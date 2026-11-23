@@ -41,6 +41,7 @@ PanelWindow {
     mask: Region {
         Region { item: body }
         Region { item: revealStrip }
+        Region { item: secondaryPill }
     }
 
     // ── state ───────────────────────────────────────────────────
@@ -98,7 +99,7 @@ PanelWindow {
     Timer {
         id: hideTimer
         interval: Tokens.islandHideDelay
-        onTriggered: if (!stripHover.hovered && !bodyHover.hovered && !root.expanded) root.revealed = false
+        onTriggered: if (!stripHover.hovered && !bodyHover.hovered && !secondaryHover.hovered && !root.expanded) root.revealed = false
     }
     onHoveredChanged: if (!hovered) hideTimer.restart()
     onHidesOverAppsChanged: if (!hidesOverApps) revealed = false
@@ -135,6 +136,113 @@ PanelWindow {
         id: shadowOpacity
         spec: Motion.effectsDefault
         target: root.overApps || root.form === "peek" || root.form === "expanded" ? 1 : 0
+    }
+
+    // ── secondary activity ──────────────────────────────────────
+    // With two live activities, the second gets its own pill under the Island, as wide
+    // as the Island's collapsed form. It slides out from under the Island and stays
+    // during the peek; clicking it swaps the two (Super+Shift+I does the same).
+    readonly property string secondary: IslandState.secondaryActivity
+    readonly property bool secondaryShown: secondary !== "" && !expanded
+        && (mode === "peek" || ["timer", "media", "recording"].includes(mode))
+
+    function activityWidth(kind) {
+        return ({
+                timer: Tokens.islandActivityTimerWidth,
+                media: Tokens.islandActivityMediaWidth,
+                recording: Tokens.islandActivityRecordingWidth
+            })[kind] ?? Tokens.islandCollapsedWidth;
+    }
+
+    property string shownSecondary: secondary
+    onSecondaryChanged: {
+        if (Motion.reduceMotion) {
+            shownSecondary = secondary;
+        } else {
+            shownSecondary = "";
+            secondaryFade.restart();
+        }
+    }
+    Timer {
+        id: secondaryFade
+        interval: Motion.contentFadeDelay
+        onTriggered: root.shownSecondary = root.secondary
+    }
+
+    Spring { id: secondaryWidth; spec: Motion.spatialDefault; target: root.activityWidth(root.activity) }
+    Spring {
+        id: secondaryDrop
+        spec: Motion.spatialDefault
+        target: root.secondaryShown ? body.height + Tokens.space2 : 0
+    }
+    Spring {
+        id: secondaryOpacity
+        spec: Motion.effectsDefault
+        target: root.secondaryShown ? 1 : 0
+    }
+
+    RectangularShadow {
+        anchors.fill: secondaryPill
+        radius: secondaryPill.radius
+        offset.x: Colors.shadowIsland.x
+        offset.y: Colors.shadowIsland.y
+        blur: Colors.shadowIsland.blur
+        color: Colors.shadowIsland.color
+        opacity: shadowOpacity.value * secondaryOpacity.value
+        visible: secondaryPill.visible && opacity > 0.01
+    }
+
+    Rectangle {
+        id: secondaryPill
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: body.y + secondaryDrop.value
+        width: secondaryWidth.value
+        height: Tokens.islandCollapsedHeight
+        radius: height / 2
+        color: Colors.island
+        clip: true
+        opacity: secondaryOpacity.value
+        visible: opacity > 0.01
+
+        Accessible.role: Accessible.Button
+        Accessible.name: ({ timer: "Timer", media: "Media", recording: "Recording" })[root.secondary] + ". Put on the Island"
+
+        IslandActivity {
+            anchors.centerIn: parent
+            width: parent.width
+            height: parent.height
+            kind: root.shownSecondary || root.secondary || "media"
+            opacity: secondaryContent.value
+            visible: opacity > 0.01 && root.secondary !== ""
+            Spring {
+                id: secondaryContent
+                spec: Motion.effectsFast
+                target: root.shownSecondary !== "" ? 1 : 0
+            }
+        }
+
+        // Hover state layer
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: Colors.on.island
+            opacity: secondaryState.value
+            Spring {
+                id: secondaryState
+                spec: Motion.effectsFast
+                target: secondaryTap.pressed ? Tokens.statePressedOpacity : secondaryHover.hovered ? Tokens.stateHoverOpacity : 0
+            }
+        }
+
+        HoverHandler {
+            id: secondaryHover
+            cursorShape: Qt.PointingHandCursor
+            onHoveredChanged: if (!hovered) hideTimer.restart()
+        }
+        TapHandler {
+            id: secondaryTap
+            onTapped: IslandState.swap()
+        }
     }
 
     RectangularShadow {

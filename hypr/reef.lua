@@ -41,6 +41,7 @@ local binds = {
     { "CTRL + ALT + Delete", "power" },
     { "SUPER + B",           "focusBar" },
     { "SUPER + I",           "island" },
+    { "SUPER + SHIFT + I",   "islandSwap" },
     -- Media keys: Reef changes the level and shows the OSD.
     { "XF86AudioRaiseVolume",  "volumeUp",       { locked = true, repeating = true } },
     { "XF86AudioLowerVolume",  "volumeDown",     { locked = true, repeating = true } },

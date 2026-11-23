@@ -110,7 +110,7 @@ hypr/
 - Debug service state with `qs -p ./reef ipc call reef status`.
 - QML's JavaScript engine lacks some newer built-ins (`String.prototype.matchAll`); use `RegExp.exec` loops.
 - The visualizer writes its cava config to `~/.cache/reef/cava.conf` and runs cava only while a waveform is visible and media plays.
-- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `island open <tab>`, `island close`, `island toggle`.
+- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
 
 ## Configuration
 

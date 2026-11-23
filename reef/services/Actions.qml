@@ -13,6 +13,7 @@ Singleton {
             home: ["Home", "M4"],
             search: ["Open search", "M4"],
             island: ["Open the Island", "M2"],
+            islandSwap: ["Swap the Island's activities", "M2"],
             clipboard: ["Island → Clipboard", "M6"],
             shelf: ["Island → Shelf", "M6"],
             tools: ["Island → Tools", "M6"],
@@ -35,15 +36,17 @@ Singleton {
         })
 
     // Actions with a global shortcut (bound in hypr/reef.lua).
-    readonly property var shortcuts: ["search", "island", "clipboard", "emoji", "coral", "controlCenter", "overview", "switcher", "editMode", "lock", "power", "focusBar", "volumeUp", "volumeDown", "volumeMute", "brightnessUp", "brightnessDown"]
+    readonly property var shortcuts: ["search", "island", "islandSwap", "clipboard", "emoji", "coral", "controlCenter", "overview", "switcher", "editMode", "lock", "power", "focusBar", "volumeUp", "volumeDown", "volumeMute", "brightnessUp", "brightnessDown"]
 
     // Surfaces listen to these.
     signal focusBarRequested
     signal islandRequested(string tab)
+    signal islandSwapRequested
 
     readonly property var handlers: ({
             focusBar: () => root.focusBarRequested(),
             island: () => root.islandRequested("now"),
+            islandSwap: () => root.islandSwapRequested(),
             volumeUp: () => Audio.setVolume(Audio.volume + 0.05),
             volumeDown: () => Audio.setVolume(Audio.volume - 0.05),
             volumeMute: () => Audio.toggleMute(),

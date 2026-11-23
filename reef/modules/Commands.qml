@@ -47,6 +47,10 @@ Scope {
             return "ok";
         }
 
+        function timerCancel(): void {
+            Countdown.cancel();
+        }
+
         function toast(text: string): void {
             Toasts.show({ text: text, icon: "info" });
         }
@@ -69,6 +73,10 @@ Scope {
         }
         function toggle(): void {
             IslandState.toggle();
+        }
+        // Put the secondary live activity on the main Island.
+        function swap(): void {
+            IslandState.swap();
         }
     }
 

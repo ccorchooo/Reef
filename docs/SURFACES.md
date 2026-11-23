@@ -35,7 +35,8 @@ Mockups: `parts/Island-Rest.png`, `parts/Island-*.png`, `screens/Working.png`, `
 - **At rest:** a black pill (`island`, 120×32px) at the top center.
 - **On the home screen** (no windows open): always visible. Hover expands it into a peek of the current activity.
 - **With an app open:** hidden. Pointing at the top center for 150ms drops it in **over** the app with `shadow-island`. It never reserves space.
-- **Collapsed live activities:** timer, media (artwork plus a mini waveform), recording (red dot plus elapsed time). Only one shows at a time, by priority: recording, then timer, then playing media.
+- **Collapsed live activities:** timer, media (artwork plus a mini waveform), recording (red dot plus elapsed time). The Island shows one, by priority: recording, then timer, then playing media.
+  - **A second activity** gets its own collapsed pill below the Island, `space-2` under it and as wide as the Island's collapsed form. It slides out from under the Island and stays below the hover peek. Clicking it (or Super+Shift+I) swaps the two: the Island and the pill morph to each other's width while their contents crossfade. Reef remembers the choice until that activity ends. With three activities, the third shows in the Now tab.
   - The waveform comes from cava and rests in the mockup's shape when the visualizer is off (Settings → Power & performance).
   - Recording shows any running gpu-screen-recorder, wf-recorder or wl-screenrec (Settings → Bar & Island → Detect screen recording).
   - Timers start from the Tools tab (M6) or `qs -p ./reef ipc call reef timer 5m`. A finished timer shows a toast with **Restart**.
@@ -178,4 +179,5 @@ Mockup: `screens/Settings.png`
 | `Ctrl + Alt + Delete` | Power actions |
 | `Super + B` | Keyboard focus to the bar (Tab between controls, Escape to leave) |
 | `Super + I` | Open or close the Island (Tab between controls, Escape to close) |
+| `Super + Shift + I` | Swap the Island's activity with the one in the pill below |
 | Volume and brightness keys | Change the level and show the edge OSD |
