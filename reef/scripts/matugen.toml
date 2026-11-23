@@ -1,0 +1,4 @@
+# Reef runs matugen with --dry-run --json and reads stdout; no templates are written yet.
+[config]
+
+[templates]

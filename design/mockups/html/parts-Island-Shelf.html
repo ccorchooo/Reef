@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Island Shelf tab</title><style>
+@font-face{font-family:'Google Sans Flex';src:url('../../fonts/GoogleSansFlex-latin-full.woff2') format('woff2');font-weight:1 1000;font-stretch:25% 151%}
+@font-face{font-family:'Google Sans Code';src:url('../../fonts/GoogleSansCode-latin-wght.woff2') format('woff2');font-weight:300 800}
+@font-face{font-family:'Material Symbols Rounded';src:url('../../fonts/material-symbols-rounded.woff2') format('woff2');font-weight:100 700}
+</style>
+
+<style>
+body{margin:0}
+.ms{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;font-size:20px;line-height:1;font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;display:inline-block}
+.ms.fill{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20}
+button{font:inherit;border:0;padding:0;background:none;color:inherit;cursor:pointer}
+</style>
+<style>html,body{margin:0;background:transparent}</style></head><body>
+
+<div style="width: 880px; height: 460px; box-sizing: border-box; background: #130d0b; font-family: 'Google Sans Flex', system-ui, sans-serif; position: relative; overflow: hidden">
+
+  <div aria-hidden="true" style="position: absolute; left: 16px; right: 16px; top: 16px; bottom: 16px; border-radius: 16px; background: #291d1a">
+    <div style="height: 44px; border-bottom: 1px solid #554441"></div>
+  </div>
+
+  <section aria-label="The Island, Shelf tab" style="position: absolute; left: 180px; top: 8px; width: 520px; border-radius: 28px; background: #000000; color: #ffffff; box-shadow: 0 6px 20px rgba(0,0,0,0.45); padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+
+    <div style="display: flex; align-items: center; gap: 8px">
+      <span style="font-size: 16px; line-height: 24px; font-weight: 700">Shelf</span>
+      <span style="font-size: 12px; line-height: 16px; color: #a8a8ad">3 items</span>
+      <span style="flex: 1"></span>
+      <button type="button" style="height: 32px; border-radius: 9999px; background: #2c2c2e; padding: 0 14px; font-size: 13px; font-weight: 500">Clear</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+      <div style="height: 112px; border-radius: 16px; background: #1c1c1e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8px; box-sizing: border-box">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: #76453b; color: #ffdbd4; display: flex; align-items: center; justify-content: center"><span class="ms fill">description</span></div>
+        <span style="font-size: 12px; line-height: 16px; text-align: center">[file name].pdf</span>
+      </div>
+      <div style="height: 112px; border-radius: 16px; background: #1c1c1e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8px; box-sizing: border-box">
+        <div style="width: 44px; height: 44px; border-radius: 22px 22px 22px 8px; background: #fdd494; color: #644815; display: flex; align-items: center; justify-content: center"><span class="ms fill">image</span></div>
+        <span style="font-size: 12px; line-height: 16px; text-align: center">screenshot.png</span>
+      </div>
+      <div style="height: 112px; border-radius: 16px; background: #1c1c1e; display: flex; flex-direction: column; gap: 6px; padding: 12px; box-sizing: border-box">
+        <span class="ms" style="color: #a8a8ad; font-size: 18px">notes</span>
+        <span style="font-family: 'Google Sans Code', monospace; font-size: 11px; line-height: 16px; color: #ffffff">hyprctl keyword general:gaps_out 16</span>
+      </div>
+      <div style="height: 112px; border-radius: 16px; border: 2px dashed #f9b7a8; background: rgba(249,183,168,0.08); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px; box-sizing: border-box; color: #f9b7a8">
+        <span class="ms" style="font-size: 24px">add</span>
+        <span style="font-size: 12px; line-height: 16px; text-align: center">Drop to add</span>
+      </div>
+    </div>
+
+    
+
+    <nav aria-label="Island tabs" style="display: flex; justify-content: center; gap: 4px">
+      <button type="button" aria-label="Now" style="width: 44px; height: 28px; border-radius: 9999px; color: #a8a8ad; display: flex; align-items: center; justify-content: center"><span class="ms" style="font-size: 18px">graphic_eq</span></button>
+      <button type="button" aria-label="Shelf" aria-current="page" style="width: 44px; height: 28px; border-radius: 9999px; background: #2c2c2e; color: #f9b7a8; display: flex; align-items: center; justify-content: center"><span class="ms fill" style="font-size: 18px">inventory_2</span></button>
+      <button type="button" aria-label="Clipboard" style="width: 44px; height: 28px; border-radius: 9999px; color: #a8a8ad; display: flex; align-items: center; justify-content: center"><span class="ms" style="font-size: 18px">content_paste</span></button>
+      <button type="button" aria-label="Tools" style="width: 44px; height: 28px; border-radius: 9999px; color: #a8a8ad; display: flex; align-items: center; justify-content: center"><span class="ms" style="font-size: 18px">widgets</span></button>
+      <button type="button" aria-label="Coral" style="width: 44px; height: 28px; border-radius: 9999px; color: #a8a8ad; display: flex; align-items: center; justify-content: center"><span style="width: 12px; height: 12px; border-radius: 50%; border: 2px solid #a8a8ad"></span></button>
+    </nav>
+  </section>
+
+  <div aria-hidden="true" style="position: absolute; left: 620px; top: 240px; width: 84px; height: 84px; border-radius: 16px; background: #302220; box-shadow: 0 8px 24px rgba(0,0,0,0.5); transform: rotate(-6deg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #f9e0db">
+    <span class="ms fill" style="font-size: 28px; color: #f9b7a8">folder_zip</span>
+    <span style="font-size: 11px">notes.zip</span>
+  </div>
+</div>
+</body></html>

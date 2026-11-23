@@ -1,0 +1,13 @@
+# Python bytecode from reef/scripts
+__pycache__/
+*.pyc
+
+# Qt / QML tooling
+*.qmlc
+*.jsc
+.qmlls.ini
+
+# Local editor and agent settings
+.claude/settings.local.json
+.vscode/
+.idea/
