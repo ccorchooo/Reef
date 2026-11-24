@@ -4,19 +4,14 @@ import qs.theme
 import qs.services
 import qs.components
 
-// The hover peek (parts/Island-Rest, screens/Working): the current activity at a glance
-// with its main control. 380×64, radius-xl, shadow-island.
+// The hover peek (parts/Island-Rest, screens/Working): the current activity at a
+// glance with its main control. 380×64, radius-xl, shadow-island.
 Item {
     id: root
 
-    required property string kind   // "media" | "timer" | "recording"
-
-    readonly property string title: kind === "media" ? Media.title
-        : kind === "timer" ? Countdown.label
-        : "Recording"
-    readonly property string subtitle: kind === "media" ? Media.artist
-        : kind === "timer" ? Countdown.text + (Countdown.paused ? " · Paused" : "")
-        : Recording.text
+    property Activity activity: null
+    readonly property bool isMedia: activity?.key === "media"
+    readonly property var action: activity?.actions?.[0] ?? null
 
     Row {
         anchors.fill: parent
@@ -30,29 +25,29 @@ Item {
             width: Tokens.islandArtMd
             height: Tokens.islandArtMd
             radius: Tokens.radiusMd
-            color: root.kind === "media" ? Colors.tertiaryContainer : Colors.islandContainerHigh
+            color: root.isMedia ? Colors.tertiaryContainer : Colors.islandContainerHigh
 
             Icon {
                 anchors.centerIn: parent
-                visible: root.kind !== "media" || cover.status !== Image.Ready
-                name: root.kind === "media" ? "music_note" : root.kind === "timer" ? "timer" : ""
+                visible: root.activity?.leading !== "dot" && (!root.isMedia || cover.status !== Image.Ready)
+                name: root.isMedia ? "music_note" : (root.activity?.icon ?? "")
                 filled: true
                 size: Tokens.iconLg
-                color: root.kind === "media" ? Colors.on.tertiaryContainer : Colors.islandAccent
+                color: root.isMedia ? Colors.on.tertiaryContainer : (root.activity?.iconColor ?? Colors.islandAccent)
             }
             Rectangle {
                 anchors.centerIn: parent
-                visible: root.kind === "recording"
+                visible: root.activity?.leading === "dot"
                 width: Tokens.recordingDot
                 height: Tokens.recordingDot
                 radius: width / 2
-                color: Colors.error
+                color: root.activity?.dotColor ?? Colors.error
             }
             Image {
                 id: cover
                 anchors.fill: parent
-                visible: root.kind === "media" && status === Image.Ready
-                source: root.kind === "media" ? Media.artUrl : ""
+                visible: root.isMedia && status === Image.Ready
+                source: root.isMedia ? Media.artUrl : ""
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 sourceSize.width: Tokens.islandArtMd * 2
@@ -62,44 +57,34 @@ Item {
 
         Column {
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - art.width - button.width - parent.spacing * 2
+            width: parent.width - art.width - (button.visible ? button.width + parent.spacing : 0) - parent.spacing
 
             StyledText {
                 width: parent.width
                 style: "islandTitle"
                 color: Colors.on.island
                 elide: Text.ElideRight
-                text: root.title
+                text: root.activity?.title ?? ""
             }
             StyledText {
                 width: parent.width
                 visible: text !== ""
-                style: root.kind === "media" ? "bodySm" : "monoSm"
+                style: root.activity?.subtitleMono ? "monoSm" : "bodySm"
                 color: Colors.on.islandVariant
                 elide: Text.ElideRight
-                text: root.subtitle
+                text: root.activity?.subtitle ?? ""
             }
         }
 
         IslandButton {
             id: button
             anchors.verticalCenter: parent.verticalCenter
-            color: root.kind === "recording" ? Colors.error : Colors.islandAccent
-            contentColor: root.kind === "recording" ? Colors.on.error : Colors.on.islandAccent
-            icon: root.kind === "recording" ? "stop"
-                : root.kind === "timer" ? (Countdown.paused ? "play_arrow" : "pause")
-                : (Media.playing ? "pause" : "play_arrow")
-            label: root.kind === "recording" ? "Stop recording"
-                : root.kind === "timer" ? (Countdown.paused ? "Resume timer" : "Pause timer")
-                : (Media.playing ? "Pause" : "Play")
-            onClicked: {
-                if (root.kind === "recording")
-                    Recording.stop();
-                else if (root.kind === "timer")
-                    Countdown.toggle();
-                else
-                    Media.togglePlaying();
-            }
+            visible: root.action !== null
+            color: root.action?.tone === "error" ? Colors.error : Colors.islandAccent
+            contentColor: root.action?.tone === "error" ? Colors.on.error : Colors.on.islandAccent
+            icon: root.action?.icon ?? ""
+            label: root.action?.label ?? ""
+            onClicked: root.action?.run()
         }
     }
 }

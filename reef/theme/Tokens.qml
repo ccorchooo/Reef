@@ -118,6 +118,7 @@ Singleton {
     readonly property real osdTrack: 40
     readonly property real toastHeight: 44
     readonly property real toastActionHeight: 32
+    readonly property real islandActivityWidth: 180
 
     // Type
     readonly property var fontFamilies: ({"sans": "Google Sans Flex", "mono": "Google Sans Code"})
@@ -338,4 +339,5 @@ Singleton {
     readonly property real toastTimeout: 4000
     readonly property real toastActionTimeout: 6000
     readonly property real wavePeriod: 1600
+    readonly property real activityNotice: 5000
 }

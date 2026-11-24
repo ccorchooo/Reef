@@ -3,83 +3,73 @@ import qs.theme
 import qs.services
 import qs.components
 
-// The collapsed live activity inside the resting pill (parts/Island-Rest):
-// timer, media (artwork + mini waveform) or recording (red dot + elapsed time).
+// A collapsed live activity (parts/Island-Rest): a leading glyph on the left
+// (icon, red dot, or media artwork) and a readout on the right (text or waveform).
+// Used by the Island and by the secondary pill below it.
 Item {
     id: root
 
-    required property string kind   // "timer" | "media" | "recording"
+    property Activity activity: null
+    readonly property bool hasActivity: activity !== null
 
-    readonly property real startPadding: kind === "media" ? Tokens.cayPaddingTight : kind === "timer" ? Tokens.space2_5 : Tokens.space3
+    // Paddings from the mockup: artwork sits closer to the edge, a dot a little further.
+    readonly property real startPadding: !hasActivity ? 0
+        : activity.leading === "art" ? Tokens.cayPaddingTight
+        : activity.leading === "dot" ? Tokens.space3 : Tokens.space2_5
     readonly property real endPadding: Tokens.space3_5
 
-    // ── timer ──
     Item {
-        anchors.fill: parent
-        visible: root.kind === "timer"
+        id: lead
+        anchors.left: parent.left
+        anchors.leftMargin: root.startPadding
+        anchors.verticalCenter: parent.verticalCenter
+        width: childrenRect.width
+        height: childrenRect.height
+
         Icon {
-            anchors.left: parent.left
-            anchors.leftMargin: root.startPadding
-            anchors.verticalCenter: parent.verticalCenter
-            name: "timer"
+            visible: root.hasActivity && root.activity.leading === "icon"
+            name: root.activity?.icon ?? ""
             filled: true
             size: Tokens.iconSm
-            color: Colors.islandAccent
+            color: root.activity?.iconColor ?? Colors.islandAccent
         }
-        StyledText {
-            anchors.right: parent.right
-            anchors.rightMargin: root.endPadding
-            anchors.verticalCenter: parent.verticalCenter
-            style: "monoMd"
-            text: Countdown.text
-            color: Countdown.paused ? Colors.on.islandVariant : Colors.islandAccent
-        }
-    }
-
-    // ── media ──
-    Item {
-        anchors.fill: parent
-        visible: root.kind === "media"
-        ShapeImage {
-            anchors.left: parent.left
-            anchors.leftMargin: root.startPadding
-            anchors.verticalCenter: parent.verticalCenter
-            width: Tokens.islandArtSm
-            height: Tokens.islandArtSm
-            shape: "cookie6"
-            source: Media.artUrl
-            color: Colors.tertiaryContainer
-        }
-        Loader {
-            anchors.right: parent.right
-            anchors.rightMargin: root.endPadding
-            anchors.verticalCenter: parent.verticalCenter
-            // Only run the visualizer while this activity is the one showing.
-            active: root.kind === "media" && root.visible
-            sourceComponent: MiniWaveform {}
-        }
-    }
-
-    // ── recording ──
-    Item {
-        anchors.fill: parent
-        visible: root.kind === "recording"
         Rectangle {
-            anchors.left: parent.left
-            anchors.leftMargin: root.startPadding
-            anchors.verticalCenter: parent.verticalCenter
+            visible: root.hasActivity && root.activity.leading === "dot"
             width: Tokens.recordingDot
             height: Tokens.recordingDot
             radius: width / 2
-            color: Colors.error
+            color: root.activity?.dotColor ?? Colors.error
         }
-        StyledText {
-            anchors.right: parent.right
-            anchors.rightMargin: root.endPadding
-            anchors.verticalCenter: parent.verticalCenter
-            style: "monoMd"
-            text: Recording.text
-            color: Colors.on.island
+        ShapeImage {
+            visible: root.hasActivity && root.activity.leading === "art"
+            width: Tokens.islandArtSm
+            height: Tokens.islandArtSm
+            shape: "cookie6"
+            source: visible ? Media.artUrl : ""
+            color: Colors.tertiaryContainer
         }
+    }
+
+    StyledText {
+        anchors.right: parent.right
+        anchors.rightMargin: root.endPadding
+        anchors.verticalCenter: parent.verticalCenter
+        // Leave room for the glyph on the left.
+        width: Math.min(implicitWidth, root.width - root.startPadding - lead.width - Tokens.space3 - root.endPadding)
+        horizontalAlignment: Text.AlignRight
+        elide: Text.ElideRight
+        visible: root.hasActivity && root.activity.trailing === "text"
+        style: root.activity?.textMono ? "monoMd" : "labelMd"
+        text: root.activity?.text ?? ""
+        color: root.activity?.textColor ?? Colors.on.island
+    }
+
+    Loader {
+        anchors.right: parent.right
+        anchors.rightMargin: root.endPadding
+        anchors.verticalCenter: parent.verticalCenter
+        // Only run the visualizer while a waveform is showing.
+        active: root.hasActivity && root.activity.trailing === "waveform" && root.visible
+        sourceComponent: MiniWaveform {}
     }
 }

@@ -35,7 +35,18 @@ Mockups: `parts/Island-Rest.png`, `parts/Island-*.png`, `screens/Working.png`, `
 - **At rest:** a black pill (`island`, 120×32px) at the top center.
 - **On the home screen** (no windows open): always visible. Hover expands it into a peek of the current activity.
 - **With an app open:** hidden. Pointing at the top center for 150ms drops it in **over** the app with `shadow-island`. It never reserves space.
-- **Collapsed live activities:** timer, media (artwork plus a mini waveform), recording (red dot plus elapsed time). The Island shows one, by priority: recording, then timer, then playing media.
+- **Collapsed live activities:** a leading glyph and a readout, each with a peek and a row in the Now tab. The Island shows the highest-priority one:
+  1. **Recording**: red dot and elapsed time; Stop.
+  2. **Screen sharing**: which app is capturing the screen (Pipewire portal streams).
+  3. **Microphone / camera in use**: which apps, read from Pipewire links. Listening to the speakers (cava, system-audio recorders) doesn't count.
+  4. **Low battery**: at or below the low level (15%), in `error`; offers Power saver when UPower has power profiles.
+  5. **Charging**: a 5-second notice when the charger is plugged in, with the level.
+  6. **Bluetooth device connected**: a 5-second notice with the device's icon, name and battery.
+  7. **Timer**: remaining time; pause, resume, cancel.
+  8. **Stopwatch**: elapsed time with tenths; pause, lap, resume, reset. Started from the Tools tab (M6) or `qs -p ./reef ipc call stopwatch start`.
+  9. **Media**: artwork plus a mini waveform.
+  10. **Keep awake**: blocks idle and screen blanking while on (Wayland idle inhibitor), with the time left; started from the control center (M3) or `ipc call keepAwake on 30m`.
+  Each can be turned off in Settings → Bar & Island → Activities.
   - **A second activity** gets its own collapsed pill below the Island, `space-2` under it and as wide as the Island's collapsed form. It slides out from under the Island and stays below the hover peek. Clicking it (or Super+Shift+I) swaps the two: the Island and the pill morph to each other's width while their contents crossfade. Reef remembers the choice until that activity ends. With three activities, the third shows in the Now tab.
   - The waveform comes from cava and rests in the mockup's shape when the visualizer is off (Settings → Power & performance).
   - Recording shows any running gpu-screen-recorder, wf-recorder or wl-screenrec (Settings → Bar & Island → Detect screen recording).

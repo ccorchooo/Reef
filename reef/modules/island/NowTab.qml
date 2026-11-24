@@ -155,72 +155,55 @@ Column {
         }
     }
 
-    // ── nothing playing ─────────────────────────────────────────
+    // ── nothing going on ────────────────────────────────────────
     ActivityRow {
-        visible: !Media.active && !Countdown.active && !Recording.active
+        visible: !Media.active && rows.count === 0
         icon: "music_note"
         iconColor: Colors.on.islandVariant
         label: "Nothing playing"
         labelColor: Colors.on.islandVariant
     }
 
-    // ── timer ───────────────────────────────────────────────────
-    ActivityRow {
-        visible: Countdown.active
-        icon: "timer"
-        label: Countdown.label
-        value: Countdown.text
-        valueColor: Countdown.paused ? Colors.on.islandVariant : Colors.islandAccent
+    // ── every other live activity, in priority order ────────────
+    Repeater {
+        id: rows
+        model: IslandState.liveActivities.filter(a => a.key !== "media")
 
-        IslandButton {
-            anchors.verticalCenter: parent.verticalCenter
-            width: Tokens.islandButtonSm
-            height: Tokens.islandButtonSm
-            iconSize: Tokens.iconSm
-            icon: Countdown.paused ? "play_arrow" : "pause"
-            label: Countdown.paused ? "Resume timer" : "Pause timer"
-            onClicked: Countdown.toggle()
-        }
-        IslandButton {
-            anchors.verticalCenter: parent.verticalCenter
-            visible: Countdown.paused
-            width: Tokens.islandButtonSm
-            height: Tokens.islandButtonSm
-            iconSize: Tokens.iconSm
-            icon: "close"
-            label: "Cancel timer"
-            onClicked: Countdown.cancel()
-        }
-    }
+        ActivityRow {
+            id: row
+            required property Activity modelData
+            icon: modelData.leading === "dot" ? "" : modelData.icon
+            iconColor: modelData.iconColor
+            label: modelData.title + (modelData.value === "" && modelData.subtitle ? " · " + modelData.subtitle : "")
+            value: modelData.value
+            valueColor: modelData.textColor
+            Accessible.name: modelData.spoken
 
-    // ── recording ───────────────────────────────────────────────
-    ActivityRow {
-        id: recordingRow
-        visible: Recording.active
-        icon: ""
-        label: "Recording"
-        value: Recording.text
-        valueColor: Colors.on.island
+            Rectangle {
+                parent: row.dotSlot
+                anchors.centerIn: parent
+                visible: row.modelData.leading === "dot"
+                width: Tokens.recordingDot
+                height: Tokens.recordingDot
+                radius: width / 2
+                color: row.modelData.dotColor
+            }
 
-        Rectangle {
-            parent: recordingRow.dotSlot
-            anchors.centerIn: parent
-            width: Tokens.recordingDot
-            height: Tokens.recordingDot
-            radius: width / 2
-            color: Colors.error
-        }
-
-        IslandButton {
-            anchors.verticalCenter: parent.verticalCenter
-            width: Tokens.islandButtonSm
-            height: Tokens.islandButtonSm
-            iconSize: Tokens.iconSm
-            color: Colors.error
-            contentColor: Colors.on.error
-            icon: "stop"
-            label: "Stop recording"
-            onClicked: Recording.stop()
+            Repeater {
+                model: row.modelData.actions
+                IslandButton {
+                    required property var modelData
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: Tokens.islandButtonSm
+                    height: Tokens.islandButtonSm
+                    iconSize: Tokens.iconSm
+                    color: modelData.tone === "error" ? Colors.error : Colors.islandContainerHigh
+                    contentColor: modelData.tone === "error" ? Colors.on.error : Colors.on.island
+                    icon: modelData.icon
+                    label: modelData.label
+                    onClicked: modelData.run()
+                }
+            }
         }
     }
 

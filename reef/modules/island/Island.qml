@@ -77,14 +77,9 @@ PanelWindow {
         onTriggered: root.shownForm = root.form
     }
 
-    readonly property real formWidth: ({
-            rest: Tokens.islandCollapsedWidth,
-            timer: Tokens.islandActivityTimerWidth,
-            media: Tokens.islandActivityMediaWidth,
-            recording: Tokens.islandActivityRecordingWidth,
-            peek: Tokens.islandPeekWidth,
-            expanded: Tokens.islandExpandedWidth
-        })[form] ?? Tokens.islandCollapsedWidth
+    readonly property real formWidth: form === "peek" ? Tokens.islandPeekWidth
+        : form === "expanded" ? Tokens.islandExpandedWidth
+        : activityWidth(form)
     readonly property real formHeight: form === "peek" ? Tokens.islandPeekHeight
         : form === "expanded" ? expandedContent.implicitHeight + Tokens.space4 * 2
         : Tokens.islandCollapsedHeight
@@ -144,14 +139,11 @@ PanelWindow {
     // during the peek; clicking it swaps the two (Super+Shift+I does the same).
     readonly property string secondary: IslandState.secondaryActivity
     readonly property bool secondaryShown: secondary !== "" && !expanded
-        && (mode === "peek" || ["timer", "media", "recording"].includes(mode))
+        && (mode === "peek" || IslandState.isActivity(mode))
 
-    function activityWidth(kind) {
-        return ({
-                timer: Tokens.islandActivityTimerWidth,
-                media: Tokens.islandActivityMediaWidth,
-                recording: Tokens.islandActivityRecordingWidth
-            })[kind] ?? Tokens.islandCollapsedWidth;
+    // Collapsed width of an activity (the resting pill for anything else).
+    function activityWidth(key) {
+        return IslandState.byKey(key)?.width ?? Tokens.islandCollapsedWidth;
     }
 
     property string shownSecondary: secondary
@@ -205,13 +197,13 @@ PanelWindow {
         visible: opacity > 0.01
 
         Accessible.role: Accessible.Button
-        Accessible.name: ({ timer: "Timer", media: "Media", recording: "Recording" })[root.secondary] + ". Put on the Island"
+        Accessible.name: (IslandState.byKey(root.secondary)?.spoken ?? "") + ". Put on the Island"
 
         IslandActivity {
             anchors.centerIn: parent
             width: parent.width
             height: parent.height
-            kind: root.shownSecondary || root.secondary || "media"
+            activity: IslandState.byKey(root.shownSecondary || root.secondary)
             opacity: secondaryContent.value
             visible: opacity > 0.01 && root.secondary !== ""
             Spring {
@@ -295,13 +287,13 @@ PanelWindow {
             width: root.formWidth
             height: Tokens.islandCollapsedHeight
             anchors.centerIn: parent
-            kind: ["timer", "media", "recording"].includes(root.form) ? root.form : (root.activity || "media")
+            activity: IslandState.byKey(IslandState.isActivity(root.form) ? root.form : root.activity)
             opacity: activityOpacity.value
             visible: opacity > 0.01
             Spring {
                 id: activityOpacity
                 spec: Motion.effectsFast
-                target: ["timer", "media", "recording"].includes(root.shownForm) ? 1 : 0
+                target: IslandState.isActivity(root.shownForm) ? 1 : 0
             }
         }
 
@@ -309,7 +301,7 @@ PanelWindow {
             width: Tokens.islandPeekWidth
             height: Tokens.islandPeekHeight
             anchors.centerIn: parent
-            kind: root.activity || "media"
+            activity: IslandState.byKey(root.activity)
             opacity: peekOpacity.value
             visible: opacity > 0.01
             enabled: root.shownForm === "peek"
@@ -345,6 +337,12 @@ PanelWindow {
                 anchors.horizontalCenter: parent.horizontalCenter
             }
         }
+    }
+
+    // Keep awake: inhibit idle while this surface is mapped.
+    IdleInhibitor {
+        window: root
+        enabled: KeepAwake.active
     }
 
     // ── keyboard while expanded ─────────────────────────────────

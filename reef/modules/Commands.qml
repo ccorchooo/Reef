@@ -78,6 +78,35 @@ Scope {
         function swap(): void {
             IslandState.swap();
         }
+
+        // Dev aid: toggle an activity on to see how it looks (e.g. "charging", "bluetooth").
+        function simulate(key: string): string {
+            if (!IslandState.isActivity(key))
+                return "Activities: " + IslandState.all.map(a => a.key).join(", ");
+            IslandState.simulate(key);
+            return IslandState.simulated[key] ? "on" : "off";
+        }
+    }
+
+    IpcHandler {
+        target: "stopwatch"
+
+        function start(): void { Stopwatch.start(); }
+        function pause(): void { Stopwatch.pause(); }
+        function toggle(): void { Stopwatch.toggle(); }
+        function lap(): void { Stopwatch.lap(); }
+        function reset(): void { Stopwatch.reset(); }
+    }
+
+    IpcHandler {
+        target: "keepAwake"
+
+        // "30m", "2h", or "" to stay awake until turned off.
+        function on(duration: string): void {
+            KeepAwake.enable(Countdown.parse(duration || "0") / 60);
+        }
+        function off(): void { KeepAwake.disable(); }
+        function toggle(): void { KeepAwake.toggle(0); }
     }
 
     // A finished timer says so.

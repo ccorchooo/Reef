@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Services.UPower
+import qs.theme
 
 // The system battery (UPower display device). `present` is false on desktops.
 Singleton {
@@ -13,6 +14,20 @@ Singleton {
     readonly property real level: device.percentage > 1 ? device.percentage / 100 : device.percentage
     readonly property bool charging: device.state === UPowerDeviceState.Charging || device.state === UPowerDeviceState.PendingCharge
     readonly property bool full: device.state === UPowerDeviceState.FullyCharged
+    readonly property string percent: `${Math.round(level * 100)}%`
+
+    // Settings → Power & performance → Low battery
+    readonly property bool low: present && !charging && !full && level <= Config.options.battery.lowLevel
+    readonly property bool critical: low && level <= Config.options.battery.criticalLevel
+
+    // True for a moment after the charger is plugged in (activity-notice).
+    property bool chargingNotice: false
+
+    readonly property bool powerSaverAvailable: PowerProfiles.profile !== undefined
+    readonly property bool powerSaver: PowerProfiles.profile === PowerProfile.PowerSaver
+    function usePowerSaver() {
+        PowerProfiles.profile = PowerProfile.PowerSaver;
+    }
 
     readonly property string icon: {
         if (!present)
@@ -31,5 +46,28 @@ Singleton {
         return level >= 0.95 ? "battery_full" : `battery_${bars}_bar`;
     }
 
-    readonly property string label: present ? `Battery ${Math.round(level * 100)}%${charging ? ", charging" : ""}` : "No battery"
+    readonly property string label: present ? `Battery ${percent}${charging ? ", charging" : ""}` : "No battery"
+
+    onChargingChanged: {
+        if (charging && _armed) {
+            chargingNotice = true;
+            noticeTimer.restart();
+        } else if (!charging) {
+            chargingNotice = false;
+        }
+    }
+
+    // UPower reports its state right after start; that isn't "plugged in".
+    property bool _armed: false
+    Timer {
+        running: true
+        interval: Tokens.activityNotice
+        onTriggered: root._armed = true
+    }
+
+    Timer {
+        id: noticeTimer
+        interval: Tokens.activityNotice
+        onTriggered: root.chargingNotice = false
+    }
 }

@@ -2,10 +2,11 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import qs.theme
 import qs.services
 
 // Which Island is expanded (one at a time, on the monitor it was opened on),
-// which tab it shows, and the current live activity.
+// which tab it shows, and the live activities.
 Singleton {
     id: root
 
@@ -13,12 +14,164 @@ Singleton {
     property string screenName: ""
     property string tab: "now"
 
-    // Live activities in priority order (recording, timer, playing media).
-    readonly property var activities: [
-        Recording.active ? "recording" : "",
-        Countdown.active ? "timer" : "",
-        Media.playing ? "media" : ""
-    ].filter(a => a !== "")
+    readonly property var settings: Config.options.island.activities
+
+    // ── activities, in priority order ───────────────────────────
+    // Privacy and safety first, then short notices so they're seen, then what you
+    // started yourself, then background states.
+    readonly property list<Activity> all: [
+        Activity {
+            key: "recording"
+            enabled: root.settings.recording
+            live: Recording.active
+            width: Tokens.islandActivityRecordingWidth
+            leading: "dot"
+            text: Recording.text
+            textColor: Colors.on.island
+            title: "Recording"
+            subtitle: Recording.text
+            subtitleMono: true
+            value: Recording.text
+            actions: [{ icon: "stop", label: "Stop recording", tone: "error", run: () => Recording.stop() }]
+        },
+        Activity {
+            key: "screenShare"
+            enabled: root.settings.screenShare
+            live: Privacy.sharing
+            icon: "screen_share"
+            text: Privacy.screenApps[0] ?? "Sharing"
+            textMono: false
+            textColor: Colors.on.island
+            title: "Sharing your screen"
+            subtitle: Privacy.screenApps.join(", ")
+        },
+        Activity {
+            key: "micCamera"
+            enabled: root.settings.micCamera
+            live: Privacy.micActive || Privacy.cameraActive
+            icon: Privacy.cameraActive ? "videocam" : "mic"
+            text: (Privacy.cameraActive ? Privacy.cameraApps : Privacy.micApps)[0] ?? "In use"
+            textMono: false
+            textColor: Colors.on.island
+            title: Privacy.cameraActive && Privacy.micActive ? "Camera and microphone in use"
+                : Privacy.cameraActive ? "Camera in use" : "Microphone in use"
+            subtitle: [...new Set(Privacy.cameraApps.concat(Privacy.micApps))].join(", ")
+        },
+        Activity {
+            key: "batteryLow"
+            enabled: root.settings.battery
+            live: Battery.low
+            icon: "battery_alert"
+            iconColor: Colors.error
+            text: Battery.percent
+            textColor: Colors.error
+            title: Battery.critical ? "Battery critically low" : "Battery low"
+            subtitle: Battery.percent + (Battery.powerSaver ? " · Power saver on" : "")
+            value: Battery.percent
+            actions: Battery.powerSaverAvailable && !Battery.powerSaver
+                ? [{ icon: "energy_savings_leaf", label: "Turn on power saver", tone: "accent", run: () => Battery.usePowerSaver() }]
+                : []
+        },
+        Activity {
+            key: "charging"
+            enabled: root.settings.battery
+            notice: true
+            live: Battery.chargingNotice
+            icon: "bolt"
+            text: Battery.percent
+            title: "Charging"
+            subtitle: Battery.percent
+            value: Battery.percent
+        },
+        Activity {
+            key: "bluetooth"
+            enabled: root.settings.bluetooth
+            notice: true
+            live: BluetoothNotice.showing
+            icon: BluetoothNotice.icon
+            text: BluetoothNotice.hasBattery ? `${Math.round(BluetoothNotice.battery * 100)}%` : "Connected"
+            textMono: BluetoothNotice.hasBattery
+            textColor: BluetoothNotice.hasBattery ? Colors.islandAccent : Colors.on.island
+            title: BluetoothNotice.name
+            subtitle: "Connected" + (BluetoothNotice.hasBattery ? ` · ${Math.round(BluetoothNotice.battery * 100)}%` : "")
+        },
+        Activity {
+            key: "timer"
+            enabled: root.settings.timer
+            live: Countdown.active
+            width: Tokens.islandActivityTimerWidth
+            icon: "timer"
+            text: Countdown.text
+            textColor: Countdown.paused ? Colors.on.islandVariant : Colors.islandAccent
+            title: Countdown.label
+            subtitle: Countdown.text + (Countdown.paused ? " · Paused" : "")
+            subtitleMono: true
+            value: Countdown.text
+            actions: [
+                { icon: Countdown.paused ? "play_arrow" : "pause", label: Countdown.paused ? "Resume timer" : "Pause timer", tone: "accent", run: () => Countdown.toggle() }
+            ].concat(Countdown.paused ? [{ icon: "close", label: "Cancel timer", tone: "neutral", run: () => Countdown.cancel() }] : [])
+        },
+        Activity {
+            key: "stopwatch"
+            enabled: root.settings.stopwatch
+            live: Stopwatch.active
+            icon: "timer_play"
+            text: Stopwatch.text
+            textColor: Stopwatch.running ? Colors.islandAccent : Colors.on.islandVariant
+            title: Stopwatch.laps.length > 0 ? `Stopwatch · Lap ${Stopwatch.laps.length + 1}` : "Stopwatch"
+            subtitle: Stopwatch.text + (Stopwatch.running ? "" : " · Paused")
+            subtitleMono: true
+            value: Stopwatch.text
+            actions: (Stopwatch.running
+                    ? [{ icon: "pause", label: "Pause stopwatch", tone: "accent", run: () => Stopwatch.pause() },
+                       { icon: "flag", label: "Lap", tone: "neutral", run: () => Stopwatch.lap() }]
+                    : [{ icon: "play_arrow", label: "Resume stopwatch", tone: "accent", run: () => Stopwatch.start() },
+                       { icon: "restart_alt", label: "Reset stopwatch", tone: "neutral", run: () => Stopwatch.reset() }])
+        },
+        Activity {
+            key: "media"
+            enabled: root.settings.media
+            live: Media.playing
+            width: Tokens.islandActivityMediaWidth
+            leading: "art"
+            trailing: "waveform"
+            title: Media.title
+            subtitle: Media.artist
+            actions: [{ icon: Media.playing ? "pause" : "play_arrow", label: Media.playing ? "Pause" : "Play", tone: "accent", run: () => Media.togglePlaying() }]
+        },
+        Activity {
+            key: "keepAwake"
+            enabled: root.settings.keepAwake
+            live: KeepAwake.active
+            icon: "coffee"
+            text: KeepAwake.text
+            textMono: KeepAwake.until > 0
+            title: "Keeping awake"
+            subtitle: KeepAwake.until > 0 ? `${KeepAwake.text} left` : "Until you turn it off"
+            value: KeepAwake.until > 0 ? KeepAwake.text : ""
+            actions: [{ icon: "close", label: "Stop keeping awake", tone: "neutral", run: () => KeepAwake.disable() }]
+        }
+    ]
+
+    // Dev aid: `qs -p ./reef ipc call island simulate <key>` toggles an activity on
+    // with whatever values its service has, to check how it looks.
+    property var simulated: ({})
+    function simulate(key) {
+        const s = Object.assign({}, simulated);
+        s[key] = !s[key];
+        simulated = s;
+    }
+
+    readonly property var liveActivities: all.filter(a => a.enabled && (a.live || !!simulated[a.key]))
+    // Keys of the live activities, in priority order.
+    readonly property var activities: liveActivities.map(a => a.key)
+
+    function byKey(key) {
+        return all.find(a => a.key === key) ?? null;
+    }
+    function isActivity(key) {
+        return all.some(a => a.key === key);
+    }
 
     // The one the user put on the main Island by swapping; forgotten when it ends.
     property string preferred: ""

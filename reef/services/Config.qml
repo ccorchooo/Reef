@@ -106,6 +106,23 @@ Singleton {
             property JsonObject island: JsonObject {
                 property bool detectRecording: true      // show other apps' screen recordings as an activity
                 property bool peek: true                 // hover the resting Island to peek at the activity
+                // Which live activities the Island shows.
+                property JsonObject activities: JsonObject {
+                    property bool recording: true
+                    property bool screenShare: true
+                    property bool micCamera: true
+                    property bool battery: true          // low battery and charging
+                    property bool bluetooth: true        // a device connects
+                    property bool timer: true
+                    property bool stopwatch: true
+                    property bool media: true
+                    property bool keepAwake: true
+                }
+            }
+
+            property JsonObject battery: JsonObject {
+                property real lowLevel: 0.15             // "low battery" activity at or below this
+                property real criticalLevel: 0.05
             }
 
             property JsonObject osd: JsonObject {

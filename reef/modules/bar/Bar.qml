@@ -81,6 +81,12 @@ PanelWindow {
         onCleared: root.keyboardActive = false
     }
 
+    // Keep awake also holds on monitors without an Island.
+    IdleInhibitor {
+        window: root
+        enabled: KeepAwake.active
+    }
+
     mask: Region {
         Region { item: dock }
         Region { item: navigator }

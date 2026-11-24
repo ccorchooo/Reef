@@ -48,8 +48,9 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     Commands.qml              ✓ IpcHandler "reef" (run, dev, scheme, status) + GlobalShortcut "reef:<action>"
     frame/ScreenCorners.qml   ✓ rounded-screen overlay (no input, no reserved space)
     bar/                      ✓ Bar (PanelWindow, input mask = the cays), Dock, Navigator, Spotlight, Status
-    island/                   ✓ Island (one morphing body), IslandState (singleton), IslandActivity, IslandPeek,
-                                NowTab, IslandTabs, IslandButton
+    island/                   ✓ Island (one morphing body), IslandState (singleton: activities in priority
+                                order, swap, simulate), Activity (one activity's data), IslandActivity,
+                                IslandPeek, NowTab, IslandTabs, IslandButton
     osd/                      ✓ edge OSD
     toasts/                   ✓ Toast window
     pearl/  controlcenter/  editmode/  search/  workspaces/  switcher/  power/  lock/  greeter/  polkit/
@@ -59,6 +60,7 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     Actions.qml               ✓ named actions shared by keybinds, IPC and buttons (stubs log their milestone)
     Workspaces  Apps  Audio  Network  Battery  Media  Time   ✓ (M1)
     Countdown  Recording  Brightness  Toasts  Visualizer     ✓ (M2)
+    Privacy  Stopwatch  KeepAwake  BluetoothNotice           ✓ (M2 activities)
     Notifications  Bluetooth  Clipboard  Shelf  Coral  Wallpaper  Sounds
   dev/                        ✓ DevWindow (M0 inspector) + its small helpers
   settings/                   # Settings app (its own window / entry point)
@@ -108,9 +110,11 @@ hypr/
 - `DesktopEntries` loads asynchronously and `byId()` isn't reactive: bindings that call it also read `DesktopEntries.applications.values.length` so they re-run.
 - A layer surface gets keyboard focus only with `WlrLayershell.keyboardFocus`; pair Exclusive with `HyprlandFocusGrab` so a click elsewhere releases it, and arm the grab a moment after focusing, or Hyprland clears it at once.
 - Debug service state with `qs -p ./reef ipc call reef status`.
+- `transient` is a reserved word in QML; don't use it as a property name.
+- To add an Island activity: add an `Activity { … }` to `IslandState.all` at its priority, bind `live` to a service, and add a toggle under `island.activities` in Config. The pill, peek, secondary pill and Now row follow.
 - QML's JavaScript engine lacks some newer built-ins (`String.prototype.matchAll`); use `RegExp.exec` loops.
 - The visualizer writes its cava config to `~/.cache/reef/cava.conf` and runs cava only while a waveform is visible and media plays.
-- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
+- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
 
 ## Configuration
 
