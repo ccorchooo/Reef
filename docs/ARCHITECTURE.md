@@ -44,6 +44,7 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     MiniWaveform.qml          ✓ five-bar cava waveform
     Card  Tile  ExpressiveSlider  Switch  Chip  ListRow  MenuButton   ✓ (M3)
     ButtonGroup.qml           ✓ M3E button group: shared width, the pressed one widens
+    WindowThumb.qml           ✓ a window's live picture (ScreencopyView), rounded, icon fallback
     IconButton.qml  Toggle.qml  Slider.qml  TidePanel.qml
   modules/
     ScreenScope.qml           ✓ one per monitor; surfaces get added here
@@ -62,7 +63,9 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     osd/                      ✓ floating OSD
     toasts/                   ✓ Toast window
     search/                   ✓ SearchView (results + field, inside the Navigator cay), SearchRow
-    pearl/  editmode/  workspaces/  switcher/  power/  lock/  greeter/  polkit/
+    overview/                 ✓ Overview (workspace cards with live windows, Super+Tab)
+    switcher/                 ✓ Switcher (Alt+Tab, most recently used windows)
+    pearl/  editmode/  power/  lock/  greeter/  polkit/
   services/                   # singletons
     Config.qml                ✓ ~/.config/reef/config.json (FileView + JsonAdapter, live reload, write-back)
     Scheme.qml                ✓ runs matugen, caches ~/.cache/reef/scheme.json
@@ -130,12 +133,18 @@ hypr/
 - A Repeater over a JS array hands each delegate a copy of its object, so `indexOf(modelData)` finds nothing; use the delegate's `index`.
 - In a `Row`, shorter children sit at the top; cays that share a row with one that grows up (the Navigator into search) anchor to the bottom.
 - Quickshell 0.3.2's `Process` has no `exec()`: to restart one, set `running = false` and start again from `exited`.
+- Window thumbnails: `ScreencopyView { captureSource: hyprlandToplevel.wayland }`. A HyprlandToplevel's `lastIpcObject` (position `at`, `size`, `class`, `focusHistoryID`) only fills in after `Hyprland.refreshToplevels()`; `Workspaces.refresh()` does it when the overview or switcher opens. Focus a window with `Workspaces.focusWindow()`.
+- `Spring.snap()` assigns `target`, which breaks a binding on it; to jump a bound spring, set `value` (and `velocity = 0`) instead.
+- Hyprland animates a layer surface as it maps and unmaps (your `layers` animation, often a slide), on top of Reef's own motion. Surfaces with their own open/close motion (overview, switcher) stay mapped and switch to an empty input mask when closed; `hypr/reef.lua` also sets `no_anim` for `reef-*` layers.
+- When a surface that held the keyboard closes, Hyprland refocuses the previous window, which can switch back to its workspace. Switch workspaces or windows after `focus-handoff-delay` (`Workspaces.afterHandoff`). Focus a window by address (`hl.dsp.focus({ window = "address:0x…" })`); `Toplevel.activate()` doesn't change workspace.
+- Holding Super: `hypr/reef.lua` binds Super's press to the `reef:superHold` global, and a `GlobalShortcut` gets both its press and release (Commands.qml). The tap-for-search bind is a separate release bind on the same key; PanelState skips that search when the release ends a hold.
+- The switcher switches when Alt is released, which it sees because it holds the keyboard while open. A release that happens before the surface gets the keyboard (a very quick Alt+Tab tap) isn't seen; Enter or a click then finishes.
 - `transient` is a reserved word in QML; don't use it as a property name.
 - To add an Island activity: add an `Activity { … }` to `IslandState.all` at its priority, bind `live` to a service, and add a toggle under `island.activities` in Config. The pill, peek, secondary pill and Now row follow.
 - QML's JavaScript engine lacks some newer built-ins (`String.prototype.matchAll`, `Object.fromEntries`); use `RegExp.exec` loops and `reduce`.
 - Don't start a `Process` from a change handler with a bound `command`: the binding may not have updated yet. Set `command` right before `running = true`.
 - The visualizer writes its cava config to `~/.cache/reef/cava.conf` and runs cava only while a waveform is visible and media plays.
-- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|search|calendar|wifi|bluetooth|audio>` (menus open inside the control center), `panel close`, `focus start <minutes>|stop|toggle`, `notifications dnd|clear`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
+- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|search|overview|calendar|wifi|bluetooth|audio>` (menus open inside the control center), `panel close`, `focus start <minutes>|stop|toggle`, `superHold down|up` (what holding Super does), `notifications dnd|clear`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
 
 ## Configuration
 

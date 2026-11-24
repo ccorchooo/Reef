@@ -146,6 +146,10 @@ Singleton {
     readonly property real searchRowHeight: 52
     readonly property real searchRowIcon: 36
     readonly property real searchMaxHeight: 640
+    readonly property real overviewScale: 0.75
+    readonly property real overviewRing: 3
+    readonly property real switcherThumbWidth: 224
+    readonly property real switcherThumbHeight: 140
     readonly property real menuButtonHeight: 40
     readonly property real switchWidth: 52
     readonly property real switchHeight: 32
@@ -389,6 +393,9 @@ Singleton {
     readonly property real menuHoverDelay: 150
     readonly property real menuCloseDelay: 350
     readonly property real searchFileDelay: 200
+    readonly property real focusHandoffDelay: 80
+    readonly property real overviewCaptureWait: 150
+    readonly property real superHoldDelay: 300
     readonly property real osdTimeout: 1500
     readonly property real toastTimeout: 4000
     readonly property real toastActionTimeout: 6000

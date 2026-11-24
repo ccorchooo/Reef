@@ -32,10 +32,10 @@ Build Reef in thin, working slices. Each milestone should be usable every day be
 - [x] Tide panels push the bar aside. Quick toggles press like an M3E button group.
 - [x] Island activities that need M3: progress from notifications (downloads, copies, installs), an upcoming calendar event ("Standup in 5 min"), and a focus session that turns on Do not disturb. Keep awake gets a control-center tile.
 
-## M4 — Find & move
+## M4 — Find & move ✅
 - [x] Search launcher growing from the Navigator cay: apps, settings, files, `/` commands, Ask Coral. Opens on a tap of either Super key.
-- [ ] Workspace overview.
-- [ ] Alt+Tab window switcher.
+- [x] Workspace overview (Super+Tab): live window thumbnails, neighbours peeking in.
+- [x] Alt+Tab window switcher: most recently used first, live thumbnails, release Alt to switch.
 
 ## M5 — Session
 - [ ] Lock screen: WlSessionLock, PAM, the Pearl, password shapes, wrong-password shake.

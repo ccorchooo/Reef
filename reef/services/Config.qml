@@ -93,6 +93,7 @@ Singleton {
                 property bool shapeMorphs: true          // false = crossfade instead of morphing
                 property bool visualizer: true           // cava-driven waveforms (Island, Pearl)
                 property int visualizerFps: 30
+                property bool liveThumbnails: true       // overview/switcher windows update live; off = one still frame
             }
 
             // Settings → Bar & Island

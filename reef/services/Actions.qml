@@ -32,6 +32,7 @@ Singleton {
             focus: ["Focus session", "M3"],
             overview: ["Workspace overview", "M4"],
             switcher: ["Window switcher", "M4"],
+            switcherBack: ["Window switcher, previous", "M4"],
             editMode: ["Edit mode", "M7"],
             lock: ["Lock", "M5"],
             power: ["Power actions", "M5"],
@@ -44,17 +45,22 @@ Singleton {
         })
 
     // Actions with a global shortcut (bound in hypr/reef.lua).
-    readonly property var shortcuts: ["search", "island", "islandSwap", "clipboard", "emoji", "coral", "controlCenter", "overview", "switcher", "editMode", "lock", "power", "focusBar", "volumeUp", "volumeDown", "volumeMute", "brightnessUp", "brightnessDown"]
+    readonly property var shortcuts: ["search", "island", "islandSwap", "clipboard", "emoji", "coral", "controlCenter", "overview", "switcher", "switcherBack", "editMode", "lock", "power", "focusBar", "volumeUp", "volumeDown", "volumeMute", "brightnessUp", "brightnessDown"]
 
     // Surfaces listen to these.
     signal focusBarRequested
     signal islandRequested(string tab)
     signal islandSwapRequested
     signal panelRequested(string name)
+    // Alt+Tab: open the switcher, or move its selection (1 forward, -1 back).
+    signal switcherRequested(int step)
 
     readonly property var handlers: ({
             focusBar: () => root.focusBarRequested(),
             search: () => root.panelRequested("search"),
+            overview: () => root.panelRequested("overview"),
+            switcher: () => root.switcherRequested(1),
+            switcherBack: () => root.switcherRequested(-1),
             island: () => root.islandRequested("now"),
             islandSwap: () => root.islandSwapRequested(),
             controlCenter: () => root.panelRequested("controlCenter"),

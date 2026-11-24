@@ -16,7 +16,11 @@ Cay {
     required property string screenName
     property string mode: "home"             // home | workspaces
     readonly property bool searching: PanelState.panel === "search" && PanelState.screenName === screenName
-    readonly property string form: searching ? "search" : mode
+    // The workspace overview shows the workspaces here too (screens/Workspaces).
+    readonly property bool overview: PanelState.panel === "overview" && PanelState.screenName === screenName
+    // Holding Super shows the workspaces here (not the overview).
+    readonly property bool superHeld: PanelState.superHeld && PanelState.superScreen === screenName
+    readonly property string form: searching ? "search" : overview || superHeld ? "workspaces" : mode
     property string shownForm: form
 
     leftPadding: form === "search" ? Tokens.space2 : Tokens.space1
@@ -64,6 +68,13 @@ Cay {
             const d = event.angleDelta.y || -event.angleDelta.x;
             if (Math.abs(d) < 1)
                 return;
+            if (root.overview) {
+                // Moves the overview's selection; the overview follows.
+                const ids = wsRow.ids;
+                const i = Math.max(0, Math.min(ids.length - 1, ids.indexOf(PanelState.overviewWorkspace) + (d < 0 ? 1 : -1)));
+                PanelState.overviewWorkspace = ids[i];
+                return;
+            }
             root.mode = "workspaces";
             Workspaces.step(d < 0 ? 1 : -1);
         }
@@ -101,8 +112,8 @@ Cay {
         }
         CayButton {
             icon: "grid_view"
-            label: "Workspaces"
-            onClicked: root.mode = "workspaces"
+            label: "Workspace overview"
+            onClicked: PanelState.toggle("overview", root.screenName)
         }
     }
 
@@ -117,7 +128,8 @@ Cay {
         enabled: root.form === "workspaces"
 
         readonly property var ids: Workspaces.ids(Config.options.bar.workspaceCount)
-        readonly property int activeId: Workspaces.activeOn(root.screenName)
+        // With the overview open, the pill shows (and moves) its selection instead.
+        readonly property int activeId: root.overview ? PanelState.overviewWorkspace : Workspaces.activeOn(root.screenName)
         readonly property int activeIndex: ids.indexOf(activeId)
 
         Spring {
@@ -152,10 +164,10 @@ Cay {
             CayButton {
                 id: closeBtn
                 icon: "grid_view"
-                label: "Close workspaces"
+                label: root.overview ? "Close the overview" : "Close workspaces"
                 selected: true
                 anchors.verticalCenter: parent.verticalCenter
-                onClicked: root.mode = "home"
+                onClicked: root.overview ? PanelState.closeAll() : (root.mode = "home")
             }
 
             Repeater {
@@ -174,13 +186,25 @@ Cay {
                     activeFocusOnTab: true
                     Accessible.role: Accessible.Button
                     Accessible.name: `Workspace ${modelData}` + (active ? ", current" : occupied ? `, ${Workspaces.windowCount(modelData)} windows` : ", empty")
-                    Keys.onReturnPressed: Workspaces.goTo(modelData)
-                    Keys.onSpacePressed: Workspaces.goTo(modelData)
+                    Keys.onReturnPressed: ws.choose()
+                    Keys.onSpacePressed: ws.choose()
+
+                    // With the overview open this selects the workspace there; otherwise
+                    // it goes to it.
+                    function choose() {
+                        if (root.overview)
+                            PanelState.overviewWorkspace = modelData;
+                        else
+                            Workspaces.goTo(modelData);
+                    }
 
                     Rectangle {
                         anchors.fill: parent
                         radius: height / 2
-                        color: wsMouse.containsMouse && !ws.active ? Colors.surfaceContainerHighest : "transparent"
+                        // Hover, or a subtle tint on a workspace that has windows.
+                        color: ws.active ? "transparent"
+                            : wsMouse.containsMouse ? Colors.surfaceContainerHighest
+                            : ws.occupied ? Colors.surfaceContainerHigh : "transparent"
                         border.width: ws.activeFocus ? 2 : 0
                         border.color: Colors.primary
                     }
@@ -208,7 +232,7 @@ Cay {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Workspaces.goTo(ws.modelData)
+                        onClicked: ws.choose()
                     }
                 }
             }

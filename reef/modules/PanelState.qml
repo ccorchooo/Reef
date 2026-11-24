@@ -3,9 +3,10 @@ import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import qs.services
+import qs.theme
 
 // Which Tide panel and quick menu are open, and on which monitor.
-//   panel: "" | "controlCenter" | "search"
+//   panel: "" | "controlCenter" | "search" | "overview"
 //   menu:  "" | "calendar" | "wifi" | "bluetooth" | "audio"
 // A quick menu has two homes (SURFACES.md → Quick menus):
 //   - with the control center open, it floats inside it. This is the default: opening
@@ -17,6 +18,34 @@ Singleton {
     property string panel: ""
     property string menu: ""
     property string screenName: ""
+
+    // The workspace the overview has selected. The overview and the Navigator cay's
+    // workspaces both show and move it, so they always agree.
+    property int overviewWorkspace: 0
+
+    // ── holding Super ──
+    // Holding Super for super-hold-delay shows the workspaces in the Navigator cay
+    // (only there, not the overview). Letting go hides them, and since that release
+    // is also a "tap Super" for search, search is skipped right after a hold.
+    property bool superHeld: false
+    property string superScreen: ""
+    property real _skipSearchUntil: 0
+
+    function superDown() {
+        superScreen = _screen("");
+        superHold.restart();
+    }
+    function superUp() {
+        superHold.stop();
+        if (superHeld)
+            _skipSearchUntil = Date.now() + Tokens.superHoldDelay;
+        superHeld = false;
+    }
+    property Timer _superHold: Timer {
+        id: superHold
+        interval: Tokens.superHoldDelay
+        onTriggered: root.superHeld = true
+    }
 
     readonly property var menus: ["calendar", "wifi", "bluetooth", "audio"]
 
@@ -30,6 +59,9 @@ Singleton {
     }
 
     function toggle(name, screen) {
+        // The Super release that ends a hold isn't a tap.
+        if (name === "search" && (superHeld || Date.now() < _skipSearchUntil))
+            return;
         const s = _screen(screen);
         if (menus.includes(name)) {
             if (panel === "controlCenter" && menu === name && screenName === s)

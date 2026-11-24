@@ -167,4 +167,21 @@ Scope {
             onPressed: Actions.run(modelData)
         }
     }
+
+    // Holding Super (hypr/reef.lua binds Super's press to this): the Navigator shows the
+    // workspaces while it's held.
+    GlobalShortcut {
+        appid: "reef"
+        name: "superHold"
+        description: "Hold Super to see the workspaces"
+        onPressed: PanelState.superDown()
+        onReleased: PanelState.superUp()
+    }
+
+    IpcHandler {
+        target: "superHold"
+
+        function down(): void { PanelState.superDown(); }
+        function up(): void { PanelState.superUp(); }
+    }
 }

@@ -93,14 +93,12 @@ Singleton {
         const entries = DesktopEntries.applications.values.filter(e => !e.noDisplay);
         const last = Apps.lastOpened;
         if (q === "") {
-            // Recently opened first, then the pins.
+            // Every app: recently opened first, then the rest A–Z (the panel scrolls).
             const recent = entries.filter(e => last[e.id]).sort((a, b) => last[b.id] - last[a.id]);
-            for (const id of Apps.pinnedIds) {
-                const e = DesktopEntries.byId(id);
-                if (e && !recent.includes(e))
-                    recent.push(e);
-            }
-            return recent.slice(0, maxApps).map(appResult);
+            const seen = new Set(recent.map(e => e.id));
+            const rest = entries.filter(e => !seen.has(e.id) && (seen.add(e.id), true))
+                .sort((a, b) => a.name.localeCompare(b.name));
+            return recent.concat(rest).map(appResult);
         }
         const scored = [];
         for (const e of entries) {
@@ -140,6 +138,7 @@ Singleton {
         { title: "Status menus on hover", path: "Bar & Island", icon: "ads_click", keys: "status bar quick menus", on: Config.options.bar.statusMenusOnHover, run: () => Config.options.bar.statusMenusOnHover = !Config.options.bar.statusMenusOnHover },
         { title: "Panels push the bar", path: "Bar & Island", icon: "width", keys: "control center tide", on: Config.options.bar.panelsPushBar, run: () => Config.options.bar.panelsPushBar = !Config.options.bar.panelsPushBar },
         { title: "Volume and brightness OSD", path: "Bar & Island", icon: "tune", keys: "osd overlay", on: Config.options.osd.enabled, run: () => Config.options.osd.enabled = !Config.options.osd.enabled },
+        { title: "Live window thumbnails", path: "Power & performance", icon: "preview", keys: "overview switcher alt tab", on: Config.options.performance.liveThumbnails, run: () => Config.options.performance.liveThumbnails = !Config.options.performance.liveThumbnails },
         { title: "Search files", path: "Search", icon: "folder_open", keys: "find documents home", on: Config.options.search.files, run: () => Config.options.search.files = !Config.options.search.files },
         { title: "Toasts", path: "Notifications", icon: "chat_info", keys: "popups messages", on: Config.options.toasts.enabled, run: () => Config.options.toasts.enabled = !Config.options.toasts.enabled }
     ]
@@ -173,7 +172,8 @@ Singleton {
             .map(c => ({ c: c, score: want === "" ? 1 : Math.max(score(c.name, want), score(c.description, want) * 0.6) }))
             .filter(x => x.score > 0)
             .sort((a, b) => b.score - a.score || a.c.name.localeCompare(b.c.name))
-            .slice(0, maxCommands)
+            // A bare "/" lists them all; typing narrows to the best few.
+            .slice(0, want === "" ? list.length : maxCommands)
             .map(x => ({ kind: "command", title: "/" + x.c.name, subtitle: x.c.description, icon: "keyboard_command_key", iconSource: "", run: x.c.run }));
     }
 

@@ -24,7 +24,9 @@ Mockups: `screens/Home.png`, `screens/Bar.png`, `screens/BarLeft.png`
 - **The Navigator cay re-forms in place** for each mode, using `spatial-default`:
   - **home**: the three icons.
   - **search**: the cay becomes the search field, and the results panel grows upward from it (`screens/Search.png`).
-  - **workspaces**: workspace numbers 1–5, with the active one in a `primary` pill that slides between them (`screens/Workspaces.png`). Workspaces with windows use `on-surface`, empty ones `on-surface-variant`; workspaces beyond 5 appear while they exist. Opened from the grid button and closed by it; scrolling over the Navigator moves between workspaces and switches to this mode.
+  - **workspaces**: workspace numbers 1–5, with the active one in a `primary` pill that slides between them (`screens/Workspaces.png`). Workspaces with windows use `on-surface` on a subtle `surface-container-high` circle, empty ones `on-surface-variant` with none; workspaces beyond 5 appear while they exist. Scrolling over the Navigator moves between workspaces and switches to this mode. **Holding Super** for `super-hold-delay` shows this mode until Super is let go (only here, not the overview; letting go after a hold doesn't open search).
+  - **With the workspace overview open**, this mode shows and drives the overview's selection: the pill follows the overview as it moves, and clicking a numeral or scrolling over the Navigator moves the overview.
+  - The **grid button** opens the workspace overview (and closes it again).
   - **power**: Lock, Log out, Sleep, Restart, Power off and Cancel. The Dock and Spotlight cays hide (`screens/PowerActions.png`).
 - **Bar on the left**: the cays stack vertically, and the clock stacks as `09` over `41` using narrowed `wdth` numerals.
 - Per monitor, the bar can be turned off on any monitor.
@@ -99,22 +101,28 @@ Mockup: `screens/Greeter.png`
 ## Search
 Mockup: `screens/Search.png`
 
+- With an empty field it lists **every app** (recently opened first, then A–Z) and a bare `/` lists **every command**; the panel scrolls. Typing narrows each section to its best few.
 - Opened by **tapping either Super key on its own** (Super pressed and released with no other key), the Navigator's search button, or `qs -p ./reef ipc call panel toggle search`.
 - The Navigator cay grows up into it (`search-width`, `radius-xl`, `spatial-default`); the field (`search-field-height`, a `primary`-outlined pill) stays at the bottom, where the cay was. The Dock and Spotlight stay on the bar beside it. It grows to `search-max-height`, then the results scroll.
-- Results are grouped as **Apps**, **Settings**, **Files**, and **Coral** ("Ask Coral about …"). With an empty field it shows recently opened apps, then the pins. Apps match by name, generic name, keywords; recently opened ones rank higher and show "last opened …". Settings act in place until the Settings app exists (a toggle flips, a menu opens in the control center). Files come from `find` in the home folder (hidden folders skipped) after `search-file-delay`; Settings → Search → "Search files" turns it off. Coral says it isn't here yet until M8.
+- Results are grouped as **Apps**, **Settings**, **Files**, and **Coral** ("Ask Coral about …"). Apps match by name, generic name, keywords; recently opened ones rank higher and show "last opened …". Settings act in place until the Settings app exists (a toggle flips, a menu opens in the control center). Files come from `find` in the home folder (hidden folders skipped) after `search-file-delay`; Settings → Search → "Search files" turns it off. Coral says it isn't here yet until M8.
 - The selected row uses `secondary-container`. Up/Down (or Tab) move it, Enter opens it, Escape or a click elsewhere closes. Typing `/` switches to commands: every built action (`/dnd`, `/nightLight`, `/controlCenter`, …) plus `/scheme`.
 - A light `scrim` (`scrim` at `scrim-light`) dims the desktop behind it.
 
 ## Workspaces overview
 Mockup: `screens/Workspaces.png`
 
-- The current workspace zooms into a large `radius-xl` card with a `primary` ring. The neighboring workspaces peek in at the left and right edges.
-- Below the card: the workspace number and its window count. Swipe or scroll to move between workspaces.
+- Opened with **Super+Tab**, the Navigator's grid button, or `panel toggle overview`.
+- Like GNOME's: **the screen collapses into the card.** The overview waits (at most `overview-capture-wait`) until it has the windows' pictures, so its first frame is the screen itself: the card exactly over the screen with the windows live in it right where they are (`ScreencopyView`). Then it shrinks (`spatial-slow`) to the screen at `overview-scale`, a `radius-xl` card with a `primary` ring (`overview-ring`). Nothing is left behind it but the background: the wallpaper (`look.wallpaper`), or `surface` without one, dimmed by the `scrim` as the card settles. The windows are never shown twice. Inside the card the wallpaper repeats (or `surface-container-lowest`). Closing grows the card back to the screen, and the overview is gone the moment it fills it (the spring's overshoot is never drawn).
+- Going to a workspace or window waits `focus-handoff-delay` after the overview lets go of the keyboard, so Hyprland's refocus of the old window doesn't undo it. The Alt+Tab switcher does the same.
+- The neighboring workspaces peek in at the left and right edges, `space-12` away. The bar stays visible below it, with the Navigator showing the workspaces; the two share one selection, so moving in either moves both.
+- Below the card: the workspace number and its window count ("Empty" when it has none). Swipe, scroll, Left/Right or Tab move between workspaces (the card slides with `spatial-default`). Enter or a click on the current card goes there; a click on a neighbour selects it; a click on a window focuses it. Escape, Super+Tab or a click on the background closes.
+- Settings → Power & performance → "Live window thumbnails" off shows one still frame per window.
 
 ## Window switcher (Alt+Tab)
 Mockup: `screens/Switcher.png`
 
-- A `surface-container-low` card in the center of the screen holds window thumbnails, each with its app icon and title. The selected one has a `primary` ring.
+- A `surface-container-low` `radius-xl` card with `shadow-menu` in the center of the focused monitor holds window thumbnails (`switcher-thumb-width` × `switcher-thumb-height`, the window's shape fitted inside), most recently used first, each with its app icon and name. The selected one has a `primary` ring (`overview-ring`). Too many to fit, and the row scrolls to keep the selection in the middle.
+- **Alt+Tab** opens it on the previous window; each further Tab moves on (Shift+Tab back), and letting go of Alt switches to the selected window, changing workspace if needed. Enter or a click switches too; Escape or a click elsewhere cancels.
 
 ## Control & notification center (Tide panel, right)
 Mockup: `screens/ControlCenter.png`
@@ -189,12 +197,13 @@ Mockup: `screens/Settings.png`
 | Keys | Action |
 | --- | --- |
 | `Super` (left or right, tapped alone) | Search |
+| `Super` (held) | Show the workspaces in the bar |
 | `Super + V` | Island → Clipboard |
 | `Super + .` | Island → Tools (emoji) |
 | `Super + C` | Coral (voice) |
 | `Super + N` | Control / notification center |
 | `Super + Tab` | Workspace overview |
-| `Alt + Tab` | Window switcher |
+| `Alt + Tab` (hold Alt) | Window switcher; `Alt + Shift + Tab` steps back |
 | `Super + E` | Edit mode |
 | `Super + L` | Lock |
 | `Ctrl + Alt + Delete` | Power actions |

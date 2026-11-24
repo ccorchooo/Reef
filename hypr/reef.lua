@@ -21,6 +21,10 @@ hl.config({
     },
 })
 
+-- Reef animates its own surfaces; Hyprland's layer animations would play on top
+-- (a slide as the overview or switcher appears, the last frame sliding away as it goes).
+hl.layer_rule({ name = "reef", match = { namespace = "^reef-.*" }, no_anim = true })
+
 -- Start the shell. `-n` keeps a second copy from starting on config reload.
 hl.on("hyprland.start", function()
     hl.exec_cmd("qs -c reef -n -d")
@@ -33,12 +37,18 @@ local binds = {
     -- key was pressed while Super was held, so Super+V and friends don't open it.
     { "SUPER + SUPER_L",     "search", { release = true } },
     { "SUPER + SUPER_R",     "search", { release = true } },
+    -- Holding either Super key shows the workspaces in the bar until it's let go (Reef
+    -- gets the press and the release of this global; a hold doesn't open search).
+    { "SUPER + SUPER_L",     "superHold" },
+    { "SUPER + SUPER_R",     "superHold" },
     { "SUPER + V",           "clipboard" },
     { "SUPER + period",      "emoji" },
     { "SUPER + C",           "coral" },
     { "SUPER + N",           "controlCenter" },
     { "SUPER + Tab",         "overview" },
-    { "ALT + Tab",           "switcher" },
+    -- Hold Alt and press Tab to step through windows; letting go of Alt switches.
+    { "ALT + Tab",           "switcher",     { repeating = true } },
+    { "ALT + SHIFT + Tab",   "switcherBack", { repeating = true } },
     { "SUPER + E",           "editMode" },
     { "SUPER + L",           "lock" },
     { "CTRL + ALT + Delete", "power" },

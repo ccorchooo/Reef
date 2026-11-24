@@ -8,6 +8,8 @@ import qs.modules.osd
 import qs.modules.toasts
 import qs.modules.controlcenter
 import qs.modules.menus
+import qs.modules.overview
+import qs.modules.switcher
 
 // One per monitor. Each surface can be turned off per monitor (Settings → Displays).
 Scope {
@@ -39,6 +41,12 @@ Scope {
         // The bar stays clickable while the panel is open (it moves aside, not under it).
         barWindow: bar.item
     }
+
+    Overview {
+        modelData: root.modelData
+        barWindow: bar.item
+    }
+    Switcher { modelData: root.modelData }
 
     // OSD and toasts appear on whichever monitor has focus.
     Osd { modelData: root.modelData }
