@@ -5,6 +5,7 @@ import Quickshell.Hyprland
 import qs.theme
 import qs.services
 import qs.components
+import qs.modules
 
 // Volume / brightness OSD (SURFACES.md → Notifications, OSD and toasts;
 // screens/Notifications). Attached to the right edge, vertically centered,
@@ -35,6 +36,9 @@ PanelWindow {
 
     function show(what) {
         if (!Config.options.osd.enabled || Hyprland.focusedMonitor?.name !== modelData.name)
+            return;
+        // The control center and audio menu already show the level.
+        if (PanelState.panel === "controlCenter" || PanelState.menu === "audio")
             return;
         kind = what;
         shown = true;

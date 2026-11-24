@@ -21,7 +21,15 @@ Singleton {
             coral: ["Coral voice", "M8"],
             controlCenter: ["Control and notification center", "M3"],
             calendar: ["Calendar", "M3"],
+            wifiMenu: ["Wi-Fi menu", "M3"],
+            bluetoothMenu: ["Bluetooth menu", "M3"],
             audioOutput: ["Audio output menu", "M3"],
+            dnd: ["Do not disturb", "M3"],
+            nightLight: ["Night light", "M3"],
+            micMute: ["Mute microphone", "M3"],
+            screenshot: ["Screenshot of a region", "M3"],
+            keepAwake: ["Keep awake", "M3"],
+            focus: ["Focus session", "M3"],
             overview: ["Workspace overview", "M4"],
             switcher: ["Window switcher", "M4"],
             editMode: ["Edit mode", "M7"],
@@ -42,11 +50,23 @@ Singleton {
     signal focusBarRequested
     signal islandRequested(string tab)
     signal islandSwapRequested
+    signal panelRequested(string name)
 
     readonly property var handlers: ({
             focusBar: () => root.focusBarRequested(),
             island: () => root.islandRequested("now"),
             islandSwap: () => root.islandSwapRequested(),
+            controlCenter: () => root.panelRequested("controlCenter"),
+            calendar: () => root.panelRequested("calendar"),
+            wifiMenu: () => root.panelRequested("wifi"),
+            bluetoothMenu: () => root.panelRequested("bluetooth"),
+            audioOutput: () => root.panelRequested("audio"),
+            dnd: () => Notifications.setDnd(!Notifications.dnd),
+            nightLight: () => NightLight.toggle(),
+            micMute: () => Audio.toggleMicMute(),
+            screenshot: () => Screenshot.region(),
+            keepAwake: () => KeepAwake.toggle(0),
+            focus: () => Focus.active ? Focus.stop() : Focus.start(0),
             volumeUp: () => Audio.setVolume(Audio.volume + 0.05),
             volumeDown: () => Audio.setVolume(Audio.volume - 0.05),
             volumeMute: () => Audio.toggleMute(),

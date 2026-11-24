@@ -18,7 +18,7 @@ Mockups: `screens/Home.png`, `screens/Bar.png`, `screens/BarLeft.png`
   - **Dock**: pinned and running apps, with icons from the user's icon theme (the colored tiles in the mockup stand in for them). A running app has a small dot under its tile; the focused app's tile sits on `secondary-container`. Click launches, focuses, or cycles that app's windows; middle-click opens a new window. With no pins set, Reef pins the first installed terminal, file manager, browser, editor and music app.
   - **Navigator**: home (Reef logo), search, workspaces.
   - **Spotlight**: the "special widget", which shows the current media or another chosen widget. For media: artwork (or a note on `tertiary-container`), title, artist, and play/pause. It folds away when nothing is playing.
-  - **Status**: notifications bell, clock, Wi-Fi (or wired), volume, battery (hidden without one). Clicking it opens the control center; clicking the clock opens the calendar. Scrolling over it changes the volume.
+  - **Status**: notifications bell, clock, Wi-Fi (or wired), volume, battery (hidden without one). Clicking it opens the control center; the clock opens the calendar, the network icon the Wi-Fi menu, the volume icon the audio output menu. Scrolling over it changes the volume. The bell fills when there are notifications and turns to `notifications_off` with Do not disturb.
 - Each cay is `cay-height` (40px) tall, `radius-full`, on `surface-container`, with `shadow-float`. In Frosted mode it sits on a blurred surface.
 - **The Navigator cay re-forms in place** for each mode, using `spatial-default`:
   - **home**: the three icons.
@@ -59,7 +59,10 @@ Mockups: `parts/Island-Rest.png`, `parts/Island-*.png`, `screens/Working.png`, `
   3. **Clipboard**: history with search and pinned items. **Super+V** opens the Island straight to this tab.
   4. **Tools**: calculator, emoji picker, color picker, screenshot.
   5. **Coral**: the AI chat.
-- **Notifications** appear inside the Island, with inline reply and actions, then go to the control center.
+- **Notifications** appear inside the Island (440 wide) on the focused monitor, with an inline reply field when the app supports it, otherwise its actions. They stay 6 seconds (longer while hovered or while typing a reply; critical ones until dismissed), then go to the control center. Do not disturb holds back everything but critical notifications. Clicking a notification runs its default action. Escape or the close button dismisses it.
+- **Notification progress:** a notification that reports progress (hint `value`) becomes an Island activity with its percentage.
+- **Upcoming event:** 15 minutes before a calendar event, it becomes an Island activity ("In 4 min").
+- **Focus session:** a focus period (25 min) with Do not disturb on, then a toast offers a break (5 min). Both lengths are settings.
 - Inside the Island, containers use the island grays `island-container` (#1c1c1e) and `island-container-high` (#2c2c2e). Like `island`, they're fixed in every theme.
 - Per monitor, the Island can be turned off on any monitor.
 
@@ -113,19 +116,21 @@ Mockup: `screens/Switcher.png`
 ## Control & notification center (Tide panel, right)
 Mockup: `screens/ControlCenter.png`
 
-- Full height and 392px wide, with concave fillets at the top and bottom of its left edge.
+- Full height and 392px wide (`panel-width`), with concave fillets at the top and bottom of its left edge. It slides in from the right with `spatial-default`. Escape, the Status cay or a click outside closes it; Tab moves between its controls.
 - It has three cards:
   1. **Notifications**: a "N notifications" header with a **Clear all** button. Each notification is an `surface-container-high` item with an app icon, app name, time, title, body, and optional actions. This card grows to fill the free space.
-  2. **Quick toggles**: a mixed grid. Wi-Fi and Bluetooth are 2-column tiles with labels. Do not disturb, Night light, Screenshot and Mute mic are 1-column. A tile is a **squircle when off** and a **pill on `primary-container` when on**.
-  3. **Sliders**: volume and brightness, as thick M3E sliders with a gap before the handle.
+  2. **Quick toggles**: a mixed grid. Wi-Fi and Bluetooth are 2-column tiles with labels. Do not disturb, Night light, Screenshot and Mute mic are 1-column. A third row holds Keep awake and Focus as 2-column tiles. A tile is a **squircle when off** and a **pill on `primary-container` when on**. Right-click (or the Menu key) on Wi-Fi or Bluetooth opens its menu.
+     - **Night light** warms the screen with a Hyprland screen shader written from the temperature setting (no extra programs).
+     - **Screenshot** captures a region (slurp + grim), saves it to ~/Pictures/Screenshots and copies it, with a toast.
+  3. **Sliders**: volume and brightness (brightness only with a backlight), as thick M3E sliders with a gap before the handle. While the control center or audio menu is open, the edge OSD stays hidden.
 
 ## Quick menus
 Mockup: `screens/QuickMenus.png`
 
 - These menus float above the Status cay as `surface-container` cards with `radius-xl` corners.
-- **Calendar:** a month grid where today is a `primary` cookie shape and days with events get a small dot, followed by the next event.
+- **Calendar:** a month grid where today is a `primary` cookie shape and days with events get a small dot, followed by the next event. Events come from iCalendar sources (.ics files or https links) in Settings → Calendar.
 - **Wi-Fi:** an on/off switch, then a list of networks (the connected one on `primary-container`), then a "Network settings" button.
-- Bluetooth, audio output and battery menus follow the same pattern but are not mocked up yet.
+- **Bluetooth** and **audio output** menus follow the same pattern: a switch (Bluetooth), the devices or outputs with the current one on `primary-container`, and a settings button (Bluetooth scans while open). The audio menu also has the volume slider. A battery menu isn't built yet.
 
 ## Notifications, OSD and toasts
 Mockup: `screens/Notifications.png`

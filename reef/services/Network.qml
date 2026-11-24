@@ -25,6 +25,41 @@ Singleton {
         : wifi && wifiEnabled ? "signal_wifi_statusbar_not_connected"
         : "wifi_off"
 
+    // Wi-Fi networks for the menu: connected first, then known, then by signal.
+    readonly property var networks: (wifi?.networks.values ?? []).filter(n => n.name)
+        .sort((a, b) => (b.connected - a.connected) || (b.known - a.known) || (b.signalStrength - a.signalStrength))
+
+    function signalIcon(n) {
+        const s = n.signalStrength > 1 ? n.signalStrength / 100 : n.signalStrength;
+        return s > 0.66 ? "wifi" : s > 0.33 ? "wifi_2_bar" : "wifi_1_bar";
+    }
+
+    function secured(n) {
+        return n.security !== WifiSecurityType.Open && n.security !== WifiSecurityType.Unknown;
+    }
+
+    function setWifiEnabled(on) {
+        Networking.wifiEnabled = on;
+    }
+
+    // Scan while the Wi-Fi menu is open.
+    function scan(on) {
+        if (wifi)
+            wifi.scannerEnabled = on;
+    }
+
+    // Known or open networks connect directly; others need the password.
+    function connect(n, password) {
+        if (n.connected)
+            n.disconnect();
+        else if (password)
+            n.connectWithPsk(password);
+        else
+            n.connect();
+    }
+
+    readonly property string shortLabel: wired ? "Wired" : wifiNetwork ? wifiNetwork.name : wifiEnabled ? "Not connected" : "Off"
+
     readonly property string label: wired ? "Wired network connected"
         : wifiNetwork ? `Wi-Fi ${wifiNetwork.name}`
         : wifi && wifiEnabled ? "Wi-Fi not connected" : "Wi-Fi off"

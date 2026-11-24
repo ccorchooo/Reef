@@ -34,7 +34,10 @@ Scope {
                 media: { active: Media.active, title: Media.title, playing: Media.playing },
                 workspaces: { focused: Workspaces.focusedId, all: Workspaces.all.map(w => w.id) },
                 dock: Apps.dock.map(i => ({ id: i.id, entry: i.entry?.id ?? null, icon: i.entry?.icon ?? null, running: i.running, focused: i.focused })),
-                pinned: Apps.pinnedIds
+                pinned: Apps.pinnedIds,
+                calendar: { sources: Calendar.sources, events: Calendar.events.length, next: Calendar.next?.title ?? null, soon: Calendar.soon?.title ?? null },
+                notifications: { count: Notifications.count, dnd: Notifications.dnd, popup: Notifications.popup?.summary ?? null },
+                activities: IslandState.activities
             }, null, 1);
         }
 
@@ -107,6 +110,42 @@ Scope {
         }
         function off(): void { KeepAwake.disable(); }
         function toggle(): void { KeepAwake.toggle(0); }
+    }
+
+    IpcHandler {
+        target: "panel"
+
+        // "controlCenter", "calendar", "wifi", "bluetooth", "audio"
+        function toggle(name: string): void { PanelState.toggle(name); }
+        function close(): void { PanelState.closeAll(); }
+    }
+
+    IpcHandler {
+        target: "focus"
+
+        function start(minutes: string): void { Focus.start(Number(minutes) || 0); }
+        function stop(): void { Focus.stop(); }
+        function toggle(): void { Focus.toggle(); }
+    }
+
+    IpcHandler {
+        target: "notifications"
+
+        function dnd(): string {
+            Notifications.setDnd(!Notifications.dnd);
+            return Notifications.dnd ? "on" : "off";
+        }
+        function clear(): void { Notifications.clearAll(); }
+    }
+
+    Connections {
+        target: Focus
+        function onPhaseEnded(phase) {
+            if (phase === "focus")
+                Toasts.show({ text: "Focus session done", icon: "self_improvement", action: "Take a break", onAction: () => Focus.startBreak() });
+            else
+                Toasts.show({ text: "Break's over", icon: "local_cafe", action: "Focus again", onAction: () => Focus.start(0) });
+        }
     }
 
     // A finished timer says so.

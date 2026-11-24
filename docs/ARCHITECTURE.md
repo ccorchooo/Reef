@@ -42,6 +42,7 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     WavyProgress.qml          ✓ M3E wavy progress with seek
     ShapeImage.qml            ✓ album art clipped to an M3E shape
     MiniWaveform.qml          ✓ five-bar cava waveform
+    Card  Tile  ExpressiveSlider  Switch  Chip  ListRow  MenuButton   ✓ (M3)
     IconButton.qml  ButtonGroup.qml  Toggle.qml  Tile.qml  Slider.qml  Card.qml  TidePanel.qml
   modules/
     ScreenScope.qml           ✓ one per monitor; surfaces get added here
@@ -51,9 +52,12 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     island/                   ✓ Island (one morphing body), IslandState (singleton: activities in priority
                                 order, swap, simulate), Activity (one activity's data), IslandActivity,
                                 IslandPeek, NowTab, IslandTabs, IslandButton
+    controlcenter/            ✓ ControlCenter (Tide panel), NotificationCard
+    menus/                    ✓ QuickMenu window + CalendarMenu, WifiMenu, BluetoothMenu, AudioMenu
+    PanelState.qml            ✓ which panel/menu is open, on which monitor
     osd/                      ✓ edge OSD
     toasts/                   ✓ Toast window
-    pearl/  controlcenter/  editmode/  search/  workspaces/  switcher/  power/  lock/  greeter/  polkit/
+    pearl/  editmode/  search/  workspaces/  switcher/  power/  lock/  greeter/  polkit/
   services/                   # singletons
     Config.qml                ✓ ~/.config/reef/config.json (FileView + JsonAdapter, live reload, write-back)
     Scheme.qml                ✓ runs matugen, caches ~/.cache/reef/scheme.json
@@ -61,6 +65,7 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     Workspaces  Apps  Audio  Network  Battery  Media  Time   ✓ (M1)
     Countdown  Recording  Brightness  Toasts  Visualizer     ✓ (M2)
     Privacy  Stopwatch  KeepAwake  BluetoothNotice           ✓ (M2 activities)
+    Notifications  NightLight  Calendar  Focus  BluetoothState  Screenshot   ✓ (M3)
     Notifications  Bluetooth  Clipboard  Shelf  Coral  Wallpaper  Sounds
   dev/                        ✓ DevWindow (M0 inspector) + its small helpers
   settings/                   # Settings app (its own window / entry point)
@@ -82,7 +87,7 @@ hypr/
 | Colors | `services/Scheme` runs **matugen 4.x** (`matugen image <path> --prefer saturation --dry-run --json hex -t <type> -c scripts/matugen.toml`, or `matugen color hex <seed>` for a static color). One run returns both dark and light (`colors.<role>.dark.color`). Tinted = `scheme-tonal-spot`, Vivid = `scheme-vibrant`, Neutral = tonal-spot accents with `scheme-neutral` surfaces (two runs). The result is cached in `~/.cache/reef/scheme.json` so the next start is instant. `Colors.qml` falls back to the reference scheme in tokens, keeps the Island roles and scrim fixed, and crossfades every change with `effects-slow`. Writing GTK/Qt/kitty/Hyprland themes through matugen templates comes later. The wallpaper path is `look.wallpaper` in Config; Reef doesn't draw the wallpaper yet. |
 | Audio | `Quickshell.Services.Pipewire` |
 | Media | `Quickshell.Services.Mpris`. Pull the album art's color for `island-accent`. |
-| Notifications | `Quickshell.Services.Notifications`. Reef **is** the notification server. |
+| Notifications | `Quickshell.Services.Notifications`. Reef **is** the notification server. Only one program can own `org.freedesktop.Notifications`: while another shell (Caelestia) runs, Reef receives none. Test with `dbus-run-session` and an isolated `XDG_CONFIG_HOME`. |
 | Tray | `Quickshell.Services.SystemTray`, shown inside the Status cay overflow. |
 | Battery | `Quickshell.Services.UPower` |
 | Network / Bluetooth | Quickshell's networking and Bluetooth modules if your version has them, otherwise `nmcli` and `bluetoothctl` through `Process`. |
@@ -112,9 +117,10 @@ hypr/
 - Debug service state with `qs -p ./reef ipc call reef status`.
 - `transient` is a reserved word in QML; don't use it as a property name.
 - To add an Island activity: add an `Activity { … }` to `IslandState.all` at its priority, bind `live` to a service, and add a toggle under `island.activities` in Config. The pill, peek, secondary pill and Now row follow.
-- QML's JavaScript engine lacks some newer built-ins (`String.prototype.matchAll`); use `RegExp.exec` loops.
+- QML's JavaScript engine lacks some newer built-ins (`String.prototype.matchAll`, `Object.fromEntries`); use `RegExp.exec` loops and `reduce`.
+- Don't start a `Process` from a change handler with a bound `command`: the binding may not have updated yet. Set `command` right before `running = true`.
 - The visualizer writes its cava config to `~/.cache/reef/cava.conf` and runs cava only while a waveform is visible and media plays.
-- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
+- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|calendar|wifi|bluetooth|audio>`, `panel close`, `focus start <minutes>|stop|toggle`, `notifications dnd|clear`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
 
 ## Configuration
 

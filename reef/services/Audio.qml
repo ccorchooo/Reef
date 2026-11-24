@@ -20,6 +20,24 @@ Singleton {
     readonly property string label: !ready ? "No audio output"
         : muted ? "Muted" : `Volume ${Math.round(volume * 100)}%`
 
+    // Outputs (sinks) and the microphone (default source).
+    readonly property var outputs: Pipewire.nodes.values.filter(n => n.isSink && !n.isStream && n.audio)
+    readonly property PwNode source: Pipewire.defaultAudioSource
+    readonly property bool micMuted: source?.audio?.muted ?? false
+
+    function outputName(node) {
+        return node?.description || node?.nickname || node?.name || "Output";
+    }
+
+    function setOutput(node) {
+        Pipewire.preferredDefaultAudioSink = node;
+    }
+
+    function toggleMicMute() {
+        if (source?.ready)
+            source.audio.muted = !source.audio.muted;
+    }
+
     function setVolume(v) {
         if (ready)
             sink.audio.volume = Math.max(0, Math.min(1, v));
@@ -31,6 +49,6 @@ Singleton {
     }
 
     PwObjectTracker {
-        objects: root.sink ? [root.sink] : []
+        objects: [root.sink, root.source].filter(n => !!n)
     }
 }

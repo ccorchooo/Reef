@@ -96,6 +96,44 @@ Singleton {
             subtitle: "Connected" + (BluetoothNotice.hasBattery ? ` · ${Math.round(BluetoothNotice.battery * 100)}%` : "")
         },
         Activity {
+            key: "event"
+            enabled: root.settings.event
+            live: Calendar.soon !== null
+            icon: "event"
+            text: Calendar.soon ? Calendar.startsIn(Calendar.soon) : ""
+            textMono: false
+            title: Calendar.soon?.title ?? ""
+            subtitle: Calendar.soon ? Calendar.startsIn(Calendar.soon) + (Calendar.soon.location ? " · " + Calendar.soon.location : "") : ""
+            actions: [{ icon: "calendar_month", label: "Open calendar", tone: "accent", run: () => Actions.run("calendar") }]
+        },
+        Activity {
+            key: "focus"
+            enabled: root.settings.focus
+            live: Focus.active
+            icon: Focus.phase === "focus" ? "self_improvement" : "local_cafe"
+            text: Focus.text
+            textColor: Focus.paused ? Colors.on.islandVariant : Colors.islandAccent
+            title: Focus.phase === "focus" ? "Focus" + (Notifications.dnd ? " · Do not disturb" : "") : "Break"
+            subtitle: Focus.text + (Focus.paused ? " · Paused" : "")
+            subtitleMono: true
+            value: Focus.text
+            actions: [
+                { icon: Focus.paused ? "play_arrow" : "pause", label: Focus.paused ? "Resume" : "Pause", tone: "accent", run: () => Focus.toggle() },
+                { icon: "stop", label: "End session", tone: "neutral", run: () => Focus.stop() }
+            ]
+        },
+        Activity {
+            key: "progress"
+            enabled: root.settings.progress
+            live: Notifications.inProgress.length > 0
+            readonly property var n: Notifications.inProgress[0] ?? null
+            icon: "downloading"
+            text: n ? `${Math.round(Number(n.hints.value))}%` : ""
+            title: n ? (n.summary || n.appName) : ""
+            subtitle: n ? `${n.appName} · ${Math.round(Number(n.hints.value))}%` : ""
+            value: text
+        },
+        Activity {
             key: "timer"
             enabled: root.settings.timer
             live: Countdown.active

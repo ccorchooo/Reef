@@ -2,27 +2,35 @@ import QtQuick
 import qs.theme
 import qs.services
 import qs.components
+import qs.modules
 
 // Status cay (SURFACES.md → Bar): notifications bell, clock, network, volume, battery.
-// Clicking it opens the control center; clicking the clock opens the calendar (both M3).
+// Clicking it opens the control center; the clock opens the calendar, the network icon
+// the Wi-Fi menu, the volume icon the audio output menu. Scrolling changes the volume.
+// The bell fills when there are notifications and shows Do not disturb.
 Cay {
     id: root
+
+    required property string screenName
 
     leftPadding: Tokens.cayPadding
     rightPadding: Tokens.cayPadding
     color: bg.value
 
+    readonly property bool panelOpen: PanelState.screenName === screenName && (PanelState.panel === "controlCenter")
+
     ColorSpring {
         id: bg
         spec: Motion.effectsFast
-        target: cayMouse.containsMouse && !clockMouse.containsMouse ? Colors.surfaceContainerHigh : Colors.surfaceContainer
+        target: root.panelOpen ? Colors.surfaceContainerHighest
+            : cayMouse.containsMouse && !items.anyHovered ? Colors.surfaceContainerHigh : Colors.surfaceContainer
     }
 
     activeFocusOnTab: true
     Accessible.role: Accessible.Button
-    Accessible.name: `Status and control center. ${Time.time}. ${Network.label}. ${Audio.label}` + (Battery.present ? `. ${Battery.label}` : "")
-    Keys.onReturnPressed: Actions.run("controlCenter")
-    Keys.onSpacePressed: Actions.run("controlCenter")
+    Accessible.name: `Control center. ${Notifications.count} notifications${Notifications.dnd ? ", do not disturb" : ""}. ${Battery.present ? Battery.label : ""}`
+    Keys.onReturnPressed: PanelState.toggle("controlCenter", screenName)
+    Keys.onSpacePressed: PanelState.toggle("controlCenter", screenName)
 
     MouseArea {
         id: cayMouse
@@ -31,8 +39,7 @@ Cay {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: Actions.run("controlCenter")
-        // Scroll over the cay to change the volume.
+        onClicked: PanelState.toggle("controlCenter", root.screenName)
         onWheel: event => {
             const d = event.angleDelta.y || -event.angleDelta.x;
             if (Math.abs(d) >= 1)
@@ -41,41 +48,52 @@ Cay {
     }
 
     Row {
+        id: items
         anchors.verticalCenter: parent.verticalCenter
         spacing: Tokens.cayGapStatus
+        readonly property bool anyHovered: clock.hovered || net.hovered || vol.hovered
 
         Icon {
             anchors.verticalCenter: parent.verticalCenter
-            name: "notifications"
+            name: Notifications.dnd ? "notifications_off" : Notifications.count > 0 ? "notifications_unread" : "notifications"
+            filled: Notifications.count > 0
             size: Tokens.iconSm
+            color: Notifications.count > 0 && !Notifications.dnd ? Colors.on.surface : Colors.on.surfaceVariant
         }
 
-        StyledText {
+        StatusItem {
             id: clock
-            anchors.verticalCenter: parent.verticalCenter
-            style: "barTitle"
-            text: Time.time
-
-            MouseArea {
-                id: clockMouse
-                anchors.fill: parent
-                anchors.margins: -Tokens.space1
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: Actions.run("calendar")
+            screenName: root.screenName
+            menu: "calendar"
+            label: `${Time.time}. Calendar`
+            StyledText {
+                style: "barTitle"
+                text: Time.time
             }
         }
 
-        Icon {
-            anchors.verticalCenter: parent.verticalCenter
-            name: Network.icon
-            size: Tokens.iconSm
+        StatusItem {
+            id: net
+            screenName: root.screenName
+            menu: "wifi"
+            label: Network.label
+            Icon {
+                name: Network.icon
+                size: Tokens.iconSm
+                color: net.hovered || net.active ? Colors.on.surface : Colors.on.surfaceVariant
+            }
         }
 
-        Icon {
-            anchors.verticalCenter: parent.verticalCenter
-            name: Audio.icon
-            size: Tokens.iconSm
+        StatusItem {
+            id: vol
+            screenName: root.screenName
+            menu: "audio"
+            label: Audio.label
+            Icon {
+                name: Audio.icon
+                size: Tokens.iconSm
+                color: vol.hovered || vol.active ? Colors.on.surface : Colors.on.surfaceVariant
+            }
         }
 
         Icon {
@@ -83,7 +101,7 @@ Cay {
             visible: Battery.present
             name: Battery.icon
             size: Tokens.iconSm
-            color: Battery.level < 0.1 && !Battery.charging ? Colors.error : Colors.on.surfaceVariant
+            color: Battery.low ? Colors.error : Colors.on.surfaceVariant
         }
     }
 }

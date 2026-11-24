@@ -117,12 +117,39 @@ Singleton {
                     property bool stopwatch: true
                     property bool media: true
                     property bool keepAwake: true
+                    property bool progress: true         // notifications reporting progress
+                    property bool event: true            // calendar event starting soon
+                    property bool focus: true            // focus session
                 }
             }
 
             property JsonObject battery: JsonObject {
                 property real lowLevel: 0.15             // "low battery" activity at or below this
                 property real criticalLevel: 0.05
+            }
+
+            // Settings → Notifications
+            property JsonObject notifications: JsonObject {
+                property bool dnd: false                 // Do not disturb
+            }
+
+            property JsonObject focus: JsonObject {
+                property int focusMinutes: 25
+                property int breakMinutes: 5
+            }
+
+            property JsonObject nightLight: JsonObject {
+                property bool enabled: false
+                property int temperature: 4000           // kelvin; lower is warmer
+            }
+
+            // Settings → Calendar: .ics files or https links
+            property JsonObject calendar: JsonObject {
+                property list<string> sources: []
+            }
+
+            property JsonObject screenshots: JsonObject {
+                property string folder: ""               // empty = ~/Pictures/Screenshots
             }
 
             property JsonObject osd: JsonObject {

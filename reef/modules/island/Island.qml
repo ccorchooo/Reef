@@ -36,7 +36,7 @@ PanelWindow {
 
     // Tall enough for the expanded Island plus its shadow; only the body takes input.
     readonly property real shadowRoom: Colors.shadowIsland.blur + Colors.shadowIsland.y * 2
-    implicitHeight: Tokens.space2 + expandedContent.implicitHeight + Tokens.space4 * 2 + shadowRoom
+    implicitHeight: Tokens.space2 + Math.max(expandedContent.implicitHeight + Tokens.space4 * 2, notificationHeight) + shadowRoom
 
     mask: Region {
         Region { item: body }
@@ -52,7 +52,13 @@ PanelWindow {
     readonly property bool hovered: bodyHover.hovered
     property bool revealed: false
 
+    // New notifications show on the focused monitor.
+    readonly property var popup: Notifications.popup
+    readonly property bool showsPopup: !!popup && (Hyprland.focusedMonitor?.name ?? modelData.name) === modelData.name
+    readonly property real notificationHeight: notificationContent.implicitHeight + Tokens.space3_5 * 2
+
     readonly property string mode: expanded ? "expanded"
+        : showsPopup ? "notification"
         : (hovered && activity !== "" && Config.options.island.peek) ? "peek"
         : (hidesOverApps && !revealed && !hovered) ? "hidden"
         : activity !== "" ? activity : "rest"
@@ -77,13 +83,15 @@ PanelWindow {
         onTriggered: root.shownForm = root.form
     }
 
-    readonly property real formWidth: form === "peek" ? Tokens.islandPeekWidth
+    readonly property real formWidth: form === "notification" ? Tokens.islandNotificationWidth
+        : form === "peek" ? Tokens.islandPeekWidth
         : form === "expanded" ? Tokens.islandExpandedWidth
         : activityWidth(form)
     readonly property real formHeight: form === "peek" ? Tokens.islandPeekHeight
         : form === "expanded" ? expandedContent.implicitHeight + Tokens.space4 * 2
+        : form === "notification" ? notificationHeight
         : Tokens.islandCollapsedHeight
-    readonly property real formRadius: (form === "peek" || form === "expanded") ? Tokens.radiusXl : formHeight / 2
+    readonly property real formRadius: (form === "peek" || form === "expanded" || form === "notification") ? Tokens.radiusXl : formHeight / 2
 
     // ── reveal over apps ────────────────────────────────────────
     Timer {
@@ -130,7 +138,7 @@ PanelWindow {
     Spring {
         id: shadowOpacity
         spec: Motion.effectsDefault
-        target: root.overApps || root.form === "peek" || root.form === "expanded" ? 1 : 0
+        target: root.overApps || ["peek", "expanded", "notification"].includes(root.form) ? 1 : 0
     }
 
     // ── secondary activity ──────────────────────────────────────
@@ -138,7 +146,7 @@ PanelWindow {
     // as the Island's collapsed form. It slides out from under the Island and stays
     // during the peek; clicking it swaps the two (Super+Shift+I does the same).
     readonly property string secondary: IslandState.secondaryActivity
-    readonly property bool secondaryShown: secondary !== "" && !expanded
+    readonly property bool secondaryShown: secondary !== "" && !expanded && mode !== "notification"
         && (mode === "peek" || IslandState.isActivity(mode))
 
     // Collapsed width of an activity (the resting pill for anything else).
@@ -266,8 +274,16 @@ PanelWindow {
         }
 
         TapHandler {
-            enabled: !root.expanded
+            enabled: !root.expanded && root.form !== "notification"
             onTapped: IslandState.open("now", root.modelData.name)
+        }
+
+        // A notification stays while the pointer is on it or a reply is being typed.
+        Binding {
+            when: root.form === "notification"
+            target: root
+            property: "_holdPopup"
+            value: bodyHover.hovered || notificationContent.replying
         }
 
         // Scroll over the Island to move between tabs.
@@ -312,6 +328,23 @@ PanelWindow {
             }
         }
 
+        IslandNotification {
+            id: notificationContent
+            x: Tokens.space4
+            y: Tokens.space3_5
+            width: Tokens.islandNotificationWidth - Tokens.space4 - Tokens.space3_5
+            notification: root.popup
+            opacity: notificationOpacity.value
+            visible: opacity > 0.01
+            enabled: root.shownForm === "notification"
+            onWantsKeyboard: root.typing = true
+            Spring {
+                id: notificationOpacity
+                spec: Motion.effectsFast
+                target: root.shownForm === "notification" ? 1 : 0
+            }
+        }
+
         Column {
             id: expandedContent
             x: Tokens.space4
@@ -347,13 +380,24 @@ PanelWindow {
 
     // ── keyboard while expanded ─────────────────────────────────
     // Tab between controls, Escape or a click elsewhere closes.
-    WlrLayershell.keyboardFocus: expanded ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    // Typing a reply to a notification also takes the keyboard.
+    property bool typing: false
+    property bool _holdPopup: false
+    on_HoldPopupChanged: Notifications.holdPopup(_holdPopup)
+    onPopupChanged: typing = false
+    readonly property bool wantsKeys: expanded || (typing && mode === "notification")
 
-    onExpandedChanged: {
-        if (expanded)
-            focusFirst.restart();
-        else
+    WlrLayershell.keyboardFocus: wantsKeys ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    onWantsKeysChanged: {
+        if (wantsKeys) {
+            if (expanded)
+                focusFirst.restart();
+            else
+                armGrab.restart();
+        } else {
             grab.armed = false;
+        }
     }
 
     Timer {
@@ -367,7 +411,7 @@ PanelWindow {
     Timer {
         id: armGrab
         interval: 150
-        onTriggered: grab.armed = root.expanded
+        onTriggered: grab.armed = root.wantsKeys
     }
 
     Item {
@@ -378,15 +422,15 @@ PanelWindow {
 
     Shortcut {
         sequence: "Escape"
-        enabled: root.expanded
-        onActivated: IslandState.close()
+        enabled: root.wantsKeys
+        onActivated: root.expanded ? IslandState.close() : Notifications.closePopup()
     }
 
     HyprlandFocusGrab {
         id: grab
         property bool armed: false
         windows: [root]
-        active: root.expanded && armed
-        onCleared: IslandState.close()
+        active: root.wantsKeys && armed
+        onCleared: root.expanded ? IslandState.close() : (root.typing = false)
     }
 }

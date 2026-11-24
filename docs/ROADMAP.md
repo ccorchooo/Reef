@@ -25,11 +25,11 @@ Build Reef in thin, working slices. Each milestone should be usable every day be
 - [x] Toasts.
 - [x] More live activities: a second activity in a swappable pill; screen sharing, microphone/camera in use, low battery, charging, Bluetooth device connected, stopwatch, keep awake.
 
-## M3 — Control & notifications
-- [ ] Reef as the notification server. Notifications in the Island with inline reply.
-- [ ] Control center Tide panel: full height, fillets, cards (notifications, quick toggles, sliders).
-- [ ] Quick menus: calendar, Wi-Fi, Bluetooth, audio output.
-- [ ] Island activities that need M3: progress from notifications (downloads, copies, installs), an upcoming calendar event ("Standup in 5 min"), and a focus session that turns on Do not disturb. Keep awake gets a control-center tile.
+## M3 — Control & notifications ✅
+- [x] Reef as the notification server. Notifications in the Island with inline reply.
+- [x] Control center Tide panel: full height, fillets, cards (notifications, quick toggles, sliders).
+- [x] Quick menus: calendar, Wi-Fi, Bluetooth, audio output.
+- [x] Island activities that need M3: progress from notifications (downloads, copies, installs), an upcoming calendar event ("Standup in 5 min"), and a focus session that turns on Do not disturb. Keep awake gets a control-center tile.
 
 ## M4 — Find & move
 - [ ] Search launcher growing from the Navigator cay: apps, settings, files, `/` commands, Ask Coral.

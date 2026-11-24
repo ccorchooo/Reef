@@ -111,6 +111,7 @@ PanelWindow {
 
     Status {
         id: status
+        screenName: root.modelData.name
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.rightMargin: Tokens.space2

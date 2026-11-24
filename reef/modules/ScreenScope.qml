@@ -6,6 +6,8 @@ import qs.modules.bar
 import qs.modules.island
 import qs.modules.osd
 import qs.modules.toasts
+import qs.modules.controlcenter
+import qs.modules.menus
 
 // One per monitor. Each surface can be turned off per monitor (Settings → Displays).
 Scope {
@@ -28,6 +30,10 @@ Scope {
         active: root.settings.showIsland
         Island { modelData: root.modelData }
     }
+
+    // Panels and menus open on one monitor at a time (PanelState).
+    ControlCenter { modelData: root.modelData }
+    QuickMenu { modelData: root.modelData }
 
     // OSD and toasts appear on whichever monitor has focus.
     Osd { modelData: root.modelData }

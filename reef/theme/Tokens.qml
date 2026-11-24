@@ -44,6 +44,8 @@ Singleton {
     readonly property real cayPadding: 14 * spacingScale
     readonly property real rawToastPaddingStart: 18
     readonly property real toastPaddingStart: 18 * spacingScale
+    readonly property real rawTilePadding: 18
+    readonly property real tilePadding: 18 * spacingScale
 
     // Corner radius (M3 scale; concentric rule: inner = outer - padding)
     readonly property real rawRadiusFillCap: 6
@@ -60,8 +62,14 @@ Singleton {
     readonly property real radiusMd: 12 * cornerScale
     readonly property real rawRadiusLg: 16
     readonly property real radiusLg: 16 * cornerScale
+    readonly property real rawRadiusTile: 18
+    readonly property real radiusTile: 18 * cornerScale
     readonly property real rawRadiusPlay: 18
     readonly property real radiusPlay: 18 * cornerScale
+    readonly property real rawRadiusCard: 24
+    readonly property real radiusCard: 24 * cornerScale
+    readonly property real rawRadiusIslandIcon: 14
+    readonly property real radiusIslandIcon: 14 * cornerScale
     readonly property real rawRadiusXl: 28
     readonly property real radiusXl: 28 * cornerScale
     readonly property real rawRadius2xl: 48
@@ -74,7 +82,7 @@ Singleton {
     readonly property real islandCollapsedHeight: 32
     readonly property real islandCollapsedWidth: 120
     readonly property real pearlSize: 160
-    readonly property real panelWidth: 380
+    readonly property real panelWidth: 392
     readonly property real iconMd: 20
     readonly property real iconLg: 24
     readonly property real cayButton: 32
@@ -119,6 +127,28 @@ Singleton {
     readonly property real toastHeight: 44
     readonly property real toastActionHeight: 32
     readonly property real islandActivityWidth: 180
+    readonly property real editPanelWidth: 320
+    readonly property real tileHeight: 64
+    readonly property real sliderHeight: 44
+    readonly property real sliderHandleWidth: 4
+    readonly property real sliderHandleHeight: 52
+    readonly property real notificationIcon: 36
+    readonly property real islandNotificationWidth: 440
+    readonly property real islandNotificationIcon: 40
+    readonly property real chipHeight: 32
+    readonly property real menuWifiWidth: 300
+    readonly property real menuCalendarWidth: 320
+    readonly property real listRowHeight: 48
+    readonly property real menuButtonHeight: 40
+    readonly property real switchWidth: 52
+    readonly property real switchHeight: 32
+    readonly property real switchThumb: 24
+    readonly property real switchThumbOff: 16
+    readonly property real calendarWeekdayHeight: 32
+    readonly property real calendarDay: 36
+    readonly property real eventDot: 4
+    readonly property real eventBarHeight: 32
+    readonly property real replyFieldHeight: 40
 
     // Type
     readonly property var fontFamilies: ({"sans": "Google Sans Flex", "mono": "Google Sans Code"})
@@ -143,7 +173,17 @@ Singleton {
         "barNumeral": {"family": "sans", "size": 13, "lineHeight": 16, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "1  2  3  4  5"},
         "islandTitle": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "[Song title]"},
         "toastLabel": {"family": "sans", "size": 13, "lineHeight": 20, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "Copied to clipboard"},
-        "toastAction": {"family": "sans", "size": 13, "lineHeight": 20, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "Undo"}
+        "toastAction": {"family": "sans", "size": 13, "lineHeight": 20, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "Undo"},
+        "cardTitle": {"family": "sans", "size": 16, "lineHeight": 22, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Quick toggles"},
+        "notificationApp": {"family": "sans", "size": 12, "lineHeight": 16, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Messages"},
+        "notificationTitle": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Download finished"},
+        "notificationBody": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "wallpaper-pack.zip · 48 MB"},
+        "islandNotificationTitle": {"family": "sans", "size": 15, "lineHeight": 20, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "[Name]"},
+        "chipLabel": {"family": "sans", "size": 12, "lineHeight": 16, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Clear all"},
+        "tileLabel": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Wi-Fi"},
+        "tileSublabel": {"family": "sans", "size": 11, "lineHeight": 14, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Home"},
+        "calendarWeekday": {"family": "sans", "size": 11, "lineHeight": 16, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "M T W"},
+        "calendarDay": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "23"}
     })
 
     // Reference color schemes (seed #e8735a). Colors.qml uses these with no wallpaper.
@@ -319,7 +359,7 @@ Singleton {
     readonly property var fixedRoles: ["island", "onIsland", "onIslandVariant", "islandContainer", "islandContainerHigh", "islandAccent", "onIslandAccent", "islandTrack", "scrim", "screenCorner"]
 
     // Shadows per theme: {x, y, blur, color}
-    readonly property var shadows: ({"shadowIsland": {"dark": {"x": 0, "y": 6, "blur": 20, "color": "#73000000"}, "light": {"x": 0, "y": 6, "blur": 20, "color": "#38000000"}, "dark-neutral": {"x": 0, "y": 6, "blur": 20, "color": "#73000000"}, "light-neutral": {"x": 0, "y": 6, "blur": 20, "color": "#38000000"}}, "shadowFloat": {"dark": {"x": 0, "y": 2, "blur": 8, "color": "#59000000"}, "light": {"x": 0, "y": 2, "blur": 8, "color": "#1f000000"}, "dark-neutral": {"x": 0, "y": 2, "blur": 8, "color": "#59000000"}, "light-neutral": {"x": 0, "y": 2, "blur": 8, "color": "#1f000000"}}, "shadowToast": {"dark": {"x": 0, "y": 4, "blur": 14, "color": "#59000000"}, "light": {"x": 0, "y": 4, "blur": 14, "color": "#2e000000"}, "dark-neutral": {"x": 0, "y": 4, "blur": 14, "color": "#59000000"}, "light-neutral": {"x": 0, "y": 4, "blur": 14, "color": "#2e000000"}}})
+    readonly property var shadows: ({"shadowIsland": {"dark": {"x": 0, "y": 6, "blur": 20, "color": "#73000000"}, "light": {"x": 0, "y": 6, "blur": 20, "color": "#38000000"}, "dark-neutral": {"x": 0, "y": 6, "blur": 20, "color": "#73000000"}, "light-neutral": {"x": 0, "y": 6, "blur": 20, "color": "#38000000"}}, "shadowFloat": {"dark": {"x": 0, "y": 2, "blur": 8, "color": "#59000000"}, "light": {"x": 0, "y": 2, "blur": 8, "color": "#1f000000"}, "dark-neutral": {"x": 0, "y": 2, "blur": 8, "color": "#59000000"}, "light-neutral": {"x": 0, "y": 2, "blur": 8, "color": "#1f000000"}}, "shadowToast": {"dark": {"x": 0, "y": 4, "blur": 14, "color": "#59000000"}, "light": {"x": 0, "y": 4, "blur": 14, "color": "#2e000000"}, "dark-neutral": {"x": 0, "y": 4, "blur": 14, "color": "#59000000"}, "light-neutral": {"x": 0, "y": 4, "blur": 14, "color": "#2e000000"}}, "shadowMenu": {"dark": {"x": 0, "y": 8, "blur": 28, "color": "#73000000"}, "light": {"x": 0, "y": 8, "blur": 28, "color": "#33000000"}, "dark-neutral": {"x": 0, "y": 8, "blur": 28, "color": "#73000000"}, "light-neutral": {"x": 0, "y": 8, "blur": 28, "color": "#33000000"}}})
 
     // Opacity (state layers, disabled)
     readonly property real stateHoverOpacity: 0.08
@@ -340,4 +380,6 @@ Singleton {
     readonly property real toastActionTimeout: 6000
     readonly property real wavePeriod: 1600
     readonly property real activityNotice: 5000
+    readonly property real notificationPopupTimeout: 6000
+    readonly property real eventSoon: 900000
 }
