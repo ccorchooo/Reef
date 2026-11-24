@@ -25,11 +25,11 @@ PanelWindow {
     required property ShellScreen modelData
     screen: modelData
 
-    anchors {
-        top: true
-        left: true
-        right: true
-    }
+    // Anchored to the top only, so it's centered and just as wide as it needs to be:
+    // the Island's animations then only redraw that part of the screen.
+    anchors.top: true
+    implicitWidth: Math.max(Tokens.islandNotificationWidth, Tokens.islandPeekWidth + (Tokens.space2 + Tokens.islandCollapsedHeight) * 2,
+        Tokens.islandExpandedWidth + (Tokens.space2 + Tokens.islandTab) * 2) + shadowRoom * 2
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Top
@@ -38,7 +38,10 @@ PanelWindow {
     // Tall enough for the expanded Island plus its shadow; only the body takes input.
     readonly property real shadowRoom: Colors.shadowIsland.blur + Colors.shadowIsland.y * 2
     readonly property real activitiesHeight: activityRows.implicitHeight + Tokens.space3 * 2
-    implicitHeight: Tokens.space2 + Math.max(expandedContent.implicitHeight + Tokens.space4 * 2 + Tokens.space2 + activitiesHeight, notificationHeight) + shadowRoom
+    // Room for the tallest of: the expanded Island and its activities pill, the tab
+    // circles beside it (taller than a short Island: "Nothing playing"), a notification.
+    implicitHeight: Tokens.space2 + Math.max(expandedContent.implicitHeight + Tokens.space4 * 2 + Tokens.space2 + activitiesHeight,
+        tabs.implicitHeight, notificationHeight) + shadowRoom
 
     mask: Region {
         Region { item: body }

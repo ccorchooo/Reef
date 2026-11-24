@@ -23,9 +23,10 @@ PanelWindow {
         left: true
         right: true
     }
-    // The surface is as tall as the screen so the Status cay can grow up into a quick
-    // menu without resizing it (a resize makes the compositor re-send pointer enter and
-    // leave). Only the cays take input, and the exclusive zone stays cay-height + space-2.
+    // The surface is as tall as the screen so a cay can grow up out of it (a Status menu,
+    // search) without resizing it: on a resize Hyprland sends the pointer a leave and no
+    // enter until it moves, so a menu under a still pointer would close and reopen in a
+    // loop. Only the cays take input, and the exclusive zone stays cay-height + space-2.
     implicitHeight: modelData.height
     exclusiveZone: Tokens.cayHeight + Tokens.space2
     color: "transparent"

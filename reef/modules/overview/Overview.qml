@@ -245,7 +245,8 @@ PanelWindow {
 
             Repeater {
                 id: cards
-                model: root.ids
+                // Built only while the overview shows (each window is a live capture).
+                model: root.shown ? root.ids : []
 
                 Rectangle {
                     id: card

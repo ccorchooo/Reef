@@ -87,8 +87,9 @@ Singleton {
         };
     }
 
+    // Nothing is computed while the panel is closed.
     readonly property var apps: {
-        if (commandMode)
+        if (!active || commandMode)
             return [];
         const entries = DesktopEntries.applications.values.filter(e => !e.noDisplay);
         const last = Apps.lastOpened;
@@ -144,7 +145,7 @@ Singleton {
     ]
 
     readonly property var settings: {
-        if (commandMode || q === "")
+        if (!active || commandMode || q === "")
             return [];
         return settingsIndex
             .map(s => ({ s: s, score: Math.max(score(s.title, q), wordScore(s.keys, q) * 0.6, wordScore(s.path, q) * 0.5) }))
@@ -163,7 +164,7 @@ Singleton {
 
     // ── commands ("/") ──────────────────────────────────────────
     readonly property var commands: {
-        if (!commandMode)
+        if (!active || !commandMode)
             return [];
         const want = q.slice(1);
         const list = Object.keys(Actions.handlers).map(name => ({ name: name, description: Actions.actions[name]?.[0] ?? name, run: () => Actions.run(name) }));
@@ -249,7 +250,7 @@ Singleton {
     }
 
     // ── Coral ───────────────────────────────────────────────────
-    readonly property var coral: commandMode || q === "" ? [] : [{
+    readonly property var coral: !active || commandMode || q === "" ? [] : [{
         kind: "coral",
         title: `Ask Coral about “${text}”`,
         subtitle: "Answers in the Island",
@@ -269,7 +270,8 @@ Singleton {
     ].filter(s => s.items.length > 0)
 
     // Every result in order, for keyboard selection.
-    readonly property var results: sections.reduce((all, s) => all.concat(s.items), [])
+    // Every result in order, each tagged with its section's title (for the headers).
+    readonly property var results: sections.reduce((all, s) => all.concat(s.items.map(i => Object.assign({ section: s.title }, i))), [])
 
     function activate(result) {
         result?.run();

@@ -125,7 +125,8 @@ hypr/
 - `DesktopEntries` loads asynchronously and `byId()` isn't reactive: bindings that call it also read `DesktopEntries.applications.values.length` so they re-run.
 - A layer surface gets keyboard focus only with `WlrLayershell.keyboardFocus`; pair Exclusive with `HyprlandFocusGrab` so a click elsewhere releases it, and arm the grab a moment after focusing, or Hyprland clears it at once.
 - Debug service state with `qs -p ./reef ipc call reef status`.
-- Resizing a layer surface under a resting pointer makes Hyprland send leave/enter, so a surface that grows on hover (the bar, for the Status cay's menus) is created at full height up front with an input mask instead.
+- Resizing a layer surface under a resting pointer makes Hyprland send a leave and no enter until the pointer moves, so a surface that grows on hover (the bar, for the Status cay's menus) is created at full height up front with an input mask instead.
+- **Performance.** Qt redraws a whole surface on every change and Hyprland then recomposites all of it, so keep surfaces that animate often small: the Island's window is only as wide as its widest form (not the screen). Build heavy content only while it's shown: the overview's window captures exist only while it's open, search computes nothing while closed and lists results in a lazy `ListView`. Avoid rebuilding paths every frame: the wavy progress draws its wave once and slides it inside a clip.
 - A `MouseArea` with `hoverEnabled` takes hover from a sibling `HoverHandler` beneath it; to know whether the pointer is anywhere on an item, check both.
 - Qt Quick re-sends hover when items move under a still pointer. Where items re-form on hover (the Status row), compare positions in window coordinates and act only on real pointer movement.
 - `clip` is rectangular; to clip to a rounded shape, mask a layer with `MultiEffect` (`maskEnabled`, `maskSource`), as the OSD's fill does.

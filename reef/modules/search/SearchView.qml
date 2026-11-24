@@ -13,7 +13,7 @@ Item {
     property int selected: 0
 
     readonly property bool hasResults: Search.results.length > 0
-    readonly property real resultsHeight: Math.min(list.implicitHeight, Tokens.searchMaxHeight - Tokens.searchFieldHeight - Tokens.space2 * 3)
+    readonly property real resultsHeight: Math.min(list.contentHeight, Tokens.searchMaxHeight - Tokens.searchFieldHeight - Tokens.space2 * 3)
     implicitHeight: (hasResults ? resultsHeight + Tokens.space2 : 0) + Tokens.searchFieldHeight
 
     // Start a new search: empty field, keyboard in it.
@@ -38,15 +38,6 @@ Item {
             selected = (selected + by + n) % n;
     }
 
-    // Keep the selected row in view.
-    function reveal(row) {
-        const y = row.mapToItem(list, 0, 0).y;
-        if (y < flick.contentY)
-            flick.contentY = y;
-        else if (y + row.height > flick.contentY + flick.height)
-            flick.contentY = y + row.height - flick.height;
-    }
-
     Connections {
         target: Search
         function onResultsChanged() {
@@ -54,61 +45,49 @@ Item {
         }
     }
 
-    Flickable {
-        id: flick
+    // One list of every result, built lazily (only rows in view exist), with a section
+    // header above the first row of each section.
+    ListView {
+        id: list
         anchors.bottom: field.top
         anchors.bottomMargin: Tokens.space2
         width: parent.width
         height: root.resultsHeight
         visible: root.hasResults
-        contentHeight: list.implicitHeight
         clip: true
+        spacing: Tokens.spaceHalf
         boundsBehavior: Flickable.StopAtBounds
+        reuseItems: true
+        model: Search.results
+        currentIndex: root.selected
+        highlightFollowsCurrentItem: false
+        onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
 
-        Column {
-            id: list
-            width: flick.width
+        delegate: Column {
+            id: entry
+            required property var modelData
+            required property int index
+            readonly property bool firstOfSection: index === 0 || Search.results[index - 1]?.section !== modelData.section
+            width: list.width
             spacing: Tokens.spaceHalf
 
-            Repeater {
-                model: Search.sections
+            StyledText {
+                visible: entry.firstOfSection
+                style: "searchSection"
+                font.capitalization: Font.AllUppercase
+                color: Colors.on.surfaceVariant
+                leftPadding: Tokens.space3
+                topPadding: Tokens.space2
+                bottomPadding: Tokens.spaceHalf
+                text: entry.modelData.section
+                Accessible.role: Accessible.Heading
+            }
 
-                Column {
-                    id: section
-                    required property var modelData
-                    required property int index
-                    // Index of this section's first row among all results.
-                    readonly property int offset: Search.sections.slice(0, index).reduce((n, s) => n + s.items.length, 0)
-                    width: list.width
-                    spacing: Tokens.spaceHalf
-
-                    StyledText {
-                        style: "searchSection"
-                        font.capitalization: Font.AllUppercase
-                        color: Colors.on.surfaceVariant
-                        leftPadding: Tokens.space3
-                        topPadding: Tokens.space2
-                        bottomPadding: Tokens.spaceHalf
-                        text: section.modelData.title
-                        Accessible.role: Accessible.Heading
-                    }
-
-                    Repeater {
-                        model: section.modelData.items
-
-                        SearchRow {
-                            id: row
-                            required property var modelData
-                            required property int index
-                            readonly property int flatIndex: section.offset + index
-                            width: list.width
-                            result: modelData
-                            selected: flatIndex === root.selected
-                            onSelectedChanged: if (selected) root.reveal(row)
-                            onActivated: root.run(flatIndex)
-                        }
-                    }
-                }
+            SearchRow {
+                width: list.width
+                result: entry.modelData
+                selected: entry.index === root.selected
+                onActivated: root.run(entry.index)
             }
         }
     }
@@ -150,7 +129,7 @@ Item {
             onTextChanged: {
                 Search.query = text;
                 root.selected = 0;
-                flick.contentY = 0;
+                list.positionViewAtBeginning();
             }
             Keys.onUpPressed: root.move(-1)
             Keys.onDownPressed: root.move(1)

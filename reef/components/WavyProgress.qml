@@ -5,6 +5,9 @@ import qs.theme
 // M3 Expressive wavy progress (the Island's Now tab).
 // The played part is a wave that travels while `playing` and flattens when paused;
 // the rest is a straight track. Click or drag to seek.
+// The wave is built once (for the full width plus a wavelength) and slides inside a
+// clip as wide as the played part, so playing costs a move per frame, not a new path;
+// it's rebuilt only when the width or the amplitude changes.
 //
 //   WavyProgress { progress: Media.progress; playing: Media.playing; onSeek: f => Media.seekTo(f) }
 Item {
@@ -44,28 +47,64 @@ Item {
         onTriggered: root._phase = (root._phase + frameTime * Motion.speed * 2 * Math.PI * 1000 / Tokens.wavePeriod) % (2 * Math.PI)
     }
 
-    readonly property var _wave: {
+    readonly property real _k: 2 * Math.PI / Tokens.waveLength
+    readonly property real _end: Math.max(_inset, _thumbX - _gap / 2)
+    function _y(x) {
+        return height / 2 + amp.value * Math.sin(_k * x - _phase);
+    }
+
+    // One static wave from x = 0 to width + a wavelength.
+    readonly property var _staticWave: {
         const pts = [];
-        const end = Math.max(_inset, _thumbX - _gap / 2);
-        const mid = height / 2, a = amp.value, k = 2 * Math.PI / Tokens.waveLength;
-        for (let x = _inset; x < end; x += 2)
-            pts.push(Qt.point(x, mid + a * Math.sin(k * x - _phase)));
-        pts.push(Qt.point(end, mid + a * Math.sin(k * end - _phase)));
+        const mid = height / 2, a = amp.value, len = width + Tokens.waveLength;
+        for (let x = 0; x <= len; x += 2)
+            pts.push(Qt.point(x, mid + a * Math.sin(_k * x)));
         return pts;
+    }
+
+    // The played part.
+    Item {
+        id: played
+        x: root._inset
+        width: Math.max(0, root._end - root._inset)
+        height: root.height
+        clip: true
+        visible: root.shown > 0.002
+
+        Shape {
+            // Slides right by the phase (so it matches _y): starting a wavelength to the
+            // left keeps the clip filled.
+            x: root._phase / root._k - Tokens.waveLength - root._inset
+            width: root.width + Tokens.waveLength
+            height: parent.height
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                fillColor: "transparent"
+                strokeColor: root.color
+                strokeWidth: root._stroke
+                joinStyle: ShapePath.RoundJoin
+                PathPolyline { path: root._staticWave }
+            }
+        }
+    }
+    // Round ends (the clip cuts the stroke flat).
+    Repeater {
+        model: played.visible ? [root._inset, root._end] : []
+        Rectangle {
+            required property real modelData
+            width: root._stroke
+            height: root._stroke
+            radius: width / 2
+            color: root.color
+            x: modelData - width / 2
+            y: root._y(modelData) - height / 2
+        }
     }
 
     Shape {
         anchors.fill: parent
         preferredRendererType: Shape.CurveRenderer
-
-        ShapePath {
-            fillColor: "transparent"
-            strokeColor: root.color
-            strokeWidth: root._stroke
-            capStyle: ShapePath.RoundCap
-            joinStyle: ShapePath.RoundJoin
-            PathPolyline { path: root.shown > 0.002 ? root._wave : [] }
-        }
 
         ShapePath {
             fillColor: "transparent"
