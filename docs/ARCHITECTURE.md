@@ -61,7 +61,8 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     PanelState.qml            ✓ which panel/menu is open, on which monitor, and the menu's home
     osd/                      ✓ floating OSD
     toasts/                   ✓ Toast window
-    pearl/  editmode/  search/  workspaces/  switcher/  power/  lock/  greeter/  polkit/
+    search/                   ✓ SearchView (results + field, inside the Navigator cay), SearchRow
+    pearl/  editmode/  workspaces/  switcher/  power/  lock/  greeter/  polkit/
   services/                   # singletons
     Config.qml                ✓ ~/.config/reef/config.json (FileView + JsonAdapter, live reload, write-back)
     Scheme.qml                ✓ runs matugen, caches ~/.cache/reef/scheme.json
@@ -70,6 +71,8 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     Countdown  Recording  Brightness  Toasts  Visualizer     ✓ (M2)
     Privacy  Stopwatch  KeepAwake  BluetoothNotice           ✓ (M2 activities)
     Notifications  NightLight  Calendar  Focus  BluetoothState  Screenshot   ✓ (M3)
+    Search                    ✓ (M4) results for search: apps, settings index, `/` commands, files (find)
+                                Apps also keeps when each app was last opened (~/.cache/reef/launches.json)
     Notifications  Bluetooth  Clipboard  Shelf  Coral  Wallpaper  Sounds
   dev/                        ✓ DevWindow (M0 inspector) + its small helpers
   settings/                   # Settings app (its own window / entry point)
@@ -123,13 +126,16 @@ hypr/
 - A `MouseArea` with `hoverEnabled` takes hover from a sibling `HoverHandler` beneath it; to know whether the pointer is anywhere on an item, check both.
 - Qt Quick re-sends hover when items move under a still pointer. Where items re-form on hover (the Status row), compare positions in window coordinates and act only on real pointer movement.
 - `clip` is rectangular; to clip to a rounded shape, mask a layer with `MultiEffect` (`maskEnabled`, `maskSource`), as the OSD's fill does.
-- In Hyprland's Lua mode, `hyprctl dispatch "hl.dsp.cursor.move({x=…,y=…})"` moves the pointer, handy for checking hover behavior.
+- In Hyprland's Lua mode, `hyprctl dispatch "hl.dsp.cursor.move({x=…,y=…})"` moves the pointer and `hl.dsp.send_shortcut({mods='', key='t'})` types into the focused surface, handy for checking hover and search.
+- A Repeater over a JS array hands each delegate a copy of its object, so `indexOf(modelData)` finds nothing; use the delegate's `index`.
+- In a `Row`, shorter children sit at the top; cays that share a row with one that grows up (the Navigator into search) anchor to the bottom.
+- Quickshell 0.3.2's `Process` has no `exec()`: to restart one, set `running = false` and start again from `exited`.
 - `transient` is a reserved word in QML; don't use it as a property name.
 - To add an Island activity: add an `Activity { … }` to `IslandState.all` at its priority, bind `live` to a service, and add a toggle under `island.activities` in Config. The pill, peek, secondary pill and Now row follow.
 - QML's JavaScript engine lacks some newer built-ins (`String.prototype.matchAll`, `Object.fromEntries`); use `RegExp.exec` loops and `reduce`.
 - Don't start a `Process` from a change handler with a bound `command`: the binding may not have updated yet. Set `command` right before `running = true`.
 - The visualizer writes its cava config to `~/.cache/reef/cava.conf` and runs cava only while a waveform is visible and media plays.
-- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|calendar|wifi|bluetooth|audio>` (menus open inside the control center), `panel close`, `focus start <minutes>|stop|toggle`, `notifications dnd|clear`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
+- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|search|calendar|wifi|bluetooth|audio>` (menus open inside the control center), `panel close`, `focus start <minutes>|stop|toggle`, `notifications dnd|clear`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
 
 ## Configuration
 

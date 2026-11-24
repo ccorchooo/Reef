@@ -29,7 +29,10 @@ end)
 -- Default keybinds (SURFACES.md → Keybinds). Each fires a Reef global shortcut
 -- (reef/modules/Commands.qml); actions that aren't built yet just log.
 local binds = {
-    { "SUPER + SUPER_L",     "search", { release = true } }, -- tap Super on its own
+    -- Tap either Super key on its own for search. Release binds fire only when no other
+    -- key was pressed while Super was held, so Super+V and friends don't open it.
+    { "SUPER + SUPER_L",     "search", { release = true } },
+    { "SUPER + SUPER_R",     "search", { release = true } },
     { "SUPER + V",           "clipboard" },
     { "SUPER + period",      "emoji" },
     { "SUPER + C",           "coral" },

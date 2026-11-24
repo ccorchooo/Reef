@@ -54,6 +54,7 @@ Singleton {
 
     readonly property var handlers: ({
             focusBar: () => root.focusBarRequested(),
+            search: () => root.panelRequested("search"),
             island: () => root.islandRequested("now"),
             islandSwap: () => root.islandSwapRequested(),
             controlCenter: () => root.panelRequested("controlCenter"),

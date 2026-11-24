@@ -35,10 +35,23 @@ PanelWindow {
     // Keyboard access (Super+B): Tab between controls, Enter/Space to activate,
     // Escape, Super+B again or a click elsewhere to leave.
     property bool keyboardActive: false
+    // Search (the Navigator cay grown into the search panel) takes the keyboard.
+    readonly property bool searching: navigator.searching
     // A quick menu opened by hovering takes the keyboard only when clicked (OnDemand),
     // so it never steals typing from the focused app.
-    WlrLayershell.keyboardFocus: keyboardActive ? WlrKeyboardFocus.Exclusive
+    WlrLayershell.keyboardFocus: keyboardActive || searching ? WlrKeyboardFocus.Exclusive
         : status.menuOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+
+    onSearchingChanged: {
+        if (searching)
+            focusSearch.restart();
+    }
+    // Give the surface a moment to receive keyboard focus before typing goes into it.
+    Timer {
+        id: focusSearch
+        interval: 1
+        onTriggered: navigator.focusSearch()
+    }
 
     Connections {
         target: Actions
@@ -69,7 +82,7 @@ PanelWindow {
     }
 
     // Typing in a menu (a Wi-Fi password) holds it open until a click elsewhere.
-    readonly property bool wantsGrab: keyboardActive || status.holdOpen
+    readonly property bool wantsGrab: keyboardActive || searching || status.holdOpen
     onWantsGrabChanged: wantsGrab ? armGrab.restart() : (grab.armed = false)
 
     Item {
@@ -78,11 +91,11 @@ PanelWindow {
         focus: true
     }
 
-    // Escape closes the Status cay's menu first, then leaves the bar.
+    // Escape closes search or the Status cay's menu first, then leaves the bar.
     Shortcut {
         sequence: "Escape"
-        enabled: root.keyboardActive || status.menuOpen
-        onActivated: status.menuOpen ? PanelState.closeAll() : (root.keyboardActive = false)
+        enabled: root.keyboardActive || root.searching || status.menuOpen
+        onActivated: root.searching || status.menuOpen ? PanelState.closeAll() : (root.keyboardActive = false)
     }
 
     // Clicking anywhere outside the bar gives the keyboard back and closes a menu.
@@ -93,7 +106,7 @@ PanelWindow {
         property bool armed: false
         onCleared: {
             root.keyboardActive = false;
-            if (status.menuOpen)
+            if (status.menuOpen || root.searching)
                 PanelState.closeAll();
         }
     }
@@ -117,6 +130,20 @@ PanelWindow {
         enabled: KeepAwake.active
     }
 
+    // A light scrim dims the desktop behind search (it takes no input: a click on it
+    // reaches the window below and the focus grab closes search).
+    Rectangle {
+        anchors.fill: parent
+        color: Colors.scrim
+        opacity: scrimFade.value * Tokens.scrimLightOpacity
+        visible: opacity > 0.001
+        Spring {
+            id: scrimFade
+            spec: Motion.effectsSlow
+            target: root.searching ? 1 : 0
+        }
+    }
+
     mask: Region {
         Region { item: dock }
         Region { item: navigator }
@@ -131,12 +158,20 @@ PanelWindow {
         anchors.bottomMargin: Tokens.space2
         spacing: Tokens.space2
 
-        Dock { id: dock }
+        // Bottom-aligned: the Navigator cay grows up into search.
+        Dock {
+            id: dock
+            anchors.bottom: parent.bottom
+        }
         Navigator {
             id: navigator
+            anchors.bottom: parent.bottom
             screenName: root.modelData.name
         }
-        Spotlight { id: spotlight }
+        Spotlight {
+            id: spotlight
+            anchors.bottom: parent.bottom
+        }
     }
 
     Status {

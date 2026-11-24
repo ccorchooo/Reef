@@ -38,10 +38,11 @@ Item {
     Keys.onReturnPressed: PanelState.toggleBarMenu(menu, item.screenName)
     Keys.onSpacePressed: PanelState.toggleBarMenu(menu, item.screenName)
 
+    // A circle behind an icon, a pill behind text (the clock).
     Rectangle {
         anchors.centerIn: parent
-        width: parent.width + Tokens.space2 * 2
         height: Tokens.cayItemSm
+        width: item.width >= height ? item.width + Tokens.space2 * 2 : height
         radius: height / 2
         color: item.active ? Colors.surfaceContainerHighest : Colors.surfaceContainerHigh
         opacity: item.menu !== "" && (item.active || item.activeFocus || item.hovered) ? 1 : 0

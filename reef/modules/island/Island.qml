@@ -111,12 +111,19 @@ PanelWindow {
     onHoveredChanged: if (!hovered) hideTimer.restart()
     onHidesOverAppsChanged: if (!hidesOverApps) revealed = false
 
+    // Hidden, a thin strip along the top edge reveals the Island. Revealed, the same
+    // zone runs from the top edge down through the Island (and the circle beside it),
+    // so a pointer resting anywhere there, including the gap above the Island, keeps it
+    // in. Otherwise the Island would drop away from a pointer pinned to the top edge
+    // and the strip would bring it straight back, over and over.
     Item {
         id: revealStrip
         anchors.horizontalCenter: parent.horizontalCenter
         y: 0
-        width: Tokens.islandPeekWidth
-        height: root.hidesOverApps && root.mode === "hidden" ? Tokens.islandRevealStrip : 0
+        width: Math.max(Tokens.islandPeekWidth, body.width + (Tokens.space2 + Tokens.islandCollapsedHeight) * 2)
+        height: !root.hidesOverApps ? 0
+            : root.mode === "hidden" ? Tokens.islandRevealStrip
+            : Math.max(Tokens.islandRevealStrip, body.y + Math.min(body.height, Tokens.islandPeekHeight))
         HoverHandler {
             id: stripHover
             onHoveredChanged: {

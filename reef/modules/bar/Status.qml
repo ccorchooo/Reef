@@ -25,6 +25,8 @@ Cay {
     leftPadding: Tokens.cayPadding
     rightPadding: Tokens.cayPadding
     color: bg.value
+    // The row's hover circles reach into the paddings; only the menu area clips.
+    clipContent: false
 
     readonly property bool panelOpen: PanelState.screenName === screenName && PanelState.panel === "controlCenter"
     readonly property string menu: PanelState.barMenu(screenName)
@@ -72,18 +74,27 @@ Cay {
         target: root.menuOpen && root.shown === root.menu ? 1 : 0
     }
 
-    MenuContent {
-        id: content
-        menu: root.shown
-        live: root.menuOpen
-        x: Tokens.space4 - root.leftPadding
-        // Sits on the row and is uncovered as the cay grows upward.
-        y: row.y - Tokens.space2 - height
-        opacity: contentFade.value
-        visible: opacity > 0.01
-        enabled: root.menuOpen
-        Accessible.role: Accessible.Dialog
-        Accessible.name: title
+    // The menu area above the row, clipped so the menu is uncovered as the cay grows.
+    Item {
+        id: menuArea
+        x: -root.leftPadding
+        width: root.width
+        height: row.y
+        clip: true
+
+        MenuContent {
+            id: content
+            menu: root.shown
+            live: root.menuOpen
+            x: Tokens.space4
+            // Sits on the row.
+            y: menuArea.height - Tokens.space2 - height
+            opacity: contentFade.value
+            visible: opacity > 0.01
+            enabled: root.menuOpen
+            Accessible.role: Accessible.Dialog
+            Accessible.name: title
+        }
     }
 
     // ── the row ─────────────────────────────────────────────────
@@ -256,7 +267,7 @@ Cay {
 
     readonly property Item pointed: rowMouse.under
     onPointedChanged: {
-        if (pointed && pointed.menu !== "" && pointed.menu !== menu && hoverMenus && !panelOpen)
+        if (pointed && pointed.menu !== "" && pointed.menu !== menu && hoverMenus && PanelState.panel === "")
             hoverOpen.restart();
         else
             hoverOpen.stop();
@@ -266,7 +277,7 @@ Cay {
         interval: Tokens.menuHoverDelay
         onTriggered: {
             const i = root.pointed;
-            if (i && i.menu !== "" && !root.panelOpen)
+            if (i && i.menu !== "" && PanelState.panel === "")
                 PanelState.openBarMenu(i.menu, root.screenName);
         }
     }

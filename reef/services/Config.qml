@@ -154,6 +154,11 @@ Singleton {
                 property string folder: ""               // empty = ~/Pictures/Screenshots
             }
 
+            // Settings → Search
+            property JsonObject search: JsonObject {
+                property bool files: true                // look for files in the home folder
+            }
+
             property JsonObject osd: JsonObject {
                 property bool enabled: true              // volume and brightness OSD on the right edge
             }

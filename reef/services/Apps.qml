@@ -2,8 +2,10 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Io
 
-// Pinned and running apps for the Dock cay.
+// Pinned and running apps for the Dock cay, and when each app was last opened
+// (for search; kept in ~/.cache/reef/launches.json).
 // Pins come from Settings → Bar → Pinned apps (desktop entry ids). With none set,
 // Reef pins the first installed terminal, file manager, browser, editor and music app.
 Singleton {
@@ -74,10 +76,33 @@ Singleton {
     // Launch, focus, or cycle through an app's windows.
     function activate(item) {
         if (item.toplevels.length === 0) {
-            item.entry?.execute();
+            if (item.entry)
+                launch(item.entry);
             return;
         }
         const i = item.toplevels.findIndex(t => t.activated);
         item.toplevels[(i + 1) % item.toplevels.length].activate();
+    }
+
+    // ── launching ───────────────────────────────────────────────
+    // entry id → when it was last opened (ms since epoch).
+    readonly property var lastOpened: launches.lastOpened
+
+    function launch(entry) {
+        entry.execute();
+        const m = Object.assign({}, launches.lastOpened);
+        m[entry.id] = Date.now();
+        launches.lastOpened = m;
+    }
+
+    FileView {
+        path: Config.cacheDir + "/launches.json"
+        printErrors: false
+        onAdapterUpdated: writeAdapter()
+
+        JsonAdapter {
+            id: launches
+            property var lastOpened: ({})
+        }
     }
 }

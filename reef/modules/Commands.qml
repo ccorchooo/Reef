@@ -115,7 +115,7 @@ Scope {
     IpcHandler {
         target: "panel"
 
-        // "controlCenter", "calendar", "wifi", "bluetooth", "audio"
+        // "controlCenter", "search", "calendar", "wifi", "bluetooth", "audio"
         function toggle(name: string): void { PanelState.toggle(name); }
         function close(): void { PanelState.closeAll(); }
     }

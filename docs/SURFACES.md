@@ -35,7 +35,7 @@ Mockups: `parts/Island-Rest.png`, `parts/Island-*.png`, `screens/Working.png`, `
 
 - **At rest:** a black pill (`island`, 120×32px) at the top center.
 - **On the home screen** (no windows open): always visible. Hover expands it into a peek of the current activity.
-- **With an app open:** hidden. Pointing at the top center for 150ms drops it in **over** the app with `shadow-island`. It never reserves space.
+- **With an app open:** hidden. Pointing at the top center for 150ms drops it in **over** the app with `shadow-island`. It stays while the pointer is anywhere from the top edge down through the Island (including the gap above it and the circle beside it) and leaves `island-hide-delay` after the pointer does. It never reserves space.
 - **Collapsed live activities:** a leading glyph and a readout, each with a peek and a row in the Now tab. The Island shows the highest-priority one:
   1. **Recording**: red dot and elapsed time; Stop.
   2. **Screen sharing**: which app is capturing the screen (Pipewire portal streams).
@@ -99,10 +99,11 @@ Mockup: `screens/Greeter.png`
 ## Search
 Mockup: `screens/Search.png`
 
-- Grows upward from the Navigator cay. The field stays at the bottom, where the cay was.
-- Results are grouped as **Apps**, **Settings**, **Files**, and **Coral** ("Ask Coral about …").
-- The selected row uses `secondary-container`. Typing `/` switches to commands such as `/power`, `/wallpaper` and `/scheme`.
-- A light `scrim` dims the desktop behind it.
+- Opened by **tapping either Super key on its own** (Super pressed and released with no other key), the Navigator's search button, or `qs -p ./reef ipc call panel toggle search`.
+- The Navigator cay grows up into it (`search-width`, `radius-xl`, `spatial-default`); the field (`search-field-height`, a `primary`-outlined pill) stays at the bottom, where the cay was. The Dock and Spotlight stay on the bar beside it. It grows to `search-max-height`, then the results scroll.
+- Results are grouped as **Apps**, **Settings**, **Files**, and **Coral** ("Ask Coral about …"). With an empty field it shows recently opened apps, then the pins. Apps match by name, generic name, keywords; recently opened ones rank higher and show "last opened …". Settings act in place until the Settings app exists (a toggle flips, a menu opens in the control center). Files come from `find` in the home folder (hidden folders skipped) after `search-file-delay`; Settings → Search → "Search files" turns it off. Coral says it isn't here yet until M8.
+- The selected row uses `secondary-container`. Up/Down (or Tab) move it, Enter opens it, Escape or a click elsewhere closes. Typing `/` switches to commands: every built action (`/dnd`, `/nightLight`, `/controlCenter`, …) plus `/scheme`.
+- A light `scrim` (`scrim` at `scrim-light`) dims the desktop behind it.
 
 ## Workspaces overview
 Mockup: `screens/Workspaces.png`
@@ -187,7 +188,7 @@ Mockup: `screens/Settings.png`
 
 | Keys | Action |
 | --- | --- |
-| `Super` | Search |
+| `Super` (left or right, tapped alone) | Search |
 | `Super + V` | Island → Clipboard |
 | `Super + .` | Island → Tools (emoji) |
 | `Super + C` | Coral (voice) |

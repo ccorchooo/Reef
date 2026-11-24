@@ -33,7 +33,7 @@ Build Reef in thin, working slices. Each milestone should be usable every day be
 - [x] Island activities that need M3: progress from notifications (downloads, copies, installs), an upcoming calendar event ("Standup in 5 min"), and a focus session that turns on Do not disturb. Keep awake gets a control-center tile.
 
 ## M4 — Find & move
-- [ ] Search launcher growing from the Navigator cay: apps, settings, files, `/` commands, Ask Coral.
+- [x] Search launcher growing from the Navigator cay: apps, settings, files, `/` commands, Ask Coral. Opens on a tap of either Super key.
 - [ ] Workspace overview.
 - [ ] Alt+Tab window switcher.
 

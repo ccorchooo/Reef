@@ -2,42 +2,63 @@ import QtQuick
 import qs.theme
 import qs.services
 import qs.components
+import qs.modules
+import qs.modules.search
 
 // Navigator cay (SURFACES.md → Bar): home, search, workspaces. It re-forms in place for
-// each mode with spatial-default; the old content fades out (effects-fast) and the new one
+// each form with spatial-default; the old content fades out (effects-fast) and the new one
 // fades in after content-fade-delay (MOTION.md → Shape follows content).
-// Modes now: home, workspaces. Search and power arrive in M4/M5.
+// Forms: home, workspaces (its own mode), and search: the cay grows up into the search
+// panel (screens/Search) with the field where the cay was. Power arrives in M5.
 Cay {
     id: root
 
     required property string screenName
-    property string mode: "home"
-    property string shownMode: mode
+    property string mode: "home"             // home | workspaces
+    readonly property bool searching: PanelState.panel === "search" && PanelState.screenName === screenName
+    readonly property string form: searching ? "search" : mode
+    property string shownForm: form
 
-    leftPadding: Tokens.space1
-    rightPadding: mode === "workspaces" ? Tokens.cayPaddingTight : Tokens.space1
-    contentWidth: mode === "workspaces" ? wsRow.implicitWidth : homeRow.implicitWidth
+    leftPadding: form === "search" ? Tokens.space2 : Tokens.space1
+    rightPadding: form === "search" ? Tokens.space2 : form === "workspaces" ? Tokens.cayPaddingTight : Tokens.space1
+    contentWidth: form === "search" ? Tokens.searchWidth - Tokens.space2 * 2
+        : form === "workspaces" ? wsRow.implicitWidth : homeRow.implicitWidth
+    targetHeight: form === "search" ? searchView.implicitHeight + Tokens.space2 * 2 : Tokens.cayHeight
+    targetRadius: form === "search" ? Tokens.radiusXl : Tokens.cayHeight / 2
 
     Accessible.role: Accessible.ToolBar
-    Accessible.name: mode === "workspaces" ? "Navigator, workspaces" : "Navigator"
+    Accessible.name: form === "search" ? "Search" : form === "workspaces" ? "Navigator, workspaces" : "Navigator"
 
-    onModeChanged: {
+    onFormChanged: {
         if (Motion.reduceMotion) {
-            shownMode = mode;
+            shownForm = form;
             return;
         }
-        shownMode = "";
+        shownForm = "";
         fadeIn.restart();
     }
 
     Timer {
         id: fadeIn
         interval: Motion.contentFadeDelay
-        onTriggered: root.shownMode = root.mode
+        onTriggered: root.shownForm = root.form
+    }
+
+    // The bar calls this once the surface has the keyboard.
+    function focusSearch() {
+        searchView.open();
+    }
+
+    Binding {
+        target: Search
+        property: "active"
+        value: true
+        when: root.searching
     }
 
     // Scrolling anywhere on the Navigator moves between workspaces.
     WheelHandler {
+        enabled: !root.searching
         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         onWheel: event => {
             const d = event.angleDelta.y || -event.angleDelta.x;
@@ -55,12 +76,12 @@ Cay {
         spacing: Tokens.space1
         opacity: homeOpacity.value
         visible: opacity > 0.01
-        enabled: root.mode === "home"
+        enabled: root.form === "home"
 
         Spring {
             id: homeOpacity
             spec: Motion.reduceMotion ? Motion.effectsDefault : Motion.effectsFast
-            target: root.shownMode === "home" ? 1 : 0
+            target: root.shownForm === "home" ? 1 : 0
         }
 
         CayButton {
@@ -76,7 +97,7 @@ Cay {
         CayButton {
             icon: "search"
             label: "Search"
-            onClicked: Actions.run("search")
+            onClicked: PanelState.toggle("search", root.screenName)
         }
         CayButton {
             icon: "grid_view"
@@ -93,7 +114,7 @@ Cay {
         height: Tokens.cayButton
         opacity: wsOpacity.value
         visible: opacity > 0.01
-        enabled: root.mode === "workspaces"
+        enabled: root.form === "workspaces"
 
         readonly property var ids: Workspaces.ids(Config.options.bar.workspaceCount)
         readonly property int activeId: Workspaces.activeOn(root.screenName)
@@ -102,7 +123,7 @@ Cay {
         Spring {
             id: wsOpacity
             spec: Motion.reduceMotion ? Motion.effectsDefault : Motion.effectsFast
-            target: root.shownMode === "workspaces" ? 1 : 0
+            target: root.shownForm === "workspaces" ? 1 : 0
         }
 
         // The active pill slides between numerals.
@@ -191,6 +212,23 @@ Cay {
                     }
                 }
             }
+        }
+    }
+
+    // ── search ──────────────────────────────────────────────────
+    SearchView {
+        id: searchView
+        width: Tokens.searchWidth - Tokens.space2 * 2
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: Tokens.space2
+        opacity: searchOpacity.value
+        visible: opacity > 0.01
+        enabled: root.searching
+
+        Spring {
+            id: searchOpacity
+            spec: Motion.reduceMotion ? Motion.effectsDefault : Motion.effectsFast
+            target: root.shownForm === "search" ? 1 : 0
         }
     }
 }

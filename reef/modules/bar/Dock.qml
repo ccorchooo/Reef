@@ -93,8 +93,10 @@ Cay {
                     acceptedButtons: Qt.LeftButton | Qt.MiddleButton
                     cursorShape: Qt.PointingHandCursor
                     onClicked: event => {
-                        if (event.button === Qt.MiddleButton)
-                            tile.modelData.entry?.execute();
+                        if (event.button === Qt.MiddleButton) {
+                            if (tile.modelData.entry)
+                                Apps.launch(tile.modelData.entry);
+                        }
                         else
                             Apps.activate(tile.modelData);
                     }

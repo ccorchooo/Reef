@@ -20,6 +20,9 @@ Item {
     readonly property real targetWidth: contentWidth + leftPadding + rightPadding
     property real targetHeight: Tokens.cayHeight
     property real targetRadius: Tokens.cayHeight / 2
+    // Clip the content to the area inside the paddings (off when items draw past it,
+    // like the Status cay's hover circles).
+    property bool clipContent: true
     property color color: Colors.surfaceContainer
     // True while the cay is taller than the bar (grown or still shrinking back).
     readonly property bool grown: heightSpring.value > Tokens.cayHeight + 0.5
@@ -65,6 +68,6 @@ Item {
         x: root.leftPadding
         width: root.width - root.leftPadding - root.rightPadding
         height: parent.height
-        clip: true
+        clip: root.clipContent
     }
 }

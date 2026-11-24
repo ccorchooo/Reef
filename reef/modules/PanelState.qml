@@ -5,7 +5,7 @@ import Quickshell.Hyprland
 import qs.services
 
 // Which Tide panel and quick menu are open, and on which monitor.
-//   panel: "" | "controlCenter"
+//   panel: "" | "controlCenter" | "search"
 //   menu:  "" | "calendar" | "wifi" | "bluetooth" | "audio"
 // A quick menu has two homes (SURFACES.md → Quick menus):
 //   - with the control center open, it floats inside it. This is the default: opening

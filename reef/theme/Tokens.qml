@@ -141,6 +141,11 @@ Singleton {
     readonly property real menuWifiWidth: 300
     readonly property real menuCalendarWidth: 320
     readonly property real listRowHeight: 48
+    readonly property real searchWidth: 340
+    readonly property real searchFieldHeight: 48
+    readonly property real searchRowHeight: 52
+    readonly property real searchRowIcon: 36
+    readonly property real searchMaxHeight: 640
     readonly property real menuButtonHeight: 40
     readonly property real switchWidth: 52
     readonly property real switchHeight: 32
@@ -185,7 +190,10 @@ Singleton {
         "tileLabel": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Wi-Fi"},
         "tileSublabel": {"family": "sans", "size": 11, "lineHeight": 14, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Home"},
         "calendarWeekday": {"family": "sans", "size": 11, "lineHeight": 16, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "M T W"},
-        "calendarDay": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "23"}
+        "calendarDay": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "23"},
+        "searchSection": {"family": "sans", "size": 11, "lineHeight": 16, "weight": 600, "letterSpacing": 0.4, "emphasized": false, "sample": "APPS"},
+        "searchTitle": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Terminal"},
+        "searchField": {"family": "sans", "size": 15, "lineHeight": 20, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "ter"}
     })
 
     // Reference color schemes (seed #e8735a). Colors.qml uses these with no wallpaper.
@@ -367,6 +375,7 @@ Singleton {
     readonly property real stateHoverOpacity: 0.08
     readonly property real statePressedOpacity: 0.1
     readonly property real disabledOpacity: 0.38
+    readonly property real scrimLightOpacity: 0.5
 
     // Motion (MOTION.md). Use through the Motion singleton, never directly.
     readonly property var springs: ({"spatialFast": {"stiffness": 800, "damping": 0.6, "duration": 350, "bezier": [0.42, 1.67, 0.21, 0.9]}, "spatialDefault": {"stiffness": 380, "damping": 0.8, "duration": 500, "bezier": [0.38, 1.21, 0.22, 1.0]}, "spatialSlow": {"stiffness": 200, "damping": 0.8, "duration": 650, "bezier": [0.39, 1.29, 0.35, 0.98]}, "effectsFast": {"stiffness": 3800, "damping": 1, "duration": 150, "bezier": [0.31, 0.94, 0.34, 1.0]}, "effectsDefault": {"stiffness": 1600, "damping": 1, "duration": 200, "bezier": [0.34, 0.8, 0.34, 1.0]}, "effectsSlow": {"stiffness": 800, "damping": 1, "duration": 300, "bezier": [0.34, 0.88, 0.34, 1.0]}})
@@ -379,6 +388,7 @@ Singleton {
     readonly property real islandHideDelay: 400
     readonly property real menuHoverDelay: 150
     readonly property real menuCloseDelay: 350
+    readonly property real searchFileDelay: 200
     readonly property real osdTimeout: 1500
     readonly property real toastTimeout: 4000
     readonly property real toastActionTimeout: 6000
