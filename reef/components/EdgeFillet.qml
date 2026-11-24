@@ -3,7 +3,7 @@ import QtQuick.Shapes
 import qs.theme
 
 // A concave corner piece: a size×size square minus a quarter circle. Rounds the
-// screen corners and joins edge surfaces (OSD, Tide panels) to the screen edge
+// screen corners and joins Tide panels to the screen edge
 // (SURFACES.md → Global rules).
 //
 // `corner` names the solid corner of the square, the one that touches both

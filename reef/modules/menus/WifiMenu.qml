@@ -12,6 +12,7 @@ Column {
 
     property bool active: false
     property var asking: null       // network waiting for a password
+    readonly property bool holdOpen: asking !== null
 
     width: Tokens.menuWifiWidth - Tokens.space4 * 2
     spacing: Tokens.space2_5

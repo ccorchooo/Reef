@@ -22,6 +22,7 @@ Scope {
     }
 
     LazyLoader {
+        id: bar
         active: root.settings.showBar
         Bar { modelData: root.modelData }
     }
@@ -31,9 +32,13 @@ Scope {
         Island { modelData: root.modelData }
     }
 
-    // Panels and menus open on one monitor at a time (PanelState).
-    ControlCenter { modelData: root.modelData }
-    QuickMenu { modelData: root.modelData }
+    // Panels open on one monitor at a time (PanelState). Quick menus live in the
+    // Status cay and the control center.
+    ControlCenter {
+        modelData: root.modelData
+        // The bar stays clickable while the panel is open (it moves aside, not under it).
+        barWindow: bar.item
+    }
 
     // OSD and toasts appear on whichever monitor has focus.
     Osd { modelData: root.modelData }

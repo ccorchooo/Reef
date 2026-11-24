@@ -6,6 +6,8 @@ import qs.theme
 // (spatial-fast), fills with primary-container (effects-default), icon FILL 0→1
 // (effects-fast). Wide tiles show a label and a status line.
 // Click toggles; right-click (or Menu key) opens its menu if it has one.
+// Inside a ButtonGroup it takes `span` cells, and pressing it widens it while its
+// neighbours make room (the Pixel press), then it morphs to its new shape.
 //
 //   Tile { icon: "wifi"; label: "Wi-Fi"; sublabel: Network.shortLabel; checked: …; onToggled: … }
 Item {
@@ -18,10 +20,29 @@ Item {
     property bool wide: false
     property bool hasMenu: false
     property bool enabledState: true
+    property int span: wide ? 2 : 1
+    readonly property bool pressed: mouse.pressed
     signal toggled
     signal menuRequested
 
     implicitHeight: Tokens.tileHeight
+
+    // In a ButtonGroup, the group sets the width (and the press widening).
+    readonly property bool grouped: !!parent && parent.widthOf !== undefined
+    Spring {
+        id: widthSpring
+        spec: Motion.spatialFast
+        target: root.grouped ? root.parent.widthOf(root) : root.implicitWidth
+    }
+    width: grouped ? widthSpring.value : implicitWidth
+    onPressedChanged: {
+        if (!grouped)
+            return;
+        if (pressed)
+            parent.pressedItem = root;
+        else if (parent.pressedItem === root)
+            parent.pressedItem = null;
+    }
     opacity: enabledState ? 1 : Tokens.disabledOpacity
 
     activeFocusOnTab: enabledState

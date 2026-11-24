@@ -5,11 +5,13 @@ import qs.components
 
 // A collapsed live activity (parts/Island-Rest): a leading glyph on the left
 // (icon, red dot, or media artwork) and a readout on the right (text or waveform).
-// Used by the Island and by the secondary pill below it.
+// Used by the Island; `compact` shows only the glyph, centered (the secondary
+// activity's circle beside the Island).
 Item {
     id: root
 
     property Activity activity: null
+    property bool compact: false
     readonly property bool hasActivity: activity !== null
 
     // Paddings from the mockup: artwork sits closer to the edge, a dot a little further.
@@ -20,8 +22,7 @@ Item {
 
     Item {
         id: lead
-        anchors.left: parent.left
-        anchors.leftMargin: root.startPadding
+        x: root.compact ? (root.width - width) / 2 : root.startPadding
         anchors.verticalCenter: parent.verticalCenter
         width: childrenRect.width
         height: childrenRect.height
@@ -58,7 +59,7 @@ Item {
         width: Math.min(implicitWidth, root.width - root.startPadding - lead.width - Tokens.space3 - root.endPadding)
         horizontalAlignment: Text.AlignRight
         elide: Text.ElideRight
-        visible: root.hasActivity && root.activity.trailing === "text"
+        visible: root.hasActivity && !root.compact && root.activity.trailing === "text"
         style: root.activity?.textMono ? "monoMd" : "labelMd"
         text: root.activity?.text ?? ""
         color: root.activity?.textColor ?? Colors.on.island
@@ -69,7 +70,7 @@ Item {
         anchors.rightMargin: root.endPadding
         anchors.verticalCenter: parent.verticalCenter
         // Only run the visualizer while a waveform is showing.
-        active: root.hasActivity && root.activity.trailing === "waveform" && root.visible
+        active: root.hasActivity && !root.compact && root.activity.trailing === "waveform" && root.visible
         sourceComponent: MiniWaveform {}
     }
 }

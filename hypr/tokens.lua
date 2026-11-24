@@ -13,6 +13,7 @@ return {
     ["space-half"] = 2,
     ["cay-padding-tight"] = 6,
     ["cay-gap-status"] = 10,
+    ["cay-status-split"] = 24,
     ["cay-padding"] = 14,
     ["toast-padding-start"] = 18,
     ["tile-padding"] = 18,

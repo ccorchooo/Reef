@@ -4,8 +4,8 @@ import qs.theme
 import qs.services
 import qs.components
 
-// The Island's Now tab (parts/Island-Now): media with wavy progress and controls,
-// then any other live activities (timer, recording) as rows.
+// The Island's Now tab (parts/Island-Now): media with wavy progress and controls.
+// The other live activities (timer, recording) show in a pill under the Island.
 Column {
     id: root
 
@@ -155,119 +155,14 @@ Column {
         }
     }
 
-    // ── nothing going on ────────────────────────────────────────
+    // ── nothing playing ─────────────────────────────────────────
+    // Other live activities sit in their own pill under the Island (IslandActivities).
     ActivityRow {
-        visible: !Media.active && rows.count === 0
+        width: root.width
+        visible: !Media.active
         icon: "music_note"
         iconColor: Colors.on.islandVariant
         label: "Nothing playing"
         labelColor: Colors.on.islandVariant
-    }
-
-    // ── every other live activity, in priority order ────────────
-    Repeater {
-        id: rows
-        model: IslandState.liveActivities.filter(a => a.key !== "media")
-
-        ActivityRow {
-            id: row
-            required property Activity modelData
-            icon: modelData.leading === "dot" ? "" : modelData.icon
-            iconColor: modelData.iconColor
-            label: modelData.title + (modelData.value === "" && modelData.subtitle ? " · " + modelData.subtitle : "")
-            value: modelData.value
-            valueColor: modelData.textColor
-            Accessible.name: modelData.spoken
-
-            Rectangle {
-                parent: row.dotSlot
-                anchors.centerIn: parent
-                visible: row.modelData.leading === "dot"
-                width: Tokens.recordingDot
-                height: Tokens.recordingDot
-                radius: width / 2
-                color: row.modelData.dotColor
-            }
-
-            Repeater {
-                model: row.modelData.actions
-                IslandButton {
-                    required property var modelData
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: Tokens.islandButtonSm
-                    height: Tokens.islandButtonSm
-                    iconSize: Tokens.iconSm
-                    color: modelData.tone === "error" ? Colors.error : Colors.islandContainerHigh
-                    contentColor: modelData.tone === "error" ? Colors.on.error : Colors.on.island
-                    icon: modelData.icon
-                    label: modelData.label
-                    onClicked: modelData.run()
-                }
-            }
-        }
-    }
-
-    // A live-activity row on island-container (parts/Island-Now: the timer row).
-    component ActivityRow: Rectangle {
-        id: row
-        property string icon
-        property color iconColor: Colors.islandAccent
-        property string label
-        property color labelColor: Colors.on.island
-        property string value
-        property color valueColor: Colors.islandAccent
-        default property alias trailing: trailingRow.data
-        readonly property Item dotSlot: iconSlot
-
-        width: root.width
-        implicitHeight: Math.max(Tokens.islandButtonSm, labelText.implicitHeight) + Tokens.space2_5 * 2
-        radius: Tokens.radiusLg
-        color: Colors.islandContainer
-
-        Row {
-            anchors.fill: parent
-            anchors.leftMargin: Tokens.space3
-            anchors.rightMargin: Tokens.space3
-            spacing: Tokens.space3
-
-            Item {
-                id: iconSlot
-                anchors.verticalCenter: parent.verticalCenter
-                width: Tokens.iconLg
-                height: Tokens.iconLg
-                Icon {
-                    anchors.centerIn: parent
-                    visible: row.icon !== ""
-                    name: row.icon
-                    filled: true
-                    size: Tokens.iconLg
-                    color: row.iconColor
-                }
-            }
-
-            StyledText {
-                id: labelText
-                anchors.verticalCenter: parent.verticalCenter
-                width: parent.width - iconSlot.width - valueText.implicitWidth - trailingRow.implicitWidth - parent.spacing * 3
-                style: "bodyMd"
-                color: row.labelColor
-                elide: Text.ElideRight
-                text: row.label
-            }
-
-            StyledText {
-                id: valueText
-                anchors.verticalCenter: parent.verticalCenter
-                style: "monoLg"
-                color: row.valueColor
-                text: row.value
-            }
-
-            Row {
-                id: trailingRow
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: Tokens.space2
-            }
-        }
     }
 }

@@ -4,10 +4,13 @@ import Quickshell
 import Quickshell.Hyprland
 import qs.services
 
-// Which Tide panel or quick menu is open, and on which monitor. One at a time:
-// opening one closes the others.
+// Which Tide panel and quick menu are open, and on which monitor.
 //   panel: "" | "controlCenter"
 //   menu:  "" | "calendar" | "wifi" | "bluetooth" | "audio"
+// A quick menu has two homes (SURFACES.md → Quick menus):
+//   - with the control center open, it floats inside it. This is the default: opening
+//     a menu from anywhere (a tile, the Island, a keybind, IPC) opens the control center.
+//   - with no panel open, the Status cay grows into it (hovering a Status item).
 Singleton {
     id: root
 
@@ -15,29 +18,63 @@ Singleton {
     property string menu: ""
     property string screenName: ""
 
+    readonly property var menus: ["calendar", "wifi", "bluetooth", "audio"]
+
+    // The menu shown in the Status cay of `screen`, if any.
+    function barMenu(screen) {
+        return panel === "" && screenName === screen ? menu : "";
+    }
+
     function _screen(screen) {
         return screen || Hyprland.focusedMonitor?.name || "";
     }
 
     function toggle(name, screen) {
         const s = _screen(screen);
-        const isMenu = ["calendar", "wifi", "bluetooth", "audio"].includes(name);
-        const open = (isMenu ? menu : panel) === name && screenName === s;
-        panel = "";
-        menu = "";
-        if (!open) {
-            screenName = s;
-            if (isMenu)
-                menu = name;
+        if (menus.includes(name)) {
+            if (panel === "controlCenter" && menu === name && screenName === s)
+                closeAll();
             else
-                panel = name;
+                open(name, s);
+            return;
         }
+        const wasOpen = panel === name && screenName === s;
+        menu = "";
+        panel = wasOpen ? "" : name;
+        screenName = s;
     }
 
     function open(name, screen) {
-        if ((panel === name || menu === name) && screenName === _screen(screen))
-            return;
-        toggle(name, screen);
+        const s = _screen(screen);
+        if (menus.includes(name)) {
+            if (screenName !== s)
+                panel = "";
+            screenName = s;
+            panel = "controlCenter";
+            menu = name;
+        } else {
+            menu = "";
+            screenName = s;
+            panel = name;
+        }
+    }
+
+    // The Status cay's own menu (no panel).
+    function openBarMenu(name, screen) {
+        panel = "";
+        screenName = screen;
+        menu = name;
+    }
+
+    function toggleBarMenu(name, screen) {
+        if (barMenu(screen) === name)
+            closeAll();
+        else
+            openBarMenu(name, screen);
+    }
+
+    function closeMenu() {
+        menu = "";
     }
 
     function closeAll() {

@@ -4,10 +4,14 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import qs.theme
 import qs.services
+import qs.components
+import qs.modules
 
 // The bar (SURFACES.md → Bar): four separate cays along the bottom edge,
 // space-2 apart and space-2 above the edge. Only the cays take input; the gaps
 // between them click through to the desktop. Reserves cay-height + space-2.
+// A Tide panel pushes the bar aside instead of covering it: the cays slide in from the
+// panel's edge by the panel's width, with the panel's own spring (spatial-default).
 PanelWindow {
     id: root
 
@@ -19,8 +23,10 @@ PanelWindow {
         left: true
         right: true
     }
-    // Room above the cays for shadow-float.
-    implicitHeight: Tokens.cayHeight + Tokens.space2 * 2
+    // The surface is as tall as the screen so the Status cay can grow up into a quick
+    // menu without resizing it (a resize makes the compositor re-send pointer enter and
+    // leave). Only the cays take input, and the exclusive zone stays cay-height + space-2.
+    implicitHeight: modelData.height
     exclusiveZone: Tokens.cayHeight + Tokens.space2
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Top
@@ -29,7 +35,10 @@ PanelWindow {
     // Keyboard access (Super+B): Tab between controls, Enter/Space to activate,
     // Escape, Super+B again or a click elsewhere to leave.
     property bool keyboardActive: false
-    WlrLayershell.keyboardFocus: keyboardActive ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    // A quick menu opened by hovering takes the keyboard only when clicked (OnDemand),
+    // so it never steals typing from the focused app.
+    WlrLayershell.keyboardFocus: keyboardActive ? WlrKeyboardFocus.Exclusive
+        : status.menuOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     Connections {
         target: Actions
@@ -56,8 +65,12 @@ PanelWindow {
     Timer {
         id: armGrab
         interval: 150
-        onTriggered: grab.armed = root.keyboardActive
+        onTriggered: grab.armed = root.wantsGrab
     }
+
+    // Typing in a menu (a Wi-Fi password) holds it open until a click elsewhere.
+    readonly property bool wantsGrab: keyboardActive || status.holdOpen
+    onWantsGrabChanged: wantsGrab ? armGrab.restart() : (grab.armed = false)
 
     Item {
         id: keys
@@ -65,20 +78,37 @@ PanelWindow {
         focus: true
     }
 
+    // Escape closes the Status cay's menu first, then leaves the bar.
     Shortcut {
         sequence: "Escape"
-        enabled: root.keyboardActive
-        onActivated: root.keyboardActive = false
+        enabled: root.keyboardActive || status.menuOpen
+        onActivated: status.menuOpen ? PanelState.closeAll() : (root.keyboardActive = false)
     }
 
-    // Clicking anywhere outside the bar gives the keyboard back.
+    // Clicking anywhere outside the bar gives the keyboard back and closes a menu.
     HyprlandFocusGrab {
         id: grab
         windows: [root]
-        active: root.keyboardActive && armed
+        active: root.wantsGrab && armed
         property bool armed: false
-        onActiveChanged: if (!root.keyboardActive) armed = false
-        onCleared: root.keyboardActive = false
+        onCleared: {
+            root.keyboardActive = false;
+            if (status.menuOpen)
+                PanelState.closeAll();
+        }
+    }
+
+    // ── Tide panels push the bar ───────────────────────────────
+    readonly property bool pushable: Config.options.bar.panelsPushBar && PanelState.screenName === modelData.name
+    Spring {
+        id: rightInset
+        spec: Motion.spatialDefault
+        target: root.pushable && PanelState.panel === "controlCenter" ? Tokens.panelWidth : 0
+    }
+    Spring {
+        id: leftInset
+        spec: Motion.spatialDefault
+        target: root.pushable && PanelState.panel === "editMode" ? Tokens.editPanelWidth : 0
     }
 
     // Keep awake also holds on monitors without an Island.
@@ -97,7 +127,7 @@ PanelWindow {
     Row {
         anchors.left: parent.left
         anchors.bottom: parent.bottom
-        anchors.leftMargin: Tokens.space2
+        anchors.leftMargin: Tokens.space2 + leftInset.value
         anchors.bottomMargin: Tokens.space2
         spacing: Tokens.space2
 
@@ -112,9 +142,10 @@ PanelWindow {
     Status {
         id: status
         screenName: root.modelData.name
+        keyboardActive: root.keyboardActive
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.rightMargin: Tokens.space2
+        anchors.rightMargin: Tokens.space2 + rightInset.value
         anchors.bottomMargin: Tokens.space2
     }
 }

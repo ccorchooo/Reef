@@ -13,7 +13,8 @@ import qs.components
 //   rest      120×32 pill                    (parts/Island-Rest)
 //   timer / media / recording  collapsed live activity, wider pill
 //   peek      380×64, radius-xl, on hover    (parts/Island-Rest, screens/Working)
-//   expanded  520 wide, tabs                 (parts/Island-Now)
+//   expanded  520 wide; its tabs are circles to its left, and the other live
+//             activities sit in a pill under it, as wide as it (parts/Island-Now)
 //   hidden    up behind the top edge while an app is open; pointing at the top
 //             center for island-reveal-delay drops it back in over the app.
 // The old content fades out (effects-fast) and the new one fades in after
@@ -36,12 +37,15 @@ PanelWindow {
 
     // Tall enough for the expanded Island plus its shadow; only the body takes input.
     readonly property real shadowRoom: Colors.shadowIsland.blur + Colors.shadowIsland.y * 2
-    implicitHeight: Tokens.space2 + Math.max(expandedContent.implicitHeight + Tokens.space4 * 2, notificationHeight) + shadowRoom
+    readonly property real activitiesHeight: activityRows.implicitHeight + Tokens.space3 * 2
+    implicitHeight: Tokens.space2 + Math.max(expandedContent.implicitHeight + Tokens.space4 * 2 + Tokens.space2 + activitiesHeight, notificationHeight) + shadowRoom
 
     mask: Region {
         Region { item: body }
         Region { item: revealStrip }
-        Region { item: secondaryPill }
+        Region { item: secondaryCircle }
+        Region { item: tabs }
+        Region { item: activitiesPill }
     }
 
     // ── state ───────────────────────────────────────────────────
@@ -142,9 +146,10 @@ PanelWindow {
     }
 
     // ── secondary activity ──────────────────────────────────────
-    // With two live activities, the second gets its own pill under the Island, as wide
-    // as the Island's collapsed form. It slides out from under the Island and stays
-    // during the peek; clicking it swaps the two (Super+Shift+I does the same).
+    // With two live activities, the second shows as a small black circle beside the
+    // Island holding just its glyph. It slides out from behind the Island and follows it
+    // through the peek; clicking it (or Super+Shift+I) puts it on the Island. Expanded,
+    // every other activity moves into the pill under the Island instead.
     readonly property string secondary: IslandState.secondaryActivity
     readonly property bool secondaryShown: secondary !== "" && !expanded && mode !== "notification"
         && (mode === "peek" || IslandState.isActivity(mode))
@@ -169,11 +174,10 @@ PanelWindow {
         onTriggered: root.shownSecondary = root.secondary
     }
 
-    Spring { id: secondaryWidth; spec: Motion.spatialDefault; target: root.activityWidth(root.activity) }
     Spring {
-        id: secondaryDrop
+        id: secondaryOut
         spec: Motion.spatialDefault
-        target: root.secondaryShown ? body.height + Tokens.space2 : 0
+        target: root.secondaryShown ? Tokens.space2 + Tokens.islandCollapsedHeight : 0
     }
     Spring {
         id: secondaryOpacity
@@ -182,23 +186,24 @@ PanelWindow {
     }
 
     RectangularShadow {
-        anchors.fill: secondaryPill
-        radius: secondaryPill.radius
+        anchors.fill: secondaryCircle
+        radius: secondaryCircle.radius
         offset.x: Colors.shadowIsland.x
         offset.y: Colors.shadowIsland.y
         blur: Colors.shadowIsland.blur
         color: Colors.shadowIsland.color
         opacity: shadowOpacity.value * secondaryOpacity.value
-        visible: secondaryPill.visible && opacity > 0.01
+        visible: secondaryCircle.visible && opacity > 0.01
     }
 
     Rectangle {
-        id: secondaryPill
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: body.y + secondaryDrop.value
-        width: secondaryWidth.value
-        height: Tokens.islandCollapsedHeight
-        radius: height / 2
+        id: secondaryCircle
+        // Tucked behind the Island's right end, then out beside it.
+        x: body.x + body.width - width + secondaryOut.value
+        y: body.y + (Math.min(body.height, Tokens.islandPeekHeight) - height) / 2
+        width: Tokens.islandCollapsedHeight
+        height: width
+        radius: width / 2
         color: Colors.island
         clip: true
         opacity: secondaryOpacity.value
@@ -208,9 +213,8 @@ PanelWindow {
         Accessible.name: (IslandState.byKey(root.secondary)?.spoken ?? "") + ". Put on the Island"
 
         IslandActivity {
-            anchors.centerIn: parent
-            width: parent.width
-            height: parent.height
+            anchors.fill: parent
+            compact: true
             activity: IslandState.byKey(root.shownSecondary || root.secondary)
             opacity: secondaryContent.value
             visible: opacity > 0.01 && root.secondary !== ""
@@ -242,6 +246,77 @@ PanelWindow {
         TapHandler {
             id: secondaryTap
             onTapped: IslandState.swap()
+        }
+    }
+
+    // ── expanded: tabs and the activities pill ──────────────────
+    Spring {
+        id: besideOut
+        spec: Motion.spatialDefault
+        target: root.expanded ? 1 : 0
+    }
+    Spring {
+        id: besideOpacity
+        spec: Motion.effectsDefault
+        target: root.expanded ? 1 : 0
+    }
+
+    // Tabs: circles to the left of the Island, sliding out from behind it.
+    IslandTabs {
+        id: tabs
+        x: body.x - Tokens.space2 - width + (1 - besideOut.value) * (Tokens.space2 + width)
+        y: body.y
+        opacity: besideOpacity.value
+        visible: opacity > 0.01
+        enabled: root.expanded
+        shadowOpacity: shadowOpacity.value
+    }
+
+    // The other live activities, in a pill under the Island as wide as it.
+    readonly property bool activitiesShown: expanded && activityRows.count > 0
+    Spring {
+        id: activitiesOpacity
+        spec: Motion.effectsDefault
+        target: root.activitiesShown ? 1 : 0
+    }
+    Spring {
+        id: activitiesH
+        spec: Motion.spatialDefault
+        target: root.activitiesShown ? root.activitiesHeight : 0
+    }
+
+    RectangularShadow {
+        anchors.fill: activitiesPill
+        radius: activitiesPill.radius
+        offset.x: Colors.shadowIsland.x
+        offset.y: Colors.shadowIsland.y
+        blur: Colors.shadowIsland.blur
+        color: Colors.shadowIsland.color
+        opacity: shadowOpacity.value * activitiesOpacity.value
+        visible: activitiesPill.visible && opacity > 0.01
+    }
+
+    Rectangle {
+        id: activitiesPill
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: body.y + body.height + Tokens.space2 * besideOut.value
+        width: body.width
+        height: activitiesH.value
+        radius: Math.min(Tokens.radiusXl, height / 2)
+        color: Colors.island
+        clip: true
+        opacity: activitiesOpacity.value
+        visible: opacity > 0.01
+        enabled: root.activitiesShown
+
+        Accessible.role: Accessible.Grouping
+        Accessible.name: "Live activities"
+
+        IslandActivities {
+            id: activityRows
+            x: Tokens.space3
+            y: Tokens.space3
+            width: Tokens.islandExpandedWidth - Tokens.space3 * 2
         }
     }
 
@@ -364,10 +439,6 @@ PanelWindow {
             NowTab {
                 width: parent.width
                 visible: IslandState.tab === "now"
-            }
-
-            IslandTabs {
-                anchors.horizontalCenter: parent.horizontalCenter
             }
         }
     }

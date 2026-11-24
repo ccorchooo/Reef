@@ -21,14 +21,15 @@ Build Reef in thin, working slices. Each milestone should be usable every day be
 - [x] Resting pill. Hover peek on the home screen; hidden and hover-reveal over apps.
 - [x] Collapsed live activities: media, timer, recording.
 - [x] Now tab with MPRIS controls and wavy progress.
-- [x] Edge OSD for volume and brightness, with fillets and no number.
+- [x] Floating OSD for volume and brightness, with no number.
 - [x] Toasts.
-- [x] More live activities: a second activity in a swappable pill; screen sharing, microphone/camera in use, low battery, charging, Bluetooth device connected, stopwatch, keep awake.
+- [x] More live activities: a second activity in a swappable circle beside the Island (and a pill of activities under the expanded Island); screen sharing, microphone/camera in use, low battery, charging, Bluetooth device connected, stopwatch, keep awake.
 
 ## M3 — Control & notifications ✅
 - [x] Reef as the notification server. Notifications in the Island with inline reply.
 - [x] Control center Tide panel: full height, fillets, cards (notifications, quick toggles, sliders).
-- [x] Quick menus: calendar, Wi-Fi, Bluetooth, audio output.
+- [x] Quick menus: calendar, Wi-Fi, Bluetooth, audio output. They open in the Status cay on hover, or float inside the control center.
+- [x] Tide panels push the bar aside. Quick toggles press like an M3E button group.
 - [x] Island activities that need M3: progress from notifications (downloads, copies, installs), an upcoming calendar event ("Standup in 5 min"), and a focus session that turns on Do not disturb. Keep awake gets a control-center tile.
 
 ## M4 — Find & move

@@ -1,12 +1,18 @@
 import QtQuick
+import QtQuick.Effects
 import qs.theme
 import qs.components
 
-// The row of small tab buttons at the bottom of the expanded Island (parts/Island-Now).
-Row {
+// The expanded Island's tabs (parts/Island-Now): a column of small black circles to
+// the left of the Island, so the Island itself keeps all its room for the tab.
+// The current tab sits on island-container-high with its icon filled in the accent.
+Column {
     id: root
 
-    spacing: Tokens.space1
+    // Shadow strength, shared with the Island (only shown over apps).
+    property real shadowOpacity: 0
+
+    spacing: Tokens.space2
 
     Repeater {
         model: IslandState.tabs
@@ -16,8 +22,8 @@ Row {
             required property var modelData
             readonly property bool current: IslandState.tab === modelData.id
 
-            width: Tokens.islandTabWidth
-            height: Tokens.islandTabHeight
+            width: Tokens.islandTab
+            height: Tokens.islandTab
 
             activeFocusOnTab: true
             Accessible.role: Accessible.PageTab
@@ -26,16 +32,28 @@ Row {
             Keys.onReturnPressed: IslandState.open(modelData.id)
             Keys.onSpacePressed: IslandState.open(modelData.id)
 
+            RectangularShadow {
+                anchors.fill: circle
+                radius: circle.radius
+                offset.x: Colors.shadowIsland.x
+                offset.y: Colors.shadowIsland.y
+                blur: Colors.shadowIsland.blur
+                color: Colors.shadowIsland.color
+                opacity: root.shadowOpacity
+                visible: opacity > 0.01
+            }
+
             Rectangle {
+                id: circle
                 anchors.fill: parent
-                radius: height / 2
+                radius: width / 2
                 color: bg.value
                 border.width: tab.activeFocus ? 2 : 0
                 border.color: Colors.islandAccent
                 ColorSpring {
                     id: bg
                     spec: Motion.effectsFast
-                    target: tab.current ? Colors.islandContainerHigh : mouse.containsMouse ? Colors.islandContainer : Qt.alpha(Colors.islandContainer, 0)
+                    target: tab.current ? Colors.islandContainerHigh : mouse.containsMouse ? Colors.islandContainer : Colors.island
                 }
             }
 

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -8,10 +9,10 @@ import qs.components
 import qs.modules
 
 // Volume / brightness OSD (SURFACES.md → Notifications, OSD and toasts;
-// screens/Notifications). Attached to the right edge, vertically centered,
-// joined to the edge with concave fillets; a level and an icon, no number.
-// It slides in from the edge it lives on, on the focused monitor only.
-// Drag or scroll on it to adjust.
+// screens/Notifications). A floating card near the right edge, vertically centered,
+// with radius-xl on every corner and shadow-menu; a level and an icon, no number.
+// It slides in from the right on the focused monitor only. Drag or scroll on it to
+// adjust.
 PanelWindow {
     id: root
 
@@ -23,8 +24,13 @@ PanelWindow {
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "reef-osd"
-    implicitWidth: Tokens.osdWidth
-    implicitHeight: Tokens.osdHeight + Tokens.radiusXl * 2
+
+    // Room for the shadow, the card, and its space-4 margin from the edge (the shadow on
+    // that side runs off the screen anyway). Hidden, it slides fully past the edge.
+    readonly property real shadowRoom: Colors.shadowMenu.blur + Math.abs(Colors.shadowMenu.y)
+    readonly property real travel: Tokens.osdWidth + Tokens.space4 + shadowRoom
+    implicitWidth: shadowRoom + Tokens.osdWidth + Tokens.space4
+    implicitHeight: Tokens.osdHeight + shadowRoom * 2
 
     mask: Region { item: panel }
 
@@ -72,33 +78,32 @@ PanelWindow {
     Spring {
         id: slide
         spec: Motion.spatialDefault
-        target: root.shown ? 0 : Tokens.osdWidth
+        target: root.shown ? 0 : root.travel
     }
 
-    visible: shown || slide.value < Tokens.osdWidth - 0.5
+    visible: shown || slide.value < root.travel - 0.5
 
     Item {
         id: panel
-        x: slide.value
+        x: root.shadowRoom + slide.value
+        y: (root.height - height) / 2
         width: Tokens.osdWidth
-        height: parent.height
+        height: Tokens.osdHeight
 
-        EdgeFillet {
-            anchors.right: parent.right
-            anchors.top: parent.top
-            corner: "bottomRight"
-            color: Colors.surfaceContainerLow
+        RectangularShadow {
+            anchors.fill: body
+            radius: body.radius
+            offset.x: Colors.shadowMenu.x
+            offset.y: Colors.shadowMenu.y
+            blur: Colors.shadowMenu.blur
+            color: Colors.shadowMenu.color
         }
 
         Rectangle {
             id: body
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            width: Tokens.osdWidth
-            height: Tokens.osdHeight
-            color: Colors.surfaceContainerLow
-            topLeftRadius: Tokens.radiusXl
-            bottomLeftRadius: Tokens.radiusXl
+            anchors.fill: parent
+            color: Colors.surfaceContainer
+            radius: Tokens.radiusXl
 
             Accessible.role: Accessible.Indicator
             Accessible.name: root.kind === "volume" ? Audio.label : `Brightness ${Math.round(Brightness.level * 100)}%`
@@ -107,10 +112,7 @@ PanelWindow {
 
             Column {
                 anchors.fill: parent
-                anchors.topMargin: Tokens.space3
-                anchors.bottomMargin: Tokens.space3
-                anchors.leftMargin: Tokens.space4
-                anchors.rightMargin: Tokens.space3_5
+                anchors.margins: (Tokens.osdWidth - Tokens.osdTrack) / 2
                 spacing: Tokens.space2_5
 
                 Rectangle {
@@ -120,23 +122,40 @@ PanelWindow {
                     height: parent.height - iconItem.height - parent.spacing
                     radius: width / 2
                     color: Colors.surfaceContainerHighest
-                    clip: true
 
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        height: Math.max(0, Math.min(1, fill.value)) * parent.height
-                        color: Colors.primary
-                        topLeftRadius: Tokens.radiusFillCap
-                        topRightRadius: Tokens.radiusFillCap
-                        bottomLeftRadius: width / 2
-                        bottomRightRadius: width / 2
-                        Spring {
-                            id: fill
-                            spec: Motion.spatialFast
-                            target: root.level
+                    // The fill is clipped to the track's rounded shape (a plain `clip`
+                    // is rectangular, so the fill's corners poked out at the ends).
+                    Item {
+                        anchors.fill: parent
+                        layer.enabled: true
+                        layer.effect: MultiEffect {
+                            maskEnabled: true
+                            maskSource: trackShape
+                            maskThresholdMin: 0.5
+                            maskSpreadAtMin: 1
                         }
+
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.bottom: parent.bottom
+                            height: Math.max(0, Math.min(1, fill.value)) * parent.height
+                            color: Colors.primary
+                            topLeftRadius: Tokens.radiusFillCap
+                            topRightRadius: Tokens.radiusFillCap
+                            Spring {
+                                id: fill
+                                spec: Motion.spatialFast
+                                target: root.level
+                            }
+                        }
+                    }
+                    Rectangle {
+                        id: trackShape
+                        anchors.fill: parent
+                        radius: width / 2
+                        visible: false
+                        layer.enabled: true
                     }
 
                     MouseArea {
@@ -166,13 +185,6 @@ PanelWindow {
                     color: Colors.primary
                 }
             }
-        }
-
-        EdgeFillet {
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            corner: "topRight"
-            color: Colors.surfaceContainerLow
         }
     }
 }

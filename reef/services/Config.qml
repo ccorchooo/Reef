@@ -101,6 +101,8 @@ Singleton {
                 property list<string> pinnedApps: []     // desktop entry ids; empty = sensible defaults
                 property int workspaceCount: 5           // always shown in the Navigator; more appear when used
                 property string clockFormat: "hh:mm"     // Qt time format
+                property bool statusMenusOnHover: true   // rest on a Status item to open its menu; off = click it
+                property bool panelsPushBar: true        // Tide panels move the cays aside instead of covering them
             }
 
             property JsonObject island: JsonObject {

@@ -40,6 +40,8 @@ Singleton {
     readonly property real cayPaddingTight: 6 * spacingScale
     readonly property real rawCayGapStatus: 10
     readonly property real cayGapStatus: 10 * spacingScale
+    readonly property real rawCayStatusSplit: 24
+    readonly property real cayStatusSplit: 24 * spacingScale
     readonly property real rawCayPadding: 14
     readonly property real cayPadding: 14 * spacingScale
     readonly property real rawToastPaddingStart: 18
@@ -104,11 +106,10 @@ Singleton {
     readonly property real islandArtLg: 72
     readonly property real islandButton: 40
     readonly property real islandButtonSm: 32
+    readonly property real islandTab: 36
     readonly property real islandControl: 44
     readonly property real islandPlayWidth: 64
     readonly property real islandPlayHeight: 56
-    readonly property real islandTabWidth: 44
-    readonly property real islandTabHeight: 28
     readonly property real islandTimeWidth: 32
     readonly property real islandRevealStrip: 8
     readonly property real waveHeight: 12
@@ -129,6 +130,7 @@ Singleton {
     readonly property real islandActivityWidth: 180
     readonly property real editPanelWidth: 320
     readonly property real tileHeight: 64
+    readonly property real pressGrow: 12
     readonly property real sliderHeight: 44
     readonly property real sliderHandleWidth: 4
     readonly property real sliderHandleHeight: 52
@@ -375,6 +377,8 @@ Singleton {
     readonly property real settleEpsilon: 0.001
     readonly property real islandRevealDelay: 150
     readonly property real islandHideDelay: 400
+    readonly property real menuHoverDelay: 150
+    readonly property real menuCloseDelay: 350
     readonly property real osdTimeout: 1500
     readonly property real toastTimeout: 4000
     readonly property real toastActionTimeout: 6000

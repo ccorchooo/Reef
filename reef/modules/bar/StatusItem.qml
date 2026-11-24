@@ -3,25 +3,40 @@ import qs.theme
 import qs.components
 import qs.modules
 
-// An icon or label inside the Status cay that opens its own quick menu
-// (clock → calendar, network → Wi-Fi, volume → audio output).
+// One item in the Status cay's row: the clock, an icon, or an indicator. Items don't
+// take clicks (a click anywhere on the row opens the control center); the Status cay
+// tracks the pointer and opens an item's quick menu when it rests on it. Each item
+// slides to `targetX` with spatial-default when the row re-forms around a menu.
+// Keyboard: Enter or Space opens or closes the item's menu.
 Item {
     id: item
-    required property string screenName
-    property string menu: ""
-    property string label: ""
-    default property alias content: holder.data
-    readonly property bool hovered: mouse.containsMouse
-    readonly property bool active: PanelState.menu === menu && PanelState.screenName === item.screenName
 
-    width: holder.childrenRect.width
+    required property string screenName
+    property string menu: ""                 // quick menu this item opens ("" = none)
+    property string key: menu
+    property string label: ""
+    property real targetX: 0
+    property bool hovered: false             // set by the Status cay
+    default property alias content: holder.data
+    readonly property bool active: menu !== "" && PanelState.barMenu(screenName) === menu
+
+    x: xSpring.value
+    implicitWidth: holder.childrenRect.width
+    width: implicitWidth
     height: Tokens.cayHeight
 
-    activeFocusOnTab: true
+    Spring {
+        id: xSpring
+        spec: Motion.spatialDefault
+        target: item.targetX
+    }
+
+    activeFocusOnTab: menu !== ""
     Accessible.role: Accessible.Button
     Accessible.name: label
-    Keys.onReturnPressed: PanelState.toggle(menu, item.screenName)
-    Keys.onSpacePressed: PanelState.toggle(menu, item.screenName)
+    Accessible.ignored: menu === ""
+    Keys.onReturnPressed: PanelState.toggleBarMenu(menu, item.screenName)
+    Keys.onSpacePressed: PanelState.toggleBarMenu(menu, item.screenName)
 
     Rectangle {
         anchors.centerIn: parent
@@ -29,7 +44,7 @@ Item {
         height: Tokens.cayItemSm
         radius: height / 2
         color: item.active ? Colors.surfaceContainerHighest : Colors.surfaceContainerHigh
-        opacity: item.active || item.activeFocus || item.hovered ? 1 : 0
+        opacity: item.menu !== "" && (item.active || item.activeFocus || item.hovered) ? 1 : 0
         border.width: item.activeFocus ? 2 : 0
         border.color: Colors.primary
         Behavior on opacity { MotionAnimation { spec: Motion.effectsFast } }
@@ -39,13 +54,5 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         width: childrenRect.width
         height: childrenRect.height
-    }
-    MouseArea {
-        id: mouse
-        anchors.fill: parent
-        anchors.margins: -Tokens.space1
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onClicked: PanelState.toggle(item.menu, item.screenName)
     }
 }

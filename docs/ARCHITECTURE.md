@@ -38,24 +38,28 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     Cay.qml                   ✓ a bar pill: width springs to its content, shadow-float
     CayButton.qml             ✓ round button inside a cay (hover tint, press squash, focus ring, label)
     Logo.qml                  ✓ the Reef mark from assets/logo, colored with a token
-    EdgeFillet.qml            ✓ concave corner piece (screen corners, OSD; Tide panels next)
+    EdgeFillet.qml            ✓ concave corner piece (screen corners, Tide panels)
     WavyProgress.qml          ✓ M3E wavy progress with seek
     ShapeImage.qml            ✓ album art clipped to an M3E shape
     MiniWaveform.qml          ✓ five-bar cava waveform
     Card  Tile  ExpressiveSlider  Switch  Chip  ListRow  MenuButton   ✓ (M3)
-    IconButton.qml  ButtonGroup.qml  Toggle.qml  Tile.qml  Slider.qml  Card.qml  TidePanel.qml
+    ButtonGroup.qml           ✓ M3E button group: shared width, the pressed one widens
+    IconButton.qml  Toggle.qml  Slider.qml  TidePanel.qml
   modules/
     ScreenScope.qml           ✓ one per monitor; surfaces get added here
     Commands.qml              ✓ IpcHandler "reef" (run, dev, scheme, status) + GlobalShortcut "reef:<action>"
     frame/ScreenCorners.qml   ✓ rounded-screen overlay (no input, no reserved space)
-    bar/                      ✓ Bar (PanelWindow, input mask = the cays), Dock, Navigator, Spotlight, Status
+    bar/                      ✓ Bar (PanelWindow, input mask = the cays), Dock, Navigator, Spotlight,
+                                Status (grows into a quick menu), StatusItem
     island/                   ✓ Island (one morphing body), IslandState (singleton: activities in priority
                                 order, swap, simulate), Activity (one activity's data), IslandActivity,
-                                IslandPeek, NowTab, IslandTabs, IslandButton
+                                IslandPeek, NowTab, IslandTabs (circles), IslandActivities + ActivityRow
+                                (the pill under the expanded Island), IslandButton
     controlcenter/            ✓ ControlCenter (Tide panel), NotificationCard
-    menus/                    ✓ QuickMenu window + CalendarMenu, WifiMenu, BluetoothMenu, AudioMenu
-    PanelState.qml            ✓ which panel/menu is open, on which monitor
-    osd/                      ✓ edge OSD
+    menus/                    ✓ MenuContent (one menu by name) + CalendarMenu, WifiMenu, BluetoothMenu,
+                                AudioMenu; hosted by the Status cay and the control center
+    PanelState.qml            ✓ which panel/menu is open, on which monitor, and the menu's home
+    osd/                      ✓ floating OSD
     toasts/                   ✓ Toast window
     pearl/  editmode/  search/  workspaces/  switcher/  power/  lock/  greeter/  polkit/
   services/                   # singletons
@@ -115,12 +119,17 @@ hypr/
 - `DesktopEntries` loads asynchronously and `byId()` isn't reactive: bindings that call it also read `DesktopEntries.applications.values.length` so they re-run.
 - A layer surface gets keyboard focus only with `WlrLayershell.keyboardFocus`; pair Exclusive with `HyprlandFocusGrab` so a click elsewhere releases it, and arm the grab a moment after focusing, or Hyprland clears it at once.
 - Debug service state with `qs -p ./reef ipc call reef status`.
+- Resizing a layer surface under a resting pointer makes Hyprland send leave/enter, so a surface that grows on hover (the bar, for the Status cay's menus) is created at full height up front with an input mask instead.
+- A `MouseArea` with `hoverEnabled` takes hover from a sibling `HoverHandler` beneath it; to know whether the pointer is anywhere on an item, check both.
+- Qt Quick re-sends hover when items move under a still pointer. Where items re-form on hover (the Status row), compare positions in window coordinates and act only on real pointer movement.
+- `clip` is rectangular; to clip to a rounded shape, mask a layer with `MultiEffect` (`maskEnabled`, `maskSource`), as the OSD's fill does.
+- In Hyprland's Lua mode, `hyprctl dispatch "hl.dsp.cursor.move({x=…,y=…})"` moves the pointer, handy for checking hover behavior.
 - `transient` is a reserved word in QML; don't use it as a property name.
 - To add an Island activity: add an `Activity { … }` to `IslandState.all` at its priority, bind `live` to a service, and add a toggle under `island.activities` in Config. The pill, peek, secondary pill and Now row follow.
 - QML's JavaScript engine lacks some newer built-ins (`String.prototype.matchAll`, `Object.fromEntries`); use `RegExp.exec` loops and `reduce`.
 - Don't start a `Process` from a change handler with a bound `command`: the binding may not have updated yet. Set `command` right before `running = true`.
 - The visualizer writes its cava config to `~/.cache/reef/cava.conf` and runs cava only while a waveform is visible and media plays.
-- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|calendar|wifi|bluetooth|audio>`, `panel close`, `focus start <minutes>|stop|toggle`, `notifications dnd|clear`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
+- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|calendar|wifi|bluetooth|audio>` (menus open inside the control center), `panel close`, `focus start <minutes>|stop|toggle`, `notifications dnd|clear`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
 
 ## Configuration
 

@@ -61,11 +61,12 @@ Reef uses shape the way M3 Expressive does: **shape signals state and personalit
 - **Hyprland matches.** Window rounding uses `radius-lg`; `gaps_in` = `space-2`, `gaps_out` = `space-4`, so windows and cays share one rhythm.
 - **The screen itself is rounded.** Reef masks the display corners with `radius-xl` (28px), so the desktop reads as one rounded sheet.
 - **Tide panels are part of the screen.** The control/notification center and edit mode run the full height of the screen with no shadow. Their outer corners are the screen's own corners, and where their inner edge meets the top and bottom of the screen they flare out with **concave 28px fillets**, so the desktop beside them reads as a rounded sheet. The panel itself is `surface-container-low`, and every section inside it (notifications, quick toggles, sliders, each edit-mode group) sits on its own `surface-container` card (24px corners, 10px gaps), never on dividers.
-- **Edge OSDs grab the screen too.** Shorter things attached to an edge (the volume and brightness OSD) meet it with the same concave fillets and use `radius-xl` on their free corners. The OSD shows only the bar and icon, no number.
+- **Tide panels push the bar** aside rather than covering it.
+- **The OSD floats.** The volume and brightness OSD is a free `radius-xl` card a `space-4` gap from the edge, with `shadow-menu`. It shows only the bar and icon, no number.
 - **The M3E shape library is used almost everywhere**, with purpose:
   - **Password field:** each typed character appears as the next shape in a fixed sequence (circle, 4-sided cookie, clover, sunny, pentagon, gem…) and pops in with a fast spatial spring. A wrong password morphs them all back to circles and shakes.
   - **Toggles and tiles:** at rest a squircle (`radius-lg`); ON morphs to a pill (`radius-full`) and fills with `primary-container`.
-  - **Pressed buttons** squash their corners toward the next smaller radius, then spring back.
+  - **Pressed buttons** squash their corners toward the next smaller radius, then spring back. In a button group (quick toggles), the pressed button also widens and its neighbours make room, then it settles into its on or off shape.
   - **Home widgets** choose their container shape from the library: circle for the clock, 12-sided cookie for weather, squircle for media. Edit mode lets users change it.
   - **The Pearl** rests as a soft cookie shape and morphs between shapes with the audio (see Motion).
   - **Loading:** the M3E loading indicator, which morphs through shapes instead of spinning a ring.

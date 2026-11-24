@@ -7,7 +7,8 @@ How every part of Reef looks and behaves. Each section links to its mockup in `d
 - **The screen is rounded.** Every monitor's corners are masked with `radius-xl` (28px), so the desktop reads as one rounded sheet. This is a permanent overlay layer, not part of the wallpaper.
 - **Tide panels are part of the screen.** Panels attached to an edge (control/notification center, edit mode) run the **full height** of the screen with **no shadow**. Their outer corners are the screen's own corners. Where their inner edge meets the top and bottom of the screen, they flare out with **concave 28px fillets**, so the desktop beside them looks like a rounded sheet (Caelestia-style).
 - **Sections sit on cards, not dividers.** A Tide panel's background is `surface-container-low`. Every section inside it (notifications, quick toggles, sliders, each edit-mode group) sits on its own `surface-container` card with 24px corners and 10px gaps.
-- **Edge OSDs grab the screen too.** Shorter elements attached to an edge (the volume and brightness OSD) meet it with the same concave fillets and use `radius-xl` on their free corners.
+- **Tide panels push the bar.** While a Tide panel is open the cays slide aside by the panel's width (with the panel's own `spatial-default` spring) instead of being covered. Settings → Bar & Island → "Panels push the bar".
+- **The OSD floats.** The volume and brightness OSD is a free card `space-4` from the right edge with `radius-xl` on every corner and `shadow-menu`, not attached to the edge.
 - **No how-to text in menus.** Panels, switchers and dialogs don't explain gestures or shortcuts. Keybinds live in Settings → Keyboard & shortcuts.
 - **Everything is a setting**, including per monitor (see [ARCHITECTURE.md](ARCHITECTURE.md#configuration)).
 
@@ -18,7 +19,7 @@ Mockups: `screens/Home.png`, `screens/Bar.png`, `screens/BarLeft.png`
   - **Dock**: pinned and running apps, with icons from the user's icon theme (the colored tiles in the mockup stand in for them). A running app has a small dot under its tile; the focused app's tile sits on `secondary-container`. Click launches, focuses, or cycles that app's windows; middle-click opens a new window. With no pins set, Reef pins the first installed terminal, file manager, browser, editor and music app.
   - **Navigator**: home (Reef logo), search, workspaces.
   - **Spotlight**: the "special widget", which shows the current media or another chosen widget. For media: artwork (or a note on `tertiary-container`), title, artist, and play/pause. It folds away when nothing is playing.
-  - **Status**: notifications bell, clock, Wi-Fi (or wired), volume, battery (hidden without one). Clicking it opens the control center; the clock opens the calendar, the network icon the Wi-Fi menu, the volume icon the audio output menu. Scrolling over it changes the volume. The bell fills when there are notifications and turns to `notifications_off` with Do not disturb.
+  - **Status**: the clock on the left, then a gap (at least `cay-status-split`), then the controls on the right: notifications bell, Wi-Fi (or wired), volume, battery (hidden without one). **Clicking anywhere on it opens the control center.** The items aren't buttons: resting the pointer on the clock, network or volume icon for `menu-hover-delay` opens its quick menu (calendar, Wi-Fi, audio output) **inside the cay**, which grows up and out into a `radius-xl` card holding the menu above the row (see Quick menus). Scrolling over it changes the volume. The bell fills when there are notifications and turns to `notifications_off` with Do not disturb. With "Status menus on hover" off (Settings → Bar & Island), clicking an item opens its menu instead.
 - Each cay is `cay-height` (40px) tall, `radius-full`, on `surface-container`, with `shadow-float`. In Frosted mode it sits on a blurred surface.
 - **The Navigator cay re-forms in place** for each mode, using `spatial-default`:
   - **home**: the three icons.
@@ -47,14 +48,15 @@ Mockups: `parts/Island-Rest.png`, `parts/Island-*.png`, `screens/Working.png`, `
   9. **Media**: artwork plus a mini waveform.
   10. **Keep awake**: blocks idle and screen blanking while on (Wayland idle inhibitor), with the time left; started from the control center (M3) or `ipc call keepAwake on 30m`.
   Each can be turned off in Settings → Bar & Island → Activities.
-  - **A second activity** gets its own collapsed pill below the Island, `space-2` under it and as wide as the Island's collapsed form. It slides out from under the Island and stays below the hover peek. Clicking it (or Super+Shift+I) swaps the two: the Island and the pill morph to each other's width while their contents crossfade. Reef remembers the choice until that activity ends. With three activities, the third shows in the Now tab.
+  - **A second activity** shows as a small black circle (`island-collapsed-height`) `space-2` to the right of the Island, holding just its glyph (icon, dot or artwork). It slides out from behind the Island and follows it through the hover peek. Clicking it (or Super+Shift+I) puts it on the Island: the Island morphs to its width while the contents crossfade. Reef remembers the choice until that activity ends.
+  - **Expanded**, the Island has no circle; every live activity other than media sits in **its own pill under the Island**, `space-2` below it and exactly as wide, as rows on `island-container` with their controls.
   - The waveform comes from cava and rests in the mockup's shape when the visualizer is off (Settings → Power & performance).
   - Recording shows any running gpu-screen-recorder, wf-recorder or wl-screenrec (Settings → Bar & Island → Detect screen recording).
   - Timers start from the Tools tab (M6) or `qs -p ./reef ipc call reef timer 5m`. A finished timer shows a toast with **Restart**.
 - **Hover peek:** shown only when there's an activity, with its main control (play/pause, pause timer, stop recording). It can be turned off in settings.
 - **Opening:** click the Island or press Super+I. Escape, Super+I or a click elsewhere closes it. Tab moves between its controls.
-- **Expanded tabs**, chosen from a row of small icons at the bottom of the Island or by scrolling over it:
-  1. **Now**: media (artwork in an M3E shape, wavy progress bar, controls) plus other live activities. The wave travels while playing and flattens when paused. Drag it to seek. The speaker button opens the audio output menu (M3). With nothing going on, a single "Nothing playing" row.
+- **Expanded tabs**, chosen from a column of small black circles (`island-tab`) `space-2` to the **left** of the Island, top-aligned, or by scrolling over it. They slide out from behind the Island as it expands, leaving the Island all its room for the tab:
+  1. **Now**: media (artwork in an M3E shape, wavy progress bar, controls). The other live activities are in the pill below. The wave travels while playing and flattens when paused. Drag it to seek. The speaker button opens the audio output menu in the control center. With no media, a single "Nothing playing" row.
   2. **Shelf**: drop files, images or text anywhere on the Island to keep them here temporarily, then drag them out to another app.
   3. **Clipboard**: history with search and pinned items. **Super+V** opens the Island straight to this tab.
   4. **Tools**: calculator, emoji picker, color picker, screenshot.
@@ -116,18 +118,20 @@ Mockup: `screens/Switcher.png`
 ## Control & notification center (Tide panel, right)
 Mockup: `screens/ControlCenter.png`
 
-- Full height and 392px wide (`panel-width`), with concave fillets at the top and bottom of its left edge. It slides in from the right with `spatial-default`. Escape, the Status cay or a click outside closes it; Tab moves between its controls.
+- Full height and 392px wide (`panel-width`), with concave fillets at the top and bottom of its left edge. It slides in from the right with `spatial-default`, pushing the bar aside. Its cards keep the same `space-3` margin on both sides. Escape, the Status cay or a click outside closes it; Tab moves between its controls.
 - It has three cards:
   1. **Notifications**: a "N notifications" header with a **Clear all** button. Each notification is an `surface-container-high` item with an app icon, app name, time, title, body, and optional actions. This card grows to fill the free space.
-  2. **Quick toggles**: a mixed grid. Wi-Fi and Bluetooth are 2-column tiles with labels. Do not disturb, Night light, Screenshot and Mute mic are 1-column. A third row holds Keep awake and Focus as 2-column tiles. A tile is a **squircle when off** and a **pill on `primary-container` when on**. Right-click (or the Menu key) on Wi-Fi or Bluetooth opens its menu.
+  2. **Quick toggles**: a mixed grid, one M3E button group per row. Wi-Fi and Bluetooth are 2-column tiles with labels. Do not disturb, Night light, Screenshot and Mute mic are 1-column. A third row holds Keep awake and Focus as 2-column tiles. A tile is a **squircle when off** and a **pill on `primary-container` when on**. Pressing a tile widens it by `press-grow` while the rest of its row gives up that width (the Pixel press); on release it springs back and morphs to its new shape. Right-click (or the Menu key) on Wi-Fi or Bluetooth opens its menu, floating inside the panel.
      - **Night light** warms the screen with a Hyprland screen shader written from the temperature setting (no extra programs).
      - **Screenshot** captures a region (slurp + grim), saves it to ~/Pictures/Screenshots and copies it, with a toast.
-  3. **Sliders**: volume and brightness (brightness only with a backlight), as thick M3E sliders with a gap before the handle. While the control center or audio menu is open, the edge OSD stays hidden.
+  3. **Sliders**: volume and brightness (brightness only with a backlight), as thick M3E sliders with a gap before the handle. While the control center or audio menu is open, the OSD stays hidden.
 
 ## Quick menus
 Mockup: `screens/QuickMenus.png`
 
-- These menus float above the Status cay as `surface-container` cards with `radius-xl` corners.
+- A quick menu has two homes:
+  - **In the Status cay** (pointer resting on a Status item, no panel open): the cay grows up and out (`spatial-default`, width and height to fit the menu, corners to `radius-xl`) and the menu fades in above the row. The chosen item slides to the right end of the row alone; the others close up on the left after the clock. The clock (calendar) never moves. Resting on another item switches menus; leaving the cay closes it after `menu-close-delay`, unless a field in it is being typed in (then a click elsewhere or Escape closes it). Items sliding under a still pointer don't switch menus.
+  - **Inside the control center**: opened from anywhere else (a tile's menu, the Island's output button, a keybind, IPC), the menu opens the control center if needed and floats in it as a `surface-container-high` `radius-xl` card with `shadow-menu`, over a `scrim` on the panel. Escape or a click on the scrim closes just the menu.
 - **Calendar:** a month grid where today is a `primary` cookie shape and days with events get a small dot, followed by the next event. Events come from iCalendar sources (.ics files or https links) in Settings → Calendar.
 - **Wi-Fi:** an on/off switch, then a list of networks (the connected one on `primary-container`), then a "Network settings" button.
 - **Bluetooth** and **audio output** menus follow the same pattern: a switch (Bluetooth), the devices or outputs with the current one on `primary-container`, and a settings button (Bluetooth scans while open). The audio menu also has the volume slider. A battery menu isn't built yet.
@@ -136,7 +140,7 @@ Mockup: `screens/QuickMenus.png`
 Mockup: `screens/Notifications.png`
 
 - New notifications expand the Island with a reply field.
-- **The volume and brightness OSD** attaches to the right edge, vertically centered, with concave fillets. It shows a vertical fill bar and an icon only, **with no number**. It slides in from the edge on the focused monitor whenever the level changes (from any app or the media keys), stays while hovered, and can be dragged or scrolled.
+- **The volume and brightness OSD** floats `space-4` from the right edge, vertically centered: a `surface-container` card with `radius-xl` corners and `shadow-menu`. It shows a vertical fill bar (clipped to the track's rounded ends) and an icon only, **with no number**. It slides in from the right on the focused monitor whenever the level changes (from any app or the media keys), stays while hovered, and can be dragged or scrolled.
 - **Toasts** ("Copied to clipboard · Undo") appear centered above the bar on `inverse-surface`, one at a time, rising from the bar. A toast with an action stays a little longer.
 
 ## Authentication dialog (polkit)
@@ -195,5 +199,5 @@ Mockup: `screens/Settings.png`
 | `Ctrl + Alt + Delete` | Power actions |
 | `Super + B` | Keyboard focus to the bar (Tab between controls, Escape to leave) |
 | `Super + I` | Open or close the Island (Tab between controls, Escape to close) |
-| `Super + Shift + I` | Swap the Island's activity with the one in the pill below |
-| Volume and brightness keys | Change the level and show the edge OSD |
+| `Super + Shift + I` | Put the activity in the circle beside the Island on the Island |
+| Volume and brightness keys | Change the level and show the OSD |

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -6,16 +7,22 @@ import qs.theme
 import qs.services
 import qs.components
 import qs.modules
+import qs.modules.menus
 
 // Control and notification center (SURFACES.md; screens/ControlCenter).
 // A Tide panel: full height on the right edge, no shadow, surface-container-low, with
 // concave fillets where its inner edge meets the top and bottom of the screen. It slides
 // in from its edge with spatial-default. Three cards: notifications (fills the free
 // space), quick toggles, sliders. Escape, the Status cay or a click outside closes it.
+// Quick menus opened while it's open (a tile's menu, the Island's output button, a
+// keybind) float inside it as an elevated card over a scrim; Escape or a click on the
+// scrim closes just the menu. The bar moves aside for it (Bar.qml).
 PanelWindow {
     id: root
 
     required property ShellScreen modelData
+    // Part of the focus grab, so clicking the (pushed-aside) Status cay toggles the panel.
+    property var barWindow: null
     screen: modelData
 
     anchors {
@@ -30,6 +37,22 @@ PanelWindow {
     implicitWidth: Tokens.panelWidth + Tokens.radiusXl
 
     readonly property bool open: PanelState.panel === "controlCenter" && PanelState.screenName === modelData.name
+    readonly property string menu: open ? PanelState.menu : ""
+    readonly property bool menuOpen: menu !== ""
+    // The last menu shown, so it can animate out.
+    property string shownMenu: ""
+    onMenuChanged: if (menu !== "") shownMenu = menu
+    onMenuOpenChanged: {
+        if (menuOpen)
+            menuFocus.restart();
+        else if (open)
+            keys.forceActiveFocus();
+    }
+    Timer {
+        id: menuFocus
+        interval: 1
+        onTriggered: menuCard.nextItemInFocusChain(true)?.forceActiveFocus()
+    }
 
     Spring {
         id: slide
@@ -69,12 +92,12 @@ PanelWindow {
     Shortcut {
         sequence: "Escape"
         enabled: root.open
-        onActivated: PanelState.closeAll()
+        onActivated: root.menuOpen ? PanelState.closeMenu() : PanelState.closeAll()
     }
     HyprlandFocusGrab {
         id: grab
         property bool armed: false
-        windows: [root]
+        windows: root.barWindow ? [root, root.barWindow] : [root]
         active: root.open && armed
         onCleared: if (PanelState.panel === "controlCenter") PanelState.closeAll()
     }
@@ -125,7 +148,7 @@ PanelWindow {
                 anchors.topMargin: Tokens.space3
                 anchors.bottomMargin: Tokens.space3
                 anchors.rightMargin: Tokens.space3
-                anchors.leftMargin: Tokens.space1
+                anchors.leftMargin: Tokens.space3
                 spacing: Tokens.space2_5
 
                 // ── notifications (grows to fill) ──
@@ -184,83 +207,86 @@ PanelWindow {
                     width: parent.width
                     title: "Quick toggles"
 
-                    // Four columns; Wi-Fi, Bluetooth, Keep awake and Focus span two.
-                    Flow {
-                        id: grid
+                    // Four columns, one button group per row; Wi-Fi, Bluetooth, Keep awake
+                    // and Focus span two. A pressed tile widens and its row makes room.
+                    Column {
                         width: parent.width
                         spacing: Tokens.space2
-                        readonly property real cell: (width - spacing * 3) / 4
 
-                        Tile {
-                            width: grid.cell * 2 + grid.spacing
-                            wide: true
-                            icon: Network.wired ? "lan" : Network.wifiEnabled ? "wifi" : "wifi_off"
-                            label: Network.wired ? "Ethernet" : "Wi-Fi"
-                            sublabel: Network.shortLabel
-                            checked: Network.wired ? true : Network.wifiEnabled
-                            hasMenu: true
-                            onToggled: Network.wired ? PanelState.open("wifi") : Network.setWifiEnabled(!Network.wifiEnabled)
-                            onMenuRequested: PanelState.open("wifi")
-                        }
-                        Tile {
-                            width: grid.cell * 2 + grid.spacing
-                            wide: true
-                            icon: "bluetooth"
-                            label: "Bluetooth"
-                            sublabel: BluetoothState.label
-                            checked: BluetoothState.enabled
-                            enabledState: BluetoothState.available
-                            hasMenu: true
-                            onToggled: BluetoothState.toggle()
-                            onMenuRequested: PanelState.open("bluetooth")
-                        }
-                        Tile {
-                            width: grid.cell
-                            icon: "do_not_disturb_on"
-                            label: "Do not disturb"
-                            checked: Notifications.dnd
-                            onToggled: Notifications.setDnd(!Notifications.dnd)
-                        }
-                        Tile {
-                            width: grid.cell
-                            icon: "nightlight"
-                            label: "Night light"
-                            checked: NightLight.enabled
-                            onToggled: NightLight.toggle()
-                        }
-                        Tile {
-                            width: grid.cell
-                            icon: "screenshot_region"
-                            label: "Screenshot"
-                            onToggled: {
-                                PanelState.closeAll();
-                                Screenshot.region();
+                        ButtonGroup {
+                            width: parent.width
+
+                            Tile {
+                                wide: true
+                                icon: Network.wired ? "lan" : Network.wifiEnabled ? "wifi" : "wifi_off"
+                                label: Network.wired ? "Ethernet" : "Wi-Fi"
+                                sublabel: Network.shortLabel
+                                checked: Network.wired ? true : Network.wifiEnabled
+                                hasMenu: true
+                                onToggled: Network.wired ? PanelState.open("wifi") : Network.setWifiEnabled(!Network.wifiEnabled)
+                                onMenuRequested: PanelState.open("wifi")
+                            }
+                            Tile {
+                                wide: true
+                                icon: "bluetooth"
+                                label: "Bluetooth"
+                                sublabel: BluetoothState.label
+                                checked: BluetoothState.enabled
+                                enabledState: BluetoothState.available
+                                hasMenu: true
+                                onToggled: BluetoothState.toggle()
+                                onMenuRequested: PanelState.open("bluetooth")
                             }
                         }
-                        Tile {
-                            width: grid.cell
-                            icon: "mic_off"
-                            label: "Mute microphone"
-                            checked: Audio.micMuted
-                            onToggled: Audio.toggleMicMute()
+                        ButtonGroup {
+                            width: parent.width
+
+                            Tile {
+                                icon: "do_not_disturb_on"
+                                label: "Do not disturb"
+                                checked: Notifications.dnd
+                                onToggled: Notifications.setDnd(!Notifications.dnd)
+                            }
+                            Tile {
+                                icon: "nightlight"
+                                label: "Night light"
+                                checked: NightLight.enabled
+                                onToggled: NightLight.toggle()
+                            }
+                            Tile {
+                                icon: "screenshot_region"
+                                label: "Screenshot"
+                                onToggled: {
+                                    PanelState.closeAll();
+                                    Screenshot.region();
+                                }
+                            }
+                            Tile {
+                                icon: "mic_off"
+                                label: "Mute microphone"
+                                checked: Audio.micMuted
+                                onToggled: Audio.toggleMicMute()
+                            }
                         }
-                        Tile {
-                            width: grid.cell * 2 + grid.spacing
-                            wide: true
-                            icon: "coffee"
-                            label: "Keep awake"
-                            sublabel: KeepAwake.active ? (KeepAwake.until > 0 ? `${KeepAwake.text} left` : "On") : "Off"
-                            checked: KeepAwake.active
-                            onToggled: KeepAwake.toggle(0)
-                        }
-                        Tile {
-                            width: grid.cell * 2 + grid.spacing
-                            wide: true
-                            icon: "self_improvement"
-                            label: "Focus"
-                            sublabel: Focus.active ? `${Focus.phase === "focus" ? "Focus" : "Break"} · ${Focus.text}` : `${Config.options.focus.focusMinutes} min`
-                            checked: Focus.active
-                            onToggled: Focus.active ? Focus.stop() : Focus.start(0)
+                        ButtonGroup {
+                            width: parent.width
+
+                            Tile {
+                                wide: true
+                                icon: "coffee"
+                                label: "Keep awake"
+                                sublabel: KeepAwake.active ? (KeepAwake.until > 0 ? `${KeepAwake.text} left` : "On") : "Off"
+                                checked: KeepAwake.active
+                                onToggled: KeepAwake.toggle(0)
+                            }
+                            Tile {
+                                wide: true
+                                icon: "self_improvement"
+                                label: "Focus"
+                                sublabel: Focus.active ? `${Focus.phase === "focus" ? "Focus" : "Break"} · ${Focus.text}` : `${Config.options.focus.focusMinutes} min`
+                                checked: Focus.active
+                                onToggled: Focus.active ? Focus.stop() : Focus.start(0)
+                            }
                         }
                     }
                 }
@@ -285,6 +311,68 @@ PanelWindow {
                         value: Brightness.level
                         onMoved: v => Brightness.set(v)
                     }
+                }
+            }
+
+            // ── floating quick menu ──
+            Spring {
+                id: menuGrow
+                spec: Motion.spatialDefault
+                target: root.menuOpen ? 1 : 0
+            }
+            Spring {
+                id: menuFade
+                spec: Motion.effectsDefault
+                target: root.menuOpen ? 1 : 0
+            }
+
+            Rectangle {
+                id: scrim
+                anchors.fill: parent
+                color: Colors.scrim
+                opacity: menuFade.value
+                visible: opacity > 0.01
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: root.menuOpen
+                    onClicked: PanelState.closeMenu()
+                    onWheel: event => event.accepted = true
+                }
+            }
+
+            RectangularShadow {
+                anchors.fill: menuCard
+                radius: menuCard.radius
+                offset.x: Colors.shadowMenu.x
+                offset.y: Colors.shadowMenu.y
+                blur: Colors.shadowMenu.blur
+                color: Colors.shadowMenu.color
+                opacity: menuCard.opacity
+                scale: menuCard.scale
+                visible: menuCard.visible
+            }
+
+            Rectangle {
+                id: menuCard
+                anchors.centerIn: parent
+                width: menuContent.width + Tokens.space4 * 2
+                height: menuContent.height + Tokens.space4 * 2
+                radius: Tokens.radiusXl
+                color: Colors.surfaceContainerHigh
+                opacity: menuFade.value
+                scale: 0.85 + 0.15 * menuGrow.value
+                visible: opacity > 0.01
+                enabled: root.menuOpen
+
+                Accessible.role: Accessible.Dialog
+                Accessible.name: menuContent.title
+
+                MenuContent {
+                    id: menuContent
+                    x: Tokens.space4
+                    y: Tokens.space4
+                    menu: root.shownMenu
+                    live: root.menuOpen
                 }
             }
         }
