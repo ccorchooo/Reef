@@ -51,7 +51,8 @@ PanelWindow {
     readonly property bool power: navigator.power
     // A quick menu opened by hovering takes the keyboard only when clicked (OnDemand),
     // so it never steals typing from the focused app.
-    WlrLayershell.keyboardFocus: keyboardActive || searching || power ? WlrKeyboardFocus.Exclusive
+    // The app menu (right-click a Dock tile or an app in search) takes it while open.
+    WlrLayershell.keyboardFocus: keyboardActive || searching || power || appMenu.open ? WlrKeyboardFocus.Exclusive
         : status.menuOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     onSearchingChanged: {
@@ -103,7 +104,7 @@ PanelWindow {
     }
 
     // Typing in a menu (a Wi-Fi password) holds it open until a click elsewhere.
-    readonly property bool wantsGrab: keyboardActive || searching || power || status.holdOpen
+    readonly property bool wantsGrab: keyboardActive || searching || power || status.holdOpen || appMenu.open
     onWantsGrabChanged: wantsGrab ? armGrab.restart() : (grab.armed = false)
 
     Item {
@@ -115,8 +116,9 @@ PanelWindow {
     // Escape closes search or the Status cay's menu first, then leaves the bar.
     Shortcut {
         sequence: "Escape"
-        enabled: root.keyboardActive || root.searching || root.power || status.menuOpen
-        onActivated: root.searching || root.power || status.menuOpen ? PanelState.closeAll() : (root.keyboardActive = false)
+        enabled: root.keyboardActive || root.searching || root.power || status.menuOpen || appMenu.open
+        onActivated: appMenu.open ? appMenu.hide()
+            : root.searching || root.power || status.menuOpen ? PanelState.closeAll() : (root.keyboardActive = false)
     }
 
     // Clicking anywhere outside the bar gives the keyboard back and closes a menu.
@@ -127,6 +129,7 @@ PanelWindow {
         property bool armed: false
         onCleared: {
             root.keyboardActive = false;
+            appMenu.hide();
             if (status.menuOpen || root.searching || root.power)
                 PanelState.closeAll();
         }
@@ -283,6 +286,8 @@ PanelWindow {
 
     mask: Region {
         Region { item: powerInput }
+        Region { item: menuCatcher }
+        Region { item: appMenu }
         Region { item: dock }
         Region { item: navigator }
         Region { item: workspaces }
@@ -403,6 +408,49 @@ PanelWindow {
         opacity: asideFade.value
         enabled: !root.power
     }
+    // ── the app menu ────────────────────────────────────────────
+    // While it's open a click anywhere else on this screen closes it (and goes no further).
+    MouseArea {
+        id: menuCatcher
+        width: appMenu.open ? root.width : 0
+        height: appMenu.open ? root.height : 0
+        z: 1
+        acceptedButtons: Qt.AllButtons
+        onPressed: appMenu.hide()
+    }
+    AppMenu {
+        id: appMenu
+        z: 2
+        barLeft: root.barLeft
+        // The keyboard goes back where it was.
+        property Item returnTo: null
+        onDismissed: {
+            if (root.searching)
+                navigator.refocusSearch();
+            else if (returnTo && root.keyboardActive)
+                returnTo.forceActiveFocus();
+            returnTo = null;
+        }
+    }
+    Connections {
+        target: dock
+        function onMenuRequested(app, tile) {
+            appMenu.returnTo = tile;
+            appMenu.show(app, "dock", tile, null);
+        }
+    }
+    Connections {
+        target: navigator
+        function onAppMenuRequested(app, row, at) {
+            appMenu.show(app, "search", row, at);
+        }
+    }
+    // A menu never outlives its surface's other states.
+    Connections {
+        target: PanelState
+        function onPanelChanged() { if (PanelState.panel !== "search") appMenu.hide(); }
+    }
+
     Status {
         id: status
         x: root.xFor("status", statusAlong.value)

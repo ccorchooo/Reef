@@ -6,8 +6,10 @@ import Quickshell.Io
 
 // Pinned and running apps for the Dock cay, and when each app was last opened
 // (for search; kept in ~/.cache/reef/launches.json).
-// Pins come from Settings → Bar → Pinned apps (desktop entry ids). With none set,
-// Reef pins the first installed terminal, file manager, browser, editor and music app.
+// Pins are desktop entry ids in bar.pinnedApps, changed from the app menu (right-click a
+// Dock tile or an app in search) or Settings → Apps. Until the pins are first edited
+// (bar.pinsEdited), Reef pins the first installed terminal, file manager, browser, editor
+// and music app. Apps in apps.hidden aren't listed in search.
 Singleton {
     id: root
 
@@ -24,9 +26,8 @@ Singleton {
 
     readonly property var pinnedIds: {
         _entries;
-        const configured = Config.options.bar.pinnedApps;
-        if (configured.length > 0)
-            return configured.filter(id => !!DesktopEntries.byId(id));
+        if (Config.options.bar.pinsEdited)
+            return Array.from(Config.options.bar.pinnedApps).filter(id => !!DesktopEntries.byId(id));
         const out = [];
         for (const group of defaultCandidates) {
             const id = group.find(id => !!DesktopEntries.byId(id));
@@ -63,6 +64,62 @@ Singleton {
         if (!appId)
             return null;
         return DesktopEntries.byId(appId) ?? DesktopEntries.heuristicLookup(appId);
+    }
+
+    // ── pins ────────────────────────────────────────────────────
+    function isPinned(id) {
+        return pinnedIds.includes(id);
+    }
+
+    function _setPins(list) {
+        Config.options.bar.pinnedApps = list;
+        Config.options.bar.pinsEdited = true;
+    }
+
+    function pin(id) {
+        if (id && !isPinned(id))
+            _setPins(pinnedIds.concat([id]));
+    }
+
+    function unpin(id) {
+        _setPins(pinnedIds.filter(p => p !== id));
+    }
+
+    function togglePin(id) {
+        isPinned(id) ? unpin(id) : pin(id);
+    }
+
+    // Moves a pin by `by` places (−1 = toward the start of the Dock).
+    function movePin(id, by) {
+        const list = pinnedIds.slice();
+        const i = list.indexOf(id), j = i + by;
+        if (i < 0 || j < 0 || j >= list.length)
+            return;
+        list.splice(i, 1);
+        list.splice(j, 0, id);
+        _setPins(list);
+    }
+
+    // ── search visibility ───────────────────────────────────────
+    function isHidden(id) {
+        return Config.options.apps.hidden.includes(id);
+    }
+
+    function setHidden(id, hidden) {
+        const list = Array.from(Config.options.apps.hidden).filter(h => h !== id);
+        if (hidden)
+            list.push(id);
+        Config.options.apps.hidden = list;
+    }
+
+    // The windows open for a desktop entry id.
+    function windowsOf(id) {
+        return dock.find(i => i.id === id)?.toplevels ?? [];
+    }
+
+    function closeWindows(id) {
+        for (const t of windowsOf(id))
+            t.close();
     }
 
     function iconFor(item) {

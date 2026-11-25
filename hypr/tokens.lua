@@ -42,5 +42,4 @@ return {
     gaps_in  = 8,  -- space-2
     gaps_out = 16, -- space-4
     rounding = 16, -- radius-lg
-    settings_size = "1000 696", -- the Settings window
 }

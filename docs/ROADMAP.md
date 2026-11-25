@@ -5,7 +5,7 @@ Build Reef in thin, working slices. Each milestone should be usable every day be
 ## M0 — Foundation ✅
 - [x] Scaffold the Quickshell config (`reef/`) with `shell.qml`, per-screen `Variants`, and hot reload.
 - [x] A token generator: `design/tokens.json` → `theme/Tokens.qml`. Add `island-container` (#1c1c1e) and `island-container-high` (#2c2c2e).
-- [x] `Colors.qml`: matugen pipeline from the wallpaper, falling back to the reference scheme, with a live crossfade.
+- [x] `Colors.qml`: scheme from the wallpaper (generated in Reef, `services/schemegen.js`), falling back to the reference scheme, with a live crossfade.
 - [x] `Motion.qml` (springs, reduce motion, speed), `Type.qml`, `Icon.qml`, `Shapes.qml` with a morph demo.
 - [x] `Config` singleton reading and writing `~/.config/reef/config.json`.
 - [x] A Hyprland snippet with gaps, rounding, keybind stubs and the shell's start command (`hypr/reef.lua`; Hyprland 0.57 is configured in Lua).

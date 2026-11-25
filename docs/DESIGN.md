@@ -33,15 +33,18 @@ Reef's components are named after the sea. Use these names in code, settings and
 ## 3. Color
 
 ### Source
-All roles are generated from the wallpaper with Material color utilities (matugen or equivalent) every time the wallpaper changes. The values in `tokens.json` are the **reference scheme** from seed `#e8735a` (coral), used when there is no wallpaper or the user picks **Static**.
+The **Palette** setting picks where colors come from:
+- **Wallpaper** *(default)*: every role is generated in Reef (`services/schemegen.js`, no external tool) from the wallpaper's main colors, read with Quickshell's `ColorQuantizer` and grouped into hue families; the most prominent family seeds the scheme. A **static seed color** replaces the wallpaper's. Roles follow the M3 tone recipe (primary tone 80 on dark, 40 on light, surfaces 4–22 / 90–100), so contrast matches M3; hue and chroma are CIE LCh. The values in `tokens.json` are the **reference scheme** from seed `#e8735a` (coral), used with no wallpaper and no seed.
+- **A classic palette**: Gruvbox, Catppuccin, Nord, Tokyo Night, Rosé Pine, Everforest, Solarized or Dracula, each with a dark and a light variant (`color.palettes` in tokens). Reef derives the container and on-* roles from each palette's surfaces and four accents and raises any text below 4.5:1 (accents below 3:1 against the cays) until it passes. Colorfulness doesn't apply.
 
 ### The Colorfulness setting
 | Setting | Surfaces | Accents | Feels like |
 | --- | --- | --- | --- |
-| **Monochrome** | Neutral grays | Grays too (`scheme-monochrome`) | E-ink: no color at all |
-| **Neutral** | Neutral variant (`*-neutral` themes) | Wallpaper accent kept | macOS: quiet gray glass with one color |
-| **Tinted** *(default)* | TonalSpot (`dark`, `light` themes) | Wallpaper accent | Reef's signature: warm surfaces that echo the wallpaper |
-| **Vivid** | Vibrant or Expressive scheme variant | Stronger, uses tertiary more | Pixel at full volume |
+| **Monochrome** | Neutral grays | Grays too | E-ink: no color at all |
+| **Neutral** | Slightly tinted by the accent's hue | **One** muted accent (low chroma): secondary and tertiary are quiet tones of its hue | macOS: quiet glass with one color |
+| **Tinted** *(default)* | Tinted (TonalSpot-like) | Wallpaper accent; a second wallpaper color, when there is one, becomes tertiary | Reef's signature: surfaces that echo the wallpaper |
+| **Vivid** | More tint | Stronger; keeps a vivid wallpaper's own strength; tertiary from the wallpaper | Pixel at full volume |
+| **Deep** | **Pure black** on dark (pure white on light) | **One** muted accent, a touch more color than Neutral; the rest quiet tones of its hue | OLED: black glass with one bright color |
 
 Light/dark: **Auto** (follows sunset/sunrise or a schedule), Light, or Dark.
 
@@ -128,7 +131,9 @@ Sounds are **very subtle**, short (under 150 ms) and soft, at low volume, with o
 
 | Area | Settings |
 | --- | --- |
-| Look | Colorfulness (Neutral / Tinted / Vivid), Light/Dark/Auto, Transparency (Solid / Frosted), Static seed color, Home logo |
+| Look | Palette (Wallpaper or a classic palette), Colorfulness (Mono / Neutral / Tinted / Vivid / Deep), Light/Dark/Auto, Transparency (Solid / Frosted), Static seed color, Home logo |
+| Apps | Default apps (browser, files, terminal, mail, text, images, video, music, PDF), the Dock's pins and their order, which apps search lists |
+| Widgets | Clock: shape, numbers (none / 12 3 6 9 / all / big hour), face color, hour ticks, second hand |
 | Scale | Text size, Spacing, Corner roundness (multipliers on the tokens) |
 | Motion | Reduce motion, Animation speed multiplier, Island hover reveal on/off |
 | Per monitor | Show bar, show Island, bar position (bottom / left) |

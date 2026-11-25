@@ -7,8 +7,9 @@ import qs.services
 import qs.components
 
 // Settings → Look (screens/Settings): the wallpaper card (preview, seed colors from the
-// wallpaper, Change wallpaper, Use static color), then Colorfulness, Theme, Transparency
-// and Home logo in two columns.
+// wallpaper, Change wallpaper, Use static color), the Palette (the wallpaper's colors or a
+// classic palette), Colorfulness (wallpaper palette only), then Theme, Transparency and
+// Home logo in two columns (one when the window is narrow, as with a large zoom).
 Column {
     id: root
 
@@ -17,32 +18,14 @@ Column {
     readonly property var look: Config.options.look
     readonly property string wallpaper: look.wallpaper
 
-    // Seed candidates: the wallpaper's most colorful colors (ColorQuantizer), or the
-    // reference seed without a wallpaper.
-    ColorQuantizer {
-        id: quantizer
-        source: root.wallpaper !== "" ? "file://" + root.wallpaper : ""
-        depth: 3
-        rescaleSize: 64
-    }
-    readonly property var seeds: {
-        const all = Array.from(quantizer.colors ?? []);
-        if (all.length === 0)
-            return [Tokens.seed];
-        // Colorful, mid-light colors first (a near-black seed makes a dull scheme); a gray
-        // wallpaper still gets its grays.
-        const score = c => c.hslSaturation * (1 - Math.abs(c.hslLightness - 0.55) * 1.5);
-        const usable = all.filter(c => c.hslLightness > 0.15 && c.hslLightness < 0.9);
-        const picked = [];
-        for (const c of (usable.length ? usable : all).sort((a, b) => score(b) - score(a))) {
-            // Skip near-duplicates.
-            if (picked.some(p => Math.abs(p.r - c.r) + Math.abs(p.g - c.g) + Math.abs(p.b - c.b) < 0.25))
-                continue;
-            picked.push(c);
-            if (picked.length === 5)
-                break;
-        }
-        return picked.map(c => c.toString());
+    // Seed candidates: the wallpaper's main colors, one per hue family (Scheme reads them),
+    // or the reference seed without a wallpaper.
+    readonly property var seeds: Scheme.seeds.length > 0 ? Scheme.seeds : [Tokens.seed]
+    readonly property bool fromWallpaper: look.palette === "wallpaper"
+
+    function useSeed(hex) {
+        Config.options.look.palette = "wallpaper";
+        Config.options.look.staticColor = hex;
     }
 
     function filePath(url) {
@@ -123,7 +106,7 @@ Column {
                             id: swatch
                             required property string modelData
                             required property int index
-                            readonly property bool chosen: root.look.staticColor !== "" ? root.look.staticColor.toLowerCase() === modelData.toLowerCase() : index === 0
+                            readonly property bool chosen: root.fromWallpaper && (root.look.staticColor !== "" ? root.look.staticColor.toLowerCase() === modelData.toLowerCase() : index === 0)
                             width: Tokens.settingsSwatch
                             height: Tokens.settingsSwatch
 
@@ -131,8 +114,8 @@ Column {
                             Accessible.role: Accessible.RadioButton
                             Accessible.name: "Seed color " + modelData
                             Accessible.checked: chosen
-                            Keys.onReturnPressed: Config.options.look.staticColor = modelData
-                            Keys.onSpacePressed: Config.options.look.staticColor = modelData
+                            Keys.onReturnPressed: root.useSeed(modelData)
+                            Keys.onSpacePressed: root.useSeed(modelData)
 
                             // The chosen one: a primary ring outside a gap of the card's color.
                             Rectangle {
@@ -159,7 +142,7 @@ Column {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: Config.options.look.staticColor = swatch.modelData
+                                onClicked: root.useSeed(swatch.modelData)
                             }
                         }
                     }
@@ -176,11 +159,107 @@ Column {
                     PillButton {
                         height: Tokens.settingsButtonHeight
                         neutralColor: Colors.surfaceContainerHighest
-                        text: root.look.staticColor !== "" ? "Use wallpaper colors" : "Use static color"
-                        onClicked: Config.options.look.staticColor = root.look.staticColor !== "" ? "" : root.seeds[0]
+                        text: root.look.staticColor !== "" || !root.fromWallpaper ? "Use wallpaper colors" : "Use static color"
+                        onClicked: {
+                            const back = root.look.staticColor !== "" || !root.fromWallpaper;
+                            Config.options.look.palette = "wallpaper";
+                            Config.options.look.staticColor = back ? "" : root.seeds[0];
+                        }
                     }
                 }
             }
+        }
+    }
+
+    // ── palette ──
+    Column {
+        width: parent.width
+        spacing: Tokens.space2
+
+        StyledText {
+            style: "settingsSection"
+            text: "Palette"
+        }
+        Flow {
+            width: parent.width
+            spacing: Tokens.space2
+            Accessible.role: Accessible.Grouping
+            Accessible.name: "Palette"
+
+            // The wallpaper's colors: its seeds as dots.
+            OptionCard {
+                width: Tokens.settingsPaletteCard
+                text: "Wallpaper"
+                selected: root.fromWallpaper
+                onClicked: Config.options.look.palette = "wallpaper"
+                Row {
+                    anchors.centerIn: parent
+                    spacing: Tokens.spaceHalf
+                    Repeater {
+                        model: root.seeds.slice(0, 4)
+                        Rectangle {
+                            required property string modelData
+                            width: Tokens.settingsPaletteDot
+                            height: width
+                            radius: width / 2
+                            color: modelData
+                        }
+                    }
+                }
+            }
+            Repeater {
+                model: Tokens.paletteIds
+                OptionCard {
+                    id: paletteCard
+                    required property string modelData
+                    readonly property var colors: Tokens.palettes[modelData][Colors.mode]
+                    width: Tokens.settingsPaletteCard
+                    text: Tokens.palettes[modelData].name
+                    selected: root.look.palette === modelData
+                    onClicked: Config.options.look.palette = modelData
+                    // The palette's own surface with its accents on it.
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: dots.implicitWidth + Tokens.space2 * 2
+                        height: Tokens.settingsPaletteDot + Tokens.space2 * 2
+                        radius: height / 2
+                        color: paletteCard.colors.surfaceContainer
+                        Row {
+                            id: dots
+                            anchors.centerIn: parent
+                            spacing: Tokens.spaceHalf
+                            Repeater {
+                                model: [paletteCard.colors.primary, paletteCard.colors.secondary, paletteCard.colors.tertiary, paletteCard.colors.onSurface]
+                                Rectangle {
+                                    required property string modelData
+                                    width: Tokens.settingsPaletteDot
+                                    height: width
+                                    radius: width / 2
+                                    color: modelData
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Column {
+        width: parent.width
+        spacing: Tokens.space2
+        visible: root.fromWallpaper
+
+        StyledText {
+            style: "settingsSection"
+            text: "Colorfulness"
+        }
+        SegmentedButtons {
+            width: parent.width
+            label: "Colorfulness"
+            options: [{ value: "monochrome", label: "Mono" }, { value: "neutral", label: "Neutral" }, { value: "tinted", label: "Tinted" }, { value: "vivid", label: "Vivid" }, { value: "deep", label: "Deep" }]
+            current: root.look.colorfulness
+            onSelected: v => Config.options.look.colorfulness = v
         }
     }
 
@@ -188,10 +267,10 @@ Column {
     Grid {
         id: choices
         width: parent.width
-        columns: 2
+        columns: width >= Tokens.settingsTwoColumnMin ? 2 : 1
         columnSpacing: Tokens.settingsGap
         rowSpacing: Tokens.settingsGap
-        readonly property real cell: (width - columnSpacing) / 2
+        readonly property real cell: columns === 2 ? (width - columnSpacing) / 2 : width
 
         component Choice: Column {
             property string title
@@ -203,16 +282,6 @@ Column {
             }
         }
 
-        Choice {
-            title: "Colorfulness"
-            SegmentedButtons {
-                width: parent.width
-                label: "Colorfulness"
-                options: [{ value: "monochrome", label: "Mono" }, { value: "neutral", label: "Neutral" }, { value: "tinted", label: "Tinted" }, { value: "vivid", label: "Vivid" }]
-                current: root.look.colorfulness
-                onSelected: v => Config.options.look.colorfulness = v
-            }
-        }
         Choice {
             title: "Theme"
             SegmentedButtons {

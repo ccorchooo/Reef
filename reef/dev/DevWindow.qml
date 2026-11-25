@@ -62,7 +62,7 @@ FloatingWindow {
                     StyledText {
                         style: "bodySm"
                         color: Colors.on.surfaceVariant
-                        text: (Colors.fromWallpaper ? "Scheme from " + (win.look.staticColor ? "static color " + win.look.staticColor : "wallpaper") : "Reference scheme (seed " + Tokens.seed + ")") + " · " + Colors.mode + " · " + win.look.colorfulness + (Scheme.busy ? " · generating…" : "") + (Scheme.lastError ? " · matugen: " + Scheme.lastError : "")
+                        text: (Colors.fromWallpaper ? "Scheme from " + (win.look.palette !== "wallpaper" ? win.look.palette + " palette" : win.look.staticColor ? "static color " + win.look.staticColor : "wallpaper") : "Reference scheme (seed " + Tokens.seed + ")") + " · " + Colors.mode + " · " + win.look.colorfulness + (Scheme.busy ? " · generating…" : "") + (Scheme.lastError ? " · " + Scheme.lastError : "")
                     }
                 }
             }

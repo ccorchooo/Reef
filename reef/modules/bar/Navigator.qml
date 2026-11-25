@@ -62,6 +62,12 @@ Cay {
         onTriggered: root.shownForm = root.form
     }
 
+    // An app menu from search (see SearchView.menuRequested).
+    signal appMenuRequested(var app, Item row, var at)
+    function refocusSearch() {
+        searchView.refocus();
+    }
+
     // The bar calls this once the surface has the keyboard.
     function focusSearch() {
         searchView.open();
@@ -275,6 +281,7 @@ Cay {
         opacity: searchOpacity.value
         visible: opacity > 0.01
         enabled: root.searching
+        onMenuRequested: (app, row, at) => root.appMenuRequested(app, row, at)
 
         Spring {
             id: searchOpacity

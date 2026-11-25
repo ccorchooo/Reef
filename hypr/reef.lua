@@ -25,12 +25,12 @@ hl.config({
 -- (a slide as the overview or switcher appears, the last frame sliding away as it goes).
 hl.layer_rule({ name = "reef", match = { namespace = "^reef-.*" }, no_anim = true })
 
--- Settings (screens/Settings) floats, centered, at its designed size.
+-- Settings (screens/Settings) floats, centered. Reef sizes it itself (the designed size
+-- times the zoom, and again when the zoom changes), so the rule sets no size.
 hl.window_rule({
     name   = "reef-settings",
     match  = { class = "^(org\\.quickshell|quickshell)$", title = "^Settings$" },
     float  = true,
-    size   = t.settings_size,
     center = true,
 })
 

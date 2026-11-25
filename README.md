@@ -45,7 +45,7 @@ hypr/                ← Hyprland snippet (reef.lua) + generated tokens.lua
 
 ## Design at a glance
 
-- **Color:** M3 roles generated from the wallpaper. A **Colorfulness** setting offers Neutral, Tinted (the default) or Vivid. Light, Dark or Auto. The Island is always pure black.
+- **Color:** M3 roles generated from the wallpaper. A **Colorfulness** setting offers Mono, Neutral, Tinted (the default), Vivid or Deep (pure black with one accent), and a **Palette** setting swaps the wallpaper for a classic palette (Gruvbox, Catppuccin, Nord, …). Light, Dark or Auto. The Island is always pure black.
 - **Shape:** the screen corners are rounded. Corners follow the M3 scale and nest concentrically. M3E shapes appear across the UI: password dots, toggles, widgets, the Pearl.
 - **Type:** Google Sans Flex, with variable axes for motion. Google Sans Code for mono text. Material Symbols Rounded for icons.
 - **Motion:** M3 Expressive springs, interruptible, with Reduce motion and an animation speed setting.

@@ -151,6 +151,14 @@ def main():
     fixed = [camel(tok["name"]) for tok in t["color"]["tokens"]
              if tok["name"].startswith("island") or tok["name"].startswith("on-island") or tok["name"].startswith("scrim") or tok["name"] == "screen-corner"]
     w(f"    readonly property var fixedRoles: {js(fixed)}")
+    # Classic palettes (Settings → Look → Palette): base colors per mode; schemegen.js
+    # derives the rest.
+    pals = {p["id"]: {"name": p["name"], "dark": p["dark"], "light": p["light"]} for p in t["color"].get("palettes", [])}
+    w("    // Classic palettes: { id: { name, dark: { surface, …, primary, secondary, tertiary, error }, light } }")
+    w("    readonly property var palettes: ({")
+    w(",\n".join(f"        {js(k)}: {js(v)}" for k, v in pals.items()))
+    w("    })")
+    w(f"    readonly property var paletteIds: {js(list(pals.keys()))}")
     w("")
 
     # shadows
@@ -207,7 +215,6 @@ def main():
         f"    gaps_in  = {sp['space-2']},  -- space-2",
         f"    gaps_out = {sp['space-4']}, -- space-4",
         f"    rounding = {rd['radius-lg']}, -- radius-lg",
-        f"    settings_size = \"{sz['settings-width']} {sz['settings-height']}\", -- the Settings window",
         "}",
     ]
     LUA_OUT.write_text("\n".join(lua) + "\n")

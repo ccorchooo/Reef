@@ -75,7 +75,8 @@ Singleton {
 
             // Settings → Look
             property JsonObject look: JsonObject {
-                property string colorfulness: "tinted"   // monochrome | neutral | tinted | vivid
+                property string palette: "wallpaper"     // wallpaper | a classic palette id from tokens (gruvbox, catppuccin, …)
+                property string colorfulness: "tinted"   // monochrome | neutral | tinted | vivid | deep (wallpaper palette only)
                 property string theme: "dark"            // auto | light | dark
                 property string autoLightAt: "07:00"     // used when theme is auto
                 property string autoDarkAt: "19:00"
@@ -124,7 +125,8 @@ Singleton {
                     property bool events: true           // today's next calendar event
                     property string fallback: "weather"  // weather | system | none
                 }
-                property list<string> pinnedApps: []     // desktop entry ids; empty = sensible defaults
+                property list<string> pinnedApps: []     // desktop entry ids, in Dock order
+                property bool pinsEdited: false          // false = pin sensible defaults (pinnedApps is ignored)
                 property int workspaceCount: 5           // always shown in the Navigator; more appear when used
                 property string clockFormat: "hh:mm"     // Qt time format
                 property bool statusBluetooth: true      // a Bluetooth item in the Status cay (with an adapter)
@@ -145,6 +147,14 @@ Singleton {
                 property string weatherLocation: ""      // a city for wttr.in; empty = guessed from the IP address
                 property string temperatureUnit: "c"     // c | f
                 property bool wiggle: true               // widgets wiggle in edit mode (never with Reduce motion)
+                // Settings → Widgets → Clock
+                property JsonObject clock: JsonObject {
+                    property string shape: "circle"      // a Shapes name: circle | squircle | cookie4 | cookie6 | cookie9 | cookie12 | sunny | flower | clover8
+                    property string numbers: "none"      // none | quarters | all | hour (the current hour, large behind the hands)
+                    property bool ticks: true            // hour ticks around the edge
+                    property bool seconds: false         // a second hand
+                    property string color: "surface"     // surface | primary | secondary | tertiary (the face's container color)
+                }
             }
 
             property JsonObject island: JsonObject {
@@ -214,6 +224,11 @@ Singleton {
 
             property JsonObject screenshots: JsonObject {
                 property string folder: ""               // empty = ~/Pictures/Screenshots
+            }
+
+            // Settings → Apps
+            property JsonObject apps: JsonObject {
+                property list<string> hidden: []         // desktop entry ids search doesn't list
             }
 
             // Settings → Search

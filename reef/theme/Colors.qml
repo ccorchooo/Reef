@@ -7,7 +7,7 @@ import qs.components
 // Live M3 color roles: Colors.primary, Colors.surfaceContainer, Colors.island, …
 // (role properties come from the generated ColorRoles base type).
 //
-// Source: the matugen scheme from services/Scheme for the current light/dark mode,
+// Source: the generated scheme from services/Scheme for the current light/dark mode,
 // or the reference scheme in tokens.json when there is none. The Island's body and grays
 // are always the token values (pure black); its accent follows the scheme's dark primary
 // (the Island is dark in every theme), and the heavy scrim is the scheme's surface at the
@@ -28,7 +28,7 @@ ColorRoles {
     }
     readonly property bool dark: mode === "dark"
     // Reference theme id (tokens.json) for the fallback, island roles and shadows.
-    readonly property string themeId: mode + (["neutral", "monochrome"].includes(Config.options.look.colorfulness) ? "-neutral" : "")
+    readonly property string themeId: mode + (Config.options.look.palette === "wallpaper" && ["neutral", "monochrome"].includes(Config.options.look.colorfulness) ? "-neutral" : "")
     readonly property bool fromWallpaper: Scheme.scheme !== null
 
     readonly property var shadowIsland: Tokens.shadows.shadowIsland[themeId]

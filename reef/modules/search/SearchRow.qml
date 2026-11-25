@@ -11,6 +11,8 @@ Item {
     required property var result
     property bool selected: false
     signal activated
+    // Right-click: the pointer in the row.
+    signal menuRequested(point at)
 
     implicitHeight: Tokens.searchRowHeight
 
@@ -92,7 +94,8 @@ Item {
         id: mouse
         anchors.fill: parent
         hoverEnabled: true
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.activated()
+        onClicked: event => event.button === Qt.RightButton ? root.menuRequested(Qt.point(event.x, event.y)) : root.activated()
     }
 }

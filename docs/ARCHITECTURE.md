@@ -59,7 +59,8 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     bar/                      ✓ Bar (PanelWindow, input mask = the cays; places the cays from BarCays.order), Dock,
                                 Navigator, Spotlight, Status (grows into a quick menu), StatusItem
                                 (M7) WorkspacesCay + WorkspaceNumbers (shared with the Navigator), BarCays
-                                (singleton: the saved cay order), CayOrder (drag-to-reorder chips)
+                                (singleton: the saved cay order), CayOrder (drag-to-reorder chips),
+                                AppMenu (right-click a Dock tile or a search app: pin, hide, actions)
     island/                   ✓ Island (one morphing body), IslandState (singleton: activities in priority
                                 order, swap, simulate), Activity (one activity's data), IslandActivity,
                                 IslandPeek, NowTab, IslandTabs (circles), IslandActivities + ActivityRow
@@ -86,7 +87,9 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     pearl/  greeter/
   services/                   # singletons
     Config.qml                ✓ ~/.config/reef/config.json (FileView + JsonAdapter, live reload, write-back)
-    Scheme.qml                ✓ runs matugen, caches ~/.cache/reef/scheme.json
+    Scheme.qml                ✓ the color scheme (schemegen.js: wallpaper seeds, M3 tones, classic palettes),
+                                caches ~/.cache/reef/scheme.json
+    DefaultApps.qml           ✓ default apps through xdg-mime; the terminal in ~/.config/xdg-terminals.list
     Actions.qml               ✓ named actions shared by keybinds, IPC and buttons (stubs log their milestone)
     Workspaces  Apps  Audio  Network  Battery  Media  Time   ✓ (M1)
     Countdown  Recording  Brightness  Toasts  Visualizer     ✓ (M2)
@@ -105,7 +108,7 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
                                 page, search index), one *Page.qml per page, loaded by a Loader
   assets/fonts → ../../design/fonts (symlink)   assets/logo/ (copied from design/logo)
   assets/pam.d/reef           ✓ (M5) the lock's PAM service: pam_unix (falls back to /etc/pam.d/login)
-  scripts/                    ✓ gen-tokens.py, matugen.toml, gen-emoji.py (assets/emoji.json from
+  scripts/                    ✓ gen-tokens.py, gen-emoji.py (assets/emoji.json from
                                 Unicode's emoji-test.txt; oh-my-zsh ships a copy)
 hypr/
   reef.lua                    ✓ Hyprland snippet (gaps, rounding, start command, binds)
@@ -120,7 +123,7 @@ hypr/
 | Rounded screen | One overlay `PanelWindow` per screen anchored to all edges, with no input (empty mask), drawing four black concave corner pieces of `radius-xl`. |
 | Tide panels | A `PanelWindow` anchored top, bottom and one side, full height, plus `EdgeFillet`s at the top and bottom of the inner edge. Content is a column of `Card`s. Use a focus grab (`HyprlandFocusGrab`) so a click outside closes the panel. |
 | Hyprland | `Quickshell.Hyprland` for workspaces, the active window and `GlobalShortcut` keybinds (appid `reef`). Hyprland 0.57 is configured in **Lua**, so the snippet is `hypr/reef.lua`: load it with `dofile(…)`. It sets gaps (`gaps_in` = space-2, `gaps_out` = space-4) and `rounding` = radius-lg from the generated `hypr/tokens.lua`, starts `qs -c reef -n -d`, and binds keys to `hl.dsp.global("reef:<action>")`. |
-| Colors | `services/Scheme` runs **matugen 4.x** (`matugen image <path> --prefer saturation --dry-run --json hex -t <type> -c scripts/matugen.toml`, or `matugen color hex <seed>` for a static color). One run returns both dark and light (`colors.<role>.dark.color`). Tinted = `scheme-tonal-spot`, Vivid = `scheme-vibrant`, Neutral = tonal-spot accents with `scheme-neutral` surfaces (two runs). The result is cached in `~/.cache/reef/scheme.json` so the next start is instant. `Colors.qml` falls back to the reference scheme in tokens, keeps the Island roles and scrim fixed, and crossfades every change with `effects-slow`. Writing GTK/Qt/kitty/Hyprland themes through matugen templates comes later. The wallpaper path is `look.wallpaper` in Config; Reef doesn't draw the wallpaper yet. |
+| Colors | `services/Scheme` builds the scheme in Reef with `services/schemegen.js` (no external tool; matugen isn't needed). The wallpaper's colors come from Quickshell's `ColorQuantizer` (16 buckets); `seeds()` groups them into 30° hue families and ranks them by coverage and vividness. `generate(seed, tertiarySeed, colorfulness)` applies the M3 tone recipe in CIE LCh (L* = M3 tone), cutting chroma to fit sRGB; the Colorfulness levels are chroma tables (Neutral and Deep use one accent hue; Deep makes every surface black on dark). Classic palettes (`Tokens.palettes`) go through `classic()`, which derives containers and on-colors and enforces 4.5:1 text. The result is cached in `~/.cache/reef/scheme.json` so the next start is instant. `Colors.qml` falls back to the reference scheme in tokens, keeps the Island roles and scrim fixed, and crossfades every change with `effects-slow`. Writing GTK/Qt/kitty/Hyprland themes from the scheme comes later. The wallpaper path is `look.wallpaper` in Config. |
 | Audio | `Quickshell.Services.Pipewire` |
 | Media | `Quickshell.Services.Mpris`. Pull the album art's color for `island-accent`. |
 | Notifications | `Quickshell.Services.Notifications`. Reef **is** the notification server. Only one program can own `org.freedesktop.Notifications`: while another shell (Caelestia) runs, Reef receives none. Test with `dbus-run-session` and an isolated `XDG_CONFIG_HOME`. |
@@ -146,7 +149,6 @@ hypr/
 - `FileView` creates missing parent directories when it writes. Its `loaded` stays false when a missing file is replaced by `writeAdapter()`, so `Config.loaded` is tracked separately.
 - QML treats any name like `onSomething` as a signal handler: never name a property that way (hence `Colors.on.surface`).
 - Fonts load straight from the `.woff2` files with `FontLoader`; `font.variableAxes` drives wght, ROND, wdth (Google Sans Flex) and FILL, GRAD, opsz (Material Symbols).
-- matugen refuses to run without a config file that has a `[templates]` table, even with `--dry-run`.
 - `Quickshell.Hyprland` fills in after it connects, and `Hyprland.usingLua` turns true then. In Lua mode, dispatches use Lua syntax: `hl.dsp.focus({ workspace = "3" })` (see services/Workspaces).
 - `DesktopEntries` loads asynchronously and `byId()` isn't reactive: bindings that call it also read `DesktopEntries.applications.values.length` so they re-run.
 - A layer surface gets keyboard focus only with `WlrLayershell.keyboardFocus`; pair Exclusive with `HyprlandFocusGrab` so a click elsewhere releases it, and arm the grab a moment after focusing, or Hyprland clears it at once.
@@ -179,7 +181,10 @@ hypr/
 - **Blur.** `BackgroundEffect.blurRegion: Region { item: … }` (attached, from `Quickshell.Wayland`; the ext-background-effect protocol) works on Hyprland 0.57: the compositor blurs what's behind that part of the surface. The power actions blur the whole screen; the overview blurs the bar's strip. Point the region at an empty item to turn it off.
 - **Dragging inside a list that reflows** (edit mode's tiles, the cay chips): keep where the drag started and add the drag offset to that, not to the item's current slot, which moves as the others make room.
 - **DragHandler zeroes `activeTranslation` before `onActiveChanged(false)` runs.** Keep the last translation yourself (in `onActiveTranslationChanged`) and use it on release, or the drop lands where the drag started (the home widgets did).
-- **Zoom.** `scale.zoom` multiplies spacing, corners, type and every pixel size token in `Tokens` (gen-tokens appends `* zoom` to px sizes; ratios and angles stay). Code that uses tokens zooms for free; raw numbers wouldn't.
+- **Zoom.** `scale.zoom` multiplies spacing, corners, type and every pixel size token in `Tokens` (gen-tokens appends `* zoom` to px sizes; ratios and angles stay). Code that uses tokens zooms for free; raw numbers wouldn't. A `FloatingWindow` (Settings) keeps the size Hyprland gave it when it mapped, so changing `implicitWidth` later does nothing: Settings finds its own window in `hyprctl clients -j` (pid + title) and dispatches `hl.dsp.window.resize({ x, y, window = "address:…" })`. Its `minimumSize` must never exceed that size, or Qt draws the content past the window's edge (the old zoom bug).
+- **The app menu** lives in the bar's own surface (the Dock and search both live there), like the Status cay's menus: a full-surface `MouseArea` joins the input mask while it's open so any click closes it, and the bar takes the keyboard (Exclusive) until then.
+- **Default apps.** `DesktopEntry` has no MIME types, so `DefaultApps` greps `MimeType=` from the desktop files in the usual application folders to find candidates; `xdg-mime query default` / `xdg-mime default` read and set them (xdg-utils, already used for `xdg-open`).
+- Testing Config from outside: write `~/.config/reef/config.json` in place. Replacing the file (write a temp file, then rename) drops `FileView`'s watch, and a non-atomic `json.dump` can be read half-written.
 - An inline `component` whose root is a `QtObject`, declared in a `PanelWindow`, came up as "is not a type" in Quickshell 0.3.2; use plain objects (Bar.qml spells out one Spring per cay).
 - **A Spring only moves when its target changes.** To fade something in again with the same target (a new Settings page), use `restartFrom(0)`; assigning `value` alone leaves it there.
 - **New folders need a restart.** Hot reload picks up edits and new files in existing module folders (checked: new bar files loaded live), but a new folder under `reef/` (a new `qs.modules.x`) reports "module is not installed" until Quickshell starts again.

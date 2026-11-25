@@ -6,7 +6,8 @@ import qs.services
 import qs.components
 
 // Dock cay: pinned and running apps (SURFACES.md → Bar).
-// Click launches or focuses (and cycles windows); middle-click opens a new window.
+// Click launches or focuses (and cycles windows); middle-click opens a new window;
+// right-click (or the Menu key, Shift+F10) asks the bar for the app menu (AppMenu).
 // On the left (`vertical`) the tiles stack and the running dot sits on the edge side.
 Cay {
     id: root
@@ -14,6 +15,9 @@ Cay {
     leftPadding: vertical ? Tokens.cayPaddingTight : Tokens.space2
     rightPadding: vertical ? Tokens.cayPaddingTight : Tokens.space2
     visible: Apps.dock.length > 0
+
+    // Right-click or the Menu key on a tile: { id, entry } and the tile.
+    signal menuRequested(var app, Item tile)
 
     Accessible.role: Accessible.ToolBar
     Accessible.name: "Dock"
@@ -43,6 +47,12 @@ Cay {
                 Accessible.name: Apps.nameFor(modelData) + (modelData.focused ? ", focused" : modelData.running ? ", running" : "")
                 Keys.onReturnPressed: Apps.activate(modelData)
                 Keys.onSpacePressed: Apps.activate(modelData)
+                Keys.onPressed: event => {
+                    if (event.key === Qt.Key_Menu || (event.key === Qt.Key_F10 && (event.modifiers & Qt.ShiftModifier))) {
+                        root.menuRequested(tile.modelData, tile);
+                        event.accepted = true;
+                    }
+                }
 
                 ColorSpring {
                     id: tileBg
@@ -94,10 +104,12 @@ Cay {
                     id: mouse
                     anchors.fill: parent
                     hoverEnabled: true
-                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
                     cursorShape: Qt.PointingHandCursor
                     onClicked: event => {
-                        if (event.button === Qt.MiddleButton) {
+                        if (event.button === Qt.RightButton)
+                            root.menuRequested(tile.modelData, tile);
+                        else if (event.button === Qt.MiddleButton) {
                             if (tile.modelData.entry)
                                 Apps.launch(tile.modelData.entry);
                         }

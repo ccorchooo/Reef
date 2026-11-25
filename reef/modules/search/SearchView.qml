@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import qs.theme
 import qs.services
 import qs.components
@@ -7,10 +8,29 @@ import qs.modules
 // The inside of the search panel (screens/Search): grouped results above, the field at
 // the bottom where the Navigator cay was. The Navigator cay grows around it.
 // Up/Down move the selection, Enter opens it, Escape closes. Results come from Search.
+// Right-click an app, or press the Menu key (Shift+F10), for its app menu (AppMenu, in
+// the bar's surface).
 Item {
     id: root
 
     property int selected: 0
+
+    // An app result's menu: { id, entry }, the row, and the pointer in it (null: the row).
+    signal menuRequested(var app, Item row, var at)
+
+    function requestMenu(index, row, at) {
+        const result = Search.results[index];
+        const entry = result?.entryId ? DesktopEntries.byId(result.entryId) : null;
+        if (!entry || !row)
+            return;
+        selected = index;
+        menuRequested({ id: entry.id, entry: entry }, row, at);
+    }
+
+    // The keyboard comes back here after the app menu closes.
+    function refocus() {
+        input.forceActiveFocus();
+    }
 
     readonly property bool hasResults: Search.results.length > 0
     readonly property real resultsHeight: Math.min(list.contentHeight, Tokens.searchMaxHeight - Tokens.searchFieldHeight - Tokens.space2 * 3)
@@ -84,10 +104,12 @@ Item {
             }
 
             SearchRow {
+                id: row
                 width: list.width
                 result: entry.modelData
                 selected: entry.index === root.selected
                 onActivated: root.run(entry.index)
+                onMenuRequested: at => root.requestMenu(entry.index, row, at)
             }
         }
     }
@@ -138,6 +160,13 @@ Item {
             Keys.onReturnPressed: root.run(root.selected)
             Keys.onEnterPressed: root.run(root.selected)
             Keys.onEscapePressed: PanelState.closeAll()
+            Keys.onPressed: event => {
+                if (event.key === Qt.Key_Menu || (event.key === Qt.Key_F10 && (event.modifiers & Qt.ShiftModifier))) {
+                    const row = list.itemAtIndex(root.selected);
+                    root.requestMenu(root.selected, row, null);
+                    event.accepted = true;
+                }
+            }
         }
 
         StyledText {

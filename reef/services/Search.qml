@@ -9,7 +9,8 @@ import qs.theme
 // Settings, Files (from `find` in the home folder), Coral. A query starting with "/"
 // lists commands instead: the built actions (Actions) plus /scheme.
 //
-// Each result: { kind, title, subtitle, icon, iconSource, run }.
+// Each result: { kind, title, subtitle, icon, iconSource, run }; apps also carry
+// `entryId` (for the app menu). Apps hidden in Settings → Apps aren't listed.
 Singleton {
     id: root
 
@@ -79,6 +80,7 @@ Singleton {
         const last = Apps.lastOpened[entry.id];
         return {
             kind: "app",
+            entryId: entry.id,
             title: entry.name,
             subtitle: last ? `App · last opened ${ago(last)}` : (entry.genericName || "App"),
             icon: "",
@@ -91,7 +93,8 @@ Singleton {
     readonly property var apps: {
         if (!active || commandMode)
             return [];
-        const entries = DesktopEntries.applications.values.filter(e => !e.noDisplay);
+        const hidden = Config.options.apps.hidden;
+        const entries = DesktopEntries.applications.values.filter(e => !e.noDisplay && !hidden.includes(e.id));
         const last = Apps.lastOpened;
         if (q === "") {
             // Every app: recently opened first, then the rest A–Z (the panel scrolls).
@@ -116,7 +119,10 @@ Singleton {
     // ── settings ────────────────────────────────────────────────
     // Until the Settings app (M9), each setting acts in place: a toggle flips, a menu opens.
     function setTheme(v) { Config.options.look.theme = v; }
-    function setColorfulness(v) { Config.options.look.colorfulness = v; }
+    function setColorfulness(v) {
+        Config.options.look.palette = "wallpaper";
+        Config.options.look.colorfulness = v;
+    }
 
     readonly property var settingsIndex: [
         { title: "Wi-Fi", path: "Network", icon: "wifi", keys: "network internet wireless", run: () => Actions.run("wifiMenu") },
@@ -135,6 +141,10 @@ Singleton {
         { title: "Neutral colors", path: "Look", icon: "palette", keys: "colorfulness scheme gray", on: Config.options.look.colorfulness === "neutral", run: () => root.setColorfulness("neutral") },
         { title: "Tinted colors", path: "Look", icon: "palette", keys: "colorfulness scheme", on: Config.options.look.colorfulness === "tinted", run: () => root.setColorfulness("tinted") },
         { title: "Vivid colors", path: "Look", icon: "palette", keys: "colorfulness scheme vibrant", on: Config.options.look.colorfulness === "vivid", run: () => root.setColorfulness("vivid") },
+        { title: "Deep colors", path: "Look", icon: "palette", keys: "colorfulness scheme rich saturated wallpaper", on: Config.options.look.colorfulness === "deep", run: () => root.setColorfulness("deep") },
+        { title: "Color palette", path: "Look", icon: "format_paint", keys: "gruvbox catppuccin nord tokyo night rose pine everforest solarized dracula theme scheme", run: () => Actions.openSettings("look") },
+        { title: "Default apps", path: "Apps", icon: "apps", keys: "browser terminal file manager editor mail open with", run: () => Actions.openSettings("apps") },
+        { title: "Clock widget", path: "Widgets", icon: "schedule", keys: "analog face numbers shape seconds home", run: () => Actions.openSettings("widgets") },
         { title: "Reduce motion", path: "Accessibility", icon: "animation", keys: "animations accessibility", on: Config.options.motion.reduceMotion, run: () => Config.options.motion.reduceMotion = !Config.options.motion.reduceMotion },
         { title: "Island peek on hover", path: "Bar & Island", icon: "visibility", keys: "island hover", on: Config.options.island.peek, run: () => Config.options.island.peek = !Config.options.island.peek },
         { title: "Status menus on hover", path: "Bar & Island", icon: "ads_click", keys: "status bar quick menus", on: Config.options.bar.statusMenusOnHover, run: () => Config.options.bar.statusMenusOnHover = !Config.options.bar.statusMenusOnHover },
