@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -169,8 +168,9 @@ PanelWindow {
     }
 
     // ── behind the bar while the overview is open ──────────────
-    // The overview's background (the wallpaper, blurred, under the scrim), drawn in the
-    // bar's strip so the whole background reads as one and the cays stay in front.
+    // The overview blurs the screen behind it and dims it lightly; the bar's strip gets the
+    // same compositor blur and scrim, so the whole background reads as one and the cays
+    // stay in front.
     readonly property bool overviewOpen: PanelState.panel === "overview" && PanelState.screenName === modelData.name
     Spring {
         id: overviewFade
@@ -182,49 +182,21 @@ PanelWindow {
         y: root.barLeft ? 0 : root.height - root.exclusiveZone
         width: root.barLeft ? root.exclusiveZone : root.width
         height: root.barLeft ? root.height : root.exclusiveZone
-        clip: true
         opacity: overviewFade.value
         visible: opacity > 0.001
 
-        Loader {
-            active: overviewStrip.visible
-            sourceComponent: Item {
-                x: -overviewStrip.x
-                y: -overviewStrip.y
-                width: root.modelData.width
-                height: root.modelData.height
-
-                Item {
-                    id: stripSource
-                    anchors.fill: parent
-                    visible: false
-                    Rectangle {
-                        anchors.fill: parent
-                        color: Colors.surface
-                    }
-                    Image {
-                        anchors.fill: parent
-                        visible: Config.options.look.wallpaper !== ""
-                        source: Config.options.look.wallpaper !== "" ? "file://" + Config.options.look.wallpaper : ""
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                        sourceSize.width: root.modelData.width
-                    }
-                }
-                MultiEffect {
-                    anchors.fill: parent
-                    source: stripSource
-                    blurEnabled: true
-                    blur: 1
-                    blurMax: Tokens.backdropBlur
-                    autoPaddingEnabled: false
-                }
-            }
-        }
         Rectangle {
             anchors.fill: parent
             color: Colors.scrim
+            opacity: Tokens.scrimLightOpacity
         }
+    }
+    Item {
+        id: overviewBlur
+        x: overviewStrip.x
+        y: overviewStrip.y
+        width: root.overviewOpen ? overviewStrip.width : 0
+        height: root.overviewOpen ? overviewStrip.height : 0
     }
 
     // ── power actions: heavy scrim, clock, time and date ────────
@@ -251,7 +223,10 @@ PanelWindow {
         width: root.power ? root.width : 0
         height: root.power ? root.height : 0
     }
-    BackgroundEffect.blurRegion: Region { item: powerBlur }
+    BackgroundEffect.blurRegion: Region {
+        Region { item: powerBlur }
+        Region { item: overviewBlur }
+    }
     // A click on the scrim closes the power actions.
     MouseArea {
         id: powerInput

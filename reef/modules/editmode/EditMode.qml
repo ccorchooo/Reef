@@ -39,9 +39,9 @@ PanelWindow {
     Spring {
         id: slide
         spec: Motion.spatialDefault
-        target: root.open ? 0 : -root.width
+        target: root.open ? 0 : -root.implicitWidth
     }
-    visible: open || slide.value > -root.width + 0.5
+    visible: open || slide.value > -root.implicitWidth + 0.5
     mask: Region { item: panel }
 
     WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None

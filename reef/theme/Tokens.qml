@@ -270,7 +270,6 @@ Singleton {
     readonly property real editThumbBar: 5 * zoom
     readonly property real homeGrid: 24 * zoom
     readonly property real homeGridDot: 2 * zoom
-    readonly property real backdropBlur: 48 * zoom
     readonly property real clockSecondHand: 2 * zoom
     readonly property real clockSecondLength: 100 * zoom
     readonly property real clockNumeralInset: 34 * zoom

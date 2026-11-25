@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -13,8 +12,8 @@ import qs.modules
 // primary ring, the windows shrinking with it into their workspace, and only the
 // background (the wallpaper, or the surface color without one) is left around it.
 // The neighbouring workspaces peek in at the left and right edges, space-12 away.
-// Below the card: the workspace number and its window count. The background is the
-// blurred, dimmed wallpaper; the bar stays in front, over the same backdrop.
+// Below the card: the workspace number and its window count. Behind it, the screen itself
+// blurred and lightly dimmed; the bar stays in front, over the same blur.
 // Closing grows the card back to the screen; going to another workspace switches it under
 // the card and keeps the card over the screen until Hyprland's slide is done.
 //
@@ -216,45 +215,20 @@ PanelWindow {
     }
 
     // ── background ──────────────────────────────────────────────
-    // The wallpaper (or the surface color), blurred, laid out on the whole screen so it
-    // lines up with the same backdrop the bar draws in its strip. Opaque from the first
-    // frame: the windows are in the card, not behind it.
+    // The real screen behind it, blurred by the compositor (BackgroundEffect) and dimmed
+    // by a light scrim as the card settles. The blur starts once the card is drawn over
+    // the screen, so the first frame is still the screen itself. The bar does the same in
+    // its strip (Bar.qml), so the whole background reads as one.
     Item {
-        id: backdrop
-        x: -root.originX
-        width: root.modelData.width
-        height: root.modelData.height
-        visible: false
-
-        Rectangle {
-            anchors.fill: parent
-            color: Colors.surface
-        }
-        Image {
-            anchors.fill: parent
-            visible: root.wallpaper !== ""
-            source: root.wallpaper !== "" ? "file://" + root.wallpaper : ""
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: true
-            sourceSize.width: root.modelData.width
-        }
+        id: blurArea
+        width: root.started && root.shown ? root.width : 0
+        height: root.started && root.shown ? root.height : 0
     }
-    MultiEffect {
-        x: backdrop.x
-        width: backdrop.width
-        height: backdrop.height
-        source: backdrop
-        visible: root.started && root.shown
-        blurEnabled: true
-        blur: 1
-        blurMax: Tokens.backdropBlur
-        autoPaddingEnabled: false
-    }
-    // Dims the background as the card settles, so the card stands out.
+    BackgroundEffect.blurRegion: Region { item: blurArea }
     Rectangle {
         anchors.fill: parent
         color: Colors.scrim
-        opacity: fade.value
+        opacity: fade.value * Tokens.scrimLightOpacity
         visible: root.shown
     }
     MouseArea {
