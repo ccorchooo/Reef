@@ -20,9 +20,11 @@ Singleton {
     readonly property string label: !ready ? "No audio output"
         : muted ? "Muted" : `Volume ${Math.round(volume * 100)}%`
 
-    // Outputs (sinks) and the microphone (default source).
+    // Outputs (sinks) and the microphone: the default source, or, when the session has
+    // none set (WirePlumber leaves it empty until one is chosen), the first input device.
     readonly property var outputs: Pipewire.nodes.values.filter(n => n.isSink && !n.isStream && n.audio)
-    readonly property PwNode source: Pipewire.defaultAudioSource
+    readonly property var inputs: Pipewire.nodes.values.filter(n => !n.isSink && !n.isStream && n.audio)
+    readonly property PwNode source: Pipewire.defaultAudioSource ?? inputs[0] ?? null
     readonly property bool micMuted: source?.audio?.muted ?? false
 
     function outputName(node) {
