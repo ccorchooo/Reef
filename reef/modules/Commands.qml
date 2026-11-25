@@ -20,6 +20,12 @@ Scope {
             Actions.run(name);
         }
 
+        // Open the Settings app, optionally on a page (look, displays, bar, sound, network,
+        // bluetooth, coral, keyboard, power, accessibility, about).
+        function settings(page: string): void {
+            Actions.openSettings(page);
+        }
+
         // Toggle the M0 dev window.
         function dev(): void {
             Config.options.debug.devWindow = !Config.options.debug.devWindow;
@@ -127,6 +133,15 @@ Scope {
         // "controlCenter", "search", "calendar", "wifi", "bluetooth", "audio"
         function toggle(name: string): void { PanelState.toggle(name); }
         function close(): void { PanelState.closeAll(); }
+    }
+
+    // The workspace overview: `overview go 3` goes to workspace 3 the way Enter on its card
+    // does (the overview must be open).
+    IpcHandler {
+        target: "overview"
+
+        function go(id: int): void { PanelState.overviewGoRequested(id); }
+        function select(id: int): void { PanelState.overviewWorkspace = id; }
     }
 
     IpcHandler {

@@ -6,6 +6,7 @@ import Quickshell.Hyprland
 import qs.theme
 import qs.services
 import qs.components
+import qs.modules
 
 // The Island (SURFACES.md → The Island; MOTION.md → Shape follows content).
 //
@@ -64,8 +65,12 @@ PanelWindow {
     readonly property bool showsPopup: !!popup && (Hyprland.focusedMonitor?.name ?? modelData.name) === modelData.name
     readonly property real notificationHeight: notificationContent.implicitHeight + Tokens.space3_5 * 2
 
+    // Edit mode on this monitor: "Editing home · Done" (screens/EditMode), even over apps.
+    readonly property bool editing: PanelState.panel === "editMode" && PanelState.screenName === modelData.name
+
     readonly property string mode: expanded ? "expanded"
         : showsPopup ? "notification"
+        : editing ? "editing"
         : (hovered && activity !== "" && Config.options.island.peek) ? "peek"
         : (hidesOverApps && !revealed && !hovered) ? "hidden"
         : activity !== "" ? activity : "rest"
@@ -93,12 +98,14 @@ PanelWindow {
     readonly property real formWidth: form === "notification" ? Tokens.islandNotificationWidth
         : form === "peek" ? Tokens.islandPeekWidth
         : form === "expanded" ? expandedWidth
+        : form === "editing" ? Tokens.islandEditingWidth
         : activityWidth(form)
     // The Tools tab is narrower (parts/Island-Tools); the Island morphs between them.
     readonly property real expandedWidth: IslandState.tab === "tools" ? Tokens.islandToolsWidth : Tokens.islandExpandedWidth
     readonly property real formHeight: form === "peek" ? Tokens.islandPeekHeight
         : form === "expanded" ? expandedContent.implicitHeight + Tokens.space4 * 2
         : form === "notification" ? notificationHeight
+        : form === "editing" ? Tokens.islandBannerHeight
         : Tokens.islandCollapsedHeight
     readonly property real formRadius: (form === "peek" || form === "expanded" || form === "notification") ? Tokens.radiusXl : formHeight / 2
 
@@ -386,7 +393,7 @@ PanelWindow {
         }
 
         TapHandler {
-            enabled: !root.expanded && root.form !== "notification"
+            enabled: !root.expanded && root.form !== "notification" && root.form !== "editing"
             onTapped: IslandState.open("now", root.modelData.name)
         }
 
@@ -422,6 +429,39 @@ PanelWindow {
                 id: activityOpacity
                 spec: Motion.effectsFast
                 target: IslandState.isActivity(root.shownForm) ? 1 : 0
+            }
+        }
+
+        // Edit mode: "Editing home" and Done.
+        Item {
+            id: editingContent
+            anchors.fill: parent
+            opacity: editingOpacity.value
+            visible: opacity > 0.01
+            enabled: root.shownForm === "editing"
+            Spring {
+                id: editingOpacity
+                spec: Motion.effectsFast
+                target: root.shownForm === "editing" ? 1 : 0
+            }
+
+            StyledText {
+                x: Tokens.space4
+                anchors.verticalCenter: parent.verticalCenter
+                style: "tileLabel"
+                color: Colors.on.island
+                text: "Editing home"
+            }
+            IslandTextButton {
+                anchors.right: parent.right
+                anchors.rightMargin: Tokens.cayPaddingTight
+                anchors.verticalCenter: parent.verticalCenter
+                height: Tokens.islandBannerButton
+                text: "Done"
+                textStyle: "chipLabel"
+                color: Colors.islandAccent
+                contentColor: Colors.on.islandAccent
+                onClicked: PanelState.closeAll()
             }
         }
 

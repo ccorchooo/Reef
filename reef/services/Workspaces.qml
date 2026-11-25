@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import qs.theme
 
 // Hyprland workspaces and windows for the Navigator cay, the workspace overview and
@@ -43,6 +44,55 @@ Singleton {
 
     function goTo(id) {
         dispatchFocus(String(id));
+    }
+
+    // How long Hyprland's workspace slide takes (animations → workspaces; speed is in
+    // 100 ms steps), so the overview can stay over the screen until it ends.
+    property real switchDuration: Tokens.workspaceSwitchFallback
+    property Process _animations: Process {
+        running: true
+        command: ["hyprctl", "animations", "-j"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const all = JSON.parse(text).flat();
+                    const ws = all.find(a => a.name === "workspaces");
+                    if (ws)
+                        root.switchDuration = ws.enabled ? ws.speed * 100 : 0;
+                } catch (e) {}
+            }
+        }
+    }
+
+    // ── home ────────────────────────────────────────────────────
+    // The home screen is an empty workspace (the desktop and its widgets). openHome() goes
+    // to the first empty one (the Navigator's home button). Edit mode uses goHome(), which
+    // remembers where it came from, and leaveHome() to go back unless something was opened
+    // there in the meantime.
+    property var _homeFrom: ({})      // monitor → workspace id to return to
+    function openHome(monitorName) {
+        if (windowCount(activeOn(monitorName)) > 0)
+            dispatchFocus("empty");
+    }
+    function goHome(monitorName) {
+        const current = activeOn(monitorName);
+        if (windowCount(current) === 0)
+            return;
+        const map = Object.assign({}, _homeFrom);
+        map[monitorName] = current;
+        _homeFrom = map;
+        dispatchFocus("empty");
+    }
+    function leaveHome(monitorName) {
+        const from = _homeFrom[monitorName];
+        if (from === undefined)
+            return;
+        const map = Object.assign({}, _homeFrom);
+        delete map[monitorName];
+        _homeFrom = map;
+        const now = activeOn(monitorName);
+        if (windowCount(now) === 0 && now !== from)
+            afterHandoff(() => goTo(from));
     }
 
     // "+1" / "-1" for relative moves (scrolling over the Navigator).

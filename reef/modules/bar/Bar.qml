@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -12,22 +13,29 @@ import qs.modules
 // between them click through to the desktop. Reserves cay-height + space-2.
 // A Tide panel pushes the bar aside instead of covering it: the cays slide in from the
 // panel's edge by the panel's width, with the panel's own spring (spatial-default).
+// Bar on the left (per monitor, screens/BarLeft): the cays stack down the left edge
+// space-2 from it, the Status cay at the bottom, and it reserves cay-height + space-2
+// on the left instead.
 PanelWindow {
     id: root
 
     required property ShellScreen modelData
     screen: modelData
 
+    readonly property bool barLeft: Config.monitor(modelData.name).barPosition === "left"
+
     anchors {
+        top: barLeft
         bottom: true
         left: true
-        right: true
+        right: !barLeft
     }
     // The surface is as tall as the screen so a cay can grow up out of it (a Status menu,
     // search) without resizing it: on a resize Hyprland sends the pointer a leave and no
     // enter until it moves, so a menu under a still pointer would close and reopen in a
     // loop. Only the cays take input, and the exclusive zone stays cay-height + space-2.
     implicitHeight: modelData.height
+    implicitWidth: modelData.width
     exclusiveZone: Tokens.cayHeight + Tokens.space2
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Top
@@ -157,6 +165,65 @@ PanelWindow {
         }
     }
 
+    // ── behind the bar while the overview is open ──────────────
+    // The overview's background (the wallpaper, blurred, under the scrim), drawn in the
+    // bar's strip so the whole background reads as one and the cays stay in front.
+    readonly property bool overviewOpen: PanelState.panel === "overview" && PanelState.screenName === modelData.name
+    Spring {
+        id: overviewFade
+        spec: Motion.effectsSlow
+        target: root.overviewOpen ? 1 : 0
+    }
+    Item {
+        id: overviewStrip
+        y: root.barLeft ? 0 : root.height - root.exclusiveZone
+        width: root.barLeft ? root.exclusiveZone : root.width
+        height: root.barLeft ? root.height : root.exclusiveZone
+        clip: true
+        opacity: overviewFade.value
+        visible: opacity > 0.001
+
+        Loader {
+            active: overviewStrip.visible
+            sourceComponent: Item {
+                x: -overviewStrip.x
+                y: -overviewStrip.y
+                width: root.modelData.width
+                height: root.modelData.height
+
+                Item {
+                    id: stripSource
+                    anchors.fill: parent
+                    visible: false
+                    Rectangle {
+                        anchors.fill: parent
+                        color: Colors.surface
+                    }
+                    Image {
+                        anchors.fill: parent
+                        visible: Config.options.look.wallpaper !== ""
+                        source: Config.options.look.wallpaper !== "" ? "file://" + Config.options.look.wallpaper : ""
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                        sourceSize.width: root.modelData.width
+                    }
+                }
+                MultiEffect {
+                    anchors.fill: parent
+                    source: stripSource
+                    blurEnabled: true
+                    blur: 1
+                    blurMax: Tokens.backdropBlur
+                    autoPaddingEnabled: false
+                }
+            }
+        }
+        Rectangle {
+            anchors.fill: parent
+            color: Colors.scrim
+        }
+    }
+
     // ── power actions: heavy scrim, clock, time and date ────────
     Spring {
         id: powerFade
@@ -168,12 +235,20 @@ PanelWindow {
         spec: Motion.effectsDefault
         target: root.power ? 1 : 0
     }
+    // The scheme-tinted heavy scrim over a blur of the desktop (the compositor blurs what's
+    // behind the bar's surface while the power actions are open).
     Rectangle {
         anchors.fill: parent
         color: Colors.scrimHeavy
         opacity: powerFade.value
         visible: opacity > 0.001
     }
+    Item {
+        id: powerBlur
+        width: root.power ? root.width : 0
+        height: root.power ? root.height : 0
+    }
+    BackgroundEffect.blurRegion: Region { item: powerBlur }
     // A click on the scrim closes the power actions.
     MouseArea {
         id: powerInput
@@ -181,10 +256,10 @@ PanelWindow {
         height: root.power ? root.height : 0
         onClicked: PanelState.closeAll()
     }
-    // Centered in the space above the bar.
+    // Centered in the space above (or beside) the bar.
     Row {
         x: Tokens.powerClockInset
-        y: (root.height - root.exclusiveZone - height) / 2
+        y: (root.height - (root.barLeft ? 0 : root.exclusiveZone) - height) / 2
         spacing: Tokens.powerClockGap
         opacity: powerContent.value
         visible: opacity > 0.01
@@ -210,57 +285,130 @@ PanelWindow {
         Region { item: powerInput }
         Region { item: dock }
         Region { item: navigator }
+        Region { item: workspaces }
         Region { item: spotlight }
         Region { item: status }
     }
 
-    // The Dock and Spotlight step aside for the power actions; the Navigator slides into
-    // the Dock's place.
-    Spring {
-        id: powerShift
-        spec: Motion.spatialDefault
-        target: root.power ? dock.width + Tokens.space2 : 0
+    // ── placing the cays ────────────────────────────────────────
+    // Config bar.cays orders them: those before "|" pack from the start (left, or top on
+    // the left), the rest from the far end. Positions come from each cay's target size and
+    // spring there (spatial-default), so a cay that grows pushes its neighbours with the
+    // same motion and a reorder slides into place. Along the bottom cays are bottom-aligned
+    // (the Navigator grows up into search); on the left they're left-aligned (it grows
+    // out to the right). For the power actions everything but the Navigator and Status
+    // steps aside and the Navigator slides to the start.
+    readonly property var order: BarCays.order
+    readonly property var cays: ({ dock: dock, navigator: navigator, workspaces: workspaces, spotlight: spotlight, status: status })
+
+    function sizeOf(id) {
+        const c = cays[id];
+        if (!c || !inLayout(id))
+            return 0;
+        return barLeft ? c.targetHeight : c.targetWidth;
     }
+    function inLayout(id) {
+        if (power && id !== "navigator" && id !== "status")
+            return false;
+        if (id === "dock")
+            return dock.visible;
+        if (id === "workspaces")
+            return Config.options.bar.workspacesCay;
+        return true;
+    }
+    // Offset of a cay from its group's edge.
+    function offsetOf(id) {
+        const split = order.indexOf("|");
+        const start = order.slice(0, split), end = order.slice(split + 1).reverse();
+        const group = start.includes(id) ? start : end;
+        let off = 0;
+        for (const other of group) {
+            if (other === id)
+                break;
+            const size = sizeOf(other);
+            if (size > 0.5)
+                off += size + Tokens.space2;
+        }
+        return off;
+    }
+    function fromEnd(id) {
+        return order.indexOf(id) > order.indexOf("|");
+    }
+    // Along the bar: x along the bottom, y on the left.
+    function alongTarget(id) {
+        const c = cays[id];
+        const startInset = barLeft ? 0 : leftInset.value;
+        const endInset = barLeft ? 0 : rightInset.value;
+        const length = barLeft ? height : width;
+        return fromEnd(id) ? length - Tokens.space2 - endInset - offsetOf(id) - sizeOf(id)
+            : Tokens.space2 + startInset + offsetOf(id);
+    }
+
     Spring {
         id: asideFade
         spec: Motion.effectsFast
         target: root.power ? 0 : 1
     }
 
-    Row {
-        anchors.left: parent.left
-        anchors.bottom: parent.bottom
-        anchors.leftMargin: Tokens.space2 + leftInset.value - powerShift.value
-        anchors.bottomMargin: Tokens.space2
-        spacing: Tokens.space2
-
-        // Bottom-aligned: the Navigator cay grows up into search.
-        Dock {
-            id: dock
-            anchors.bottom: parent.bottom
-            opacity: asideFade.value
-            enabled: !root.power
-        }
-        Navigator {
-            id: navigator
-            anchors.bottom: parent.bottom
-            screenName: root.modelData.name
-        }
-        Spotlight {
-            id: spotlight
-            anchors.bottom: parent.bottom
-            opacity: asideFade.value
-            enabled: !root.power
-        }
+    // Where a cay goes, given its spring along the bar: the end group keeps its far edge
+    // fixed while the cay grows or shrinks; across the bar cays sit on the screen edge.
+    function xFor(id, along) {
+        const c = cays[id];
+        if (barLeft)
+            return Tokens.space2 + leftInset.value;
+        return fromEnd(id) ? alongTarget(id) + (c.targetWidth - c.width) : along;
     }
+    function yFor(id, along) {
+        const c = cays[id];
+        if (!barLeft)
+            return height - Tokens.space2 - c.height;
+        return fromEnd(id) ? alongTarget(id) + (c.targetHeight - c.height) : along;
+    }
+    Spring { id: dockAlong; spec: Motion.spatialDefault; target: root.alongTarget("dock") }
+    Spring { id: navigatorAlong; spec: Motion.spatialDefault; target: root.alongTarget("navigator") }
+    Spring { id: workspacesAlong; spec: Motion.spatialDefault; target: root.alongTarget("workspaces") }
+    Spring { id: spotlightAlong; spec: Motion.spatialDefault; target: root.alongTarget("spotlight") }
+    Spring { id: statusAlong; spec: Motion.spatialDefault; target: root.alongTarget("status") }
 
+    Dock {
+        id: dock
+        x: root.xFor("dock", dockAlong.value)
+        y: root.yFor("dock", dockAlong.value)
+        vertical: root.barLeft
+        opacity: asideFade.value
+        enabled: !root.power
+    }
+    Navigator {
+        id: navigator
+        x: root.xFor("navigator", navigatorAlong.value)
+        y: root.yFor("navigator", navigatorAlong.value)
+        vertical: root.barLeft
+        screenName: root.modelData.name
+    }
+    WorkspacesCay {
+        id: workspaces
+        x: root.xFor("workspaces", workspacesAlong.value)
+        y: root.yFor("workspaces", workspacesAlong.value)
+        vertical: root.barLeft
+        screenName: root.modelData.name
+        visible: Config.options.bar.workspacesCay && opacity > 0.01
+        opacity: asideFade.value
+        enabled: !root.power
+    }
+    Spotlight {
+        id: spotlight
+        x: root.xFor("spotlight", spotlightAlong.value)
+        y: root.yFor("spotlight", spotlightAlong.value)
+        vertical: root.barLeft
+        opacity: asideFade.value
+        enabled: !root.power
+    }
     Status {
         id: status
+        x: root.xFor("status", statusAlong.value)
+        y: root.yFor("status", statusAlong.value)
+        vertical: root.barLeft
         screenName: root.modelData.name
         keyboardActive: root.keyboardActive
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.rightMargin: Tokens.space2 + rightInset.value
-        anchors.bottomMargin: Tokens.space2
     }
 }

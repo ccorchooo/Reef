@@ -58,14 +58,17 @@ Singleton {
 
     function _start() {
         const s = source;
-        if (!s.staticColor && !s.wallpaper) {
+        const mono = s.colorfulness === "monochrome";
+        if (!s.staticColor && !s.wallpaper && !mono) {
             _scheme = null;          // reference scheme
             return;
         }
         if (_scheme && _sameSource(_scheme.source, s))
             return;
-        const input = s.staticColor ? ["color", "hex", s.staticColor] : ["image", s.wallpaper, "--prefer", "saturation"];
-        const accentType = s.colorfulness === "vivid" ? "scheme-vibrant" : "scheme-tonal-spot";
+        // Monochrome is all grays, so any seed will do without a wallpaper.
+        const input = s.staticColor ? ["color", "hex", s.staticColor]
+            : s.wallpaper ? ["image", s.wallpaper, "--prefer", "saturation"] : ["color", "hex", Tokens.seed];
+        const accentType = mono ? "scheme-monochrome" : s.colorfulness === "vivid" ? "scheme-vibrant" : "scheme-tonal-spot";
         _queue = [{ type: accentType, input: input }];
         if (s.colorfulness === "neutral")
             _queue.push({ type: "scheme-neutral", input: input });

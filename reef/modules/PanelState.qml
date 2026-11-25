@@ -22,6 +22,8 @@ Singleton {
     // The workspace the overview has selected. The overview and the Navigator cay's
     // workspaces both show and move it, so they always agree.
     property int overviewWorkspace: 0
+    // Go to a workspace through the open overview, as Enter on its card would (IPC).
+    signal overviewGoRequested(int id)
 
     // ── holding Super ──
     // Holding Super for super-hold-delay shows the workspaces in the Navigator cay

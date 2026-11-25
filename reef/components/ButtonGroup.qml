@@ -30,7 +30,8 @@ Row {
         let others = 0;
         for (let i = 0; i < children.length; i++) {
             const c = children[i];
-            if (c.visible && c !== p)
+            // Only buttons count (not a Repeater that makes them).
+            if (c.visible && c !== p && c.span !== undefined)
                 others += c.span ?? 1;
         }
         if (others === 0)

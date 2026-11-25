@@ -38,6 +38,7 @@ All roles are generated from the wallpaper with Material color utilities (matuge
 ### The Colorfulness setting
 | Setting | Surfaces | Accents | Feels like |
 | --- | --- | --- | --- |
+| **Monochrome** | Neutral grays | Grays too (`scheme-monochrome`) | E-ink: no color at all |
 | **Neutral** | Neutral variant (`*-neutral` themes) | Wallpaper accent kept | macOS: quiet gray glass with one color |
 | **Tinted** *(default)* | TonalSpot (`dark`, `light` themes) | Wallpaper accent | Reef's signature: warm surfaces that echo the wallpaper |
 | **Vivid** | Vibrant or Expressive scheme variant | Stronger, uses tertiary more | Pixel at full volume |
@@ -48,7 +49,7 @@ Light/dark: **Auto** (follows sunset/sunrise or a schedule), Light, or Dark.
 - **One accent per view.** `primary` marks the active thing: the selected workspace, an ON toggle, focus. If two things are `primary`, one of them is wrong.
 - Containers carry state: `secondary-container` for hover and selection, `primary-container` for the main action in a group.
 - `tertiary` is for delight: Coral's wave, timers, the Shelf badge. Never more than one tertiary element on screen at rest.
-- **The Island is always black** (`island`) with `on-island` text, in every theme. It should look like there is no screen there. Its live accent is `island-accent`, which media can override with the album art's dominant color.
+- **The Island is always black** (`island`) with `on-island` text, in every theme. It should look like there is no screen there. Its live accent is `island-accent`: the scheme's dark `primary` (the token is the reference value).
 - Text: `on-surface` for primary, `on-surface-variant` for secondary. Every pair meets 4.5:1 in all four themes (checked: lowest is on-surface-variant on surface-container-high, 5.2:1 in light).
 - Transparency is a setting: **Solid** *(default)*, or **Frosted**, which uses Hyprland blur behind cays and Tide panels at about 85% surface opacity. The Island is never frosted.
 

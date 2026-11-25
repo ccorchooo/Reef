@@ -9,6 +9,9 @@ import qs.components
 Column {
     id: root
 
+    // Inside Settings → Sound the button opens the mixer instead of Settings.
+    property bool inSettings: false
+
     width: Tokens.menuWifiWidth - Tokens.space4 * 2
     spacing: Tokens.space2_5
 
@@ -46,10 +49,13 @@ Column {
 
     MenuButton {
         width: parent.width
-        text: "Sound settings"
+        text: root.inSettings ? "Volume mixer" : "Sound settings"
         onClicked: {
             PanelState.closeAll();
-            Quickshell.execDetached(["pavucontrol"]);
+            if (root.inSettings)
+                Quickshell.execDetached(["pavucontrol"]);
+            else
+                Actions.openSettings("sound");
         }
     }
 }

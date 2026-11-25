@@ -4,6 +4,7 @@ import qs.modules
 import qs.modules.lock
 import qs.modules.polkit
 import qs.services
+import qs.settings
 import qs.dev
 
 ShellRoot {
@@ -20,6 +21,16 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         AuthDialog {}
+    }
+
+    // The Settings app (M7): its own window, built only while open.
+    LazyLoader {
+        active: SettingsState.open
+        Settings {}
+    }
+    Connections {
+        target: Actions
+        function onSettingsRequested(page) { SettingsState.show(page); }
     }
 
     LazyLoader {

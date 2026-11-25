@@ -70,7 +70,7 @@ FocusScope {
         sourceSize.width: root.width
     }
 
-    Logo {
+    HomeLogo {
         x: Tokens.space8
         y: Tokens.space8 - (Tokens.lockLogo - Tokens.iconMd) / 2
         size: Tokens.lockLogo

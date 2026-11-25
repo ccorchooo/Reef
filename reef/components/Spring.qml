@@ -28,6 +28,18 @@ QtObject {
         _snapping = false;
     }
 
+    // Start again from v and spring to `target` (a fade-in when target hasn't changed).
+    function restartFrom(v) {
+        value = v;
+        velocity = 0;
+        if (Motion.reduceMotion && !spec.effects) {
+            value = target;
+            return;
+        }
+        _range = Math.max(Math.abs(target - v), 1e-6);
+        anim.running = true;
+    }
+
     // Push the value with a velocity and let it spring back to `target` (a shake).
     // `peak` is how far the first swing should go; the velocity is solved from the spec
     // (underdamped springs only). Reduce motion: no kick.

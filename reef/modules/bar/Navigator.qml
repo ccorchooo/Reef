@@ -13,6 +13,7 @@ import qs.modules.search
 // screens/PowerActions): the icons scale away, the cay re-forms to the power actions
 // (power-cay-height) and they pop in staggered; hovering Power off turns it
 // error-container with a tooltip.
+// On the left (`vertical`) every form stacks; search grows out to the right.
 Cay {
     id: root
 
@@ -24,14 +25,21 @@ Cay {
     // Holding Super shows the workspaces here (not the overview).
     readonly property bool superHeld: PanelState.superHeld && PanelState.superScreen === screenName
     readonly property bool power: PanelState.panel === "power" && PanelState.screenName === screenName
-    readonly property string form: power ? "power" : searching ? "search" : overview || superHeld ? "workspaces" : mode
+    // With the separate Workspaces cay the Navigator stays in its home form.
+    readonly property bool ownCay: Config.options.bar.workspacesCay
+    readonly property string form: power ? "power" : searching ? "search" : ownCay ? "home" : overview || superHeld ? "workspaces" : mode
     property string shownForm: form
 
     leftPadding: form === "search" ? Tokens.space2 : form === "power" ? Tokens.cayPaddingTight : Tokens.space1
     rightPadding: form === "search" ? Tokens.space2 : form === "workspaces" || form === "power" ? Tokens.cayPaddingTight : Tokens.space1
     contentWidth: form === "search" ? Tokens.searchWidth - Tokens.space2 * 2
         : form === "workspaces" ? wsRow.implicitWidth : form === "power" ? powerRow.implicitWidth : homeRow.implicitWidth
-    targetHeight: form === "search" ? searchView.implicitHeight + Tokens.space2 * 2 : form === "power" ? Tokens.powerCayHeight : Tokens.cayHeight
+    contentHeight: form === "workspaces" ? wsRow.implicitHeight : form === "power" ? powerRow.implicitHeight : homeRow.implicitHeight
+    targetWidth: !vertical ? contentWidth + leftPadding + rightPadding
+        : form === "search" ? Tokens.searchWidth : form === "power" ? Tokens.powerCayHeight : Tokens.cayHeight
+    targetHeight: form === "search" ? searchView.implicitHeight + Tokens.space2 * 2
+        : vertical ? contentHeight + leftPadding + rightPadding
+        : form === "power" ? Tokens.powerCayHeight : Tokens.cayHeight
     targetRadius: form === "search" ? Tokens.radiusXl : form === "power" ? Tokens.powerCayHeight / 2 : Tokens.cayHeight / 2
     // The Power off tooltip sits above the cay.
     clipContent: form !== "power"
@@ -78,22 +86,19 @@ Cay {
             const d = event.angleDelta.y || -event.angleDelta.x;
             if (Math.abs(d) < 1)
                 return;
-            if (root.overview) {
-                // Moves the overview's selection; the overview follows.
-                const ids = wsRow.ids;
-                const i = Math.max(0, Math.min(ids.length - 1, ids.indexOf(PanelState.overviewWorkspace) + (d < 0 ? 1 : -1)));
-                PanelState.overviewWorkspace = ids[i];
-                return;
-            }
-            root.mode = "workspaces";
-            Workspaces.step(d < 0 ? 1 : -1);
+            // Moves the overview's selection while it's open, otherwise the workspace.
+            numbers.step(d < 0 ? 1 : -1);
+            if (!root.overview && !root.ownCay)
+                root.mode = "workspaces";
         }
     }
 
     // ── home ────────────────────────────────────────────────────
-    Row {
+    Grid {
         id: homeRow
-        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenter: root.vertical ? undefined : parent.verticalCenter
+        anchors.horizontalCenter: root.vertical ? parent.horizontalCenter : undefined
+        columns: root.vertical ? 1 : 99   // one row, or one column on the left
         spacing: Tokens.space1
         opacity: homeOpacity.value
         // Into the power actions the icons scale away (MOTION.md → Power menu).
@@ -111,7 +116,7 @@ Cay {
             label: "Home"
             selected: true
             onClicked: Actions.run("home")
-            Logo {
+            HomeLogo {
                 anchors.centerIn: parent
                 size: Tokens.iconSm
                 color: Colors.on.primaryContainer
@@ -130,19 +135,19 @@ Cay {
     }
 
     // ── workspaces ──────────────────────────────────────────────
-    Item {
+    Grid {
         id: wsRow
-        anchors.verticalCenter: parent.verticalCenter
-        implicitWidth: wsItems.implicitWidth
-        height: Tokens.cayButton
+        anchors.verticalCenter: root.vertical ? undefined : parent.verticalCenter
+        anchors.horizontalCenter: root.vertical ? parent.horizontalCenter : undefined
+        columns: root.vertical ? 1 : 99
+        spacing: Tokens.spaceHalf
+        verticalItemAlignment: Grid.AlignVCenter
+        horizontalItemAlignment: Grid.AlignHCenter
         opacity: wsOpacity.value
         visible: opacity > 0.01
         enabled: root.form === "workspaces"
 
-        readonly property var ids: Workspaces.ids(Config.options.bar.workspaceCount)
-        // With the overview open, the pill shows (and moves) its selection instead.
-        readonly property int activeId: root.overview ? PanelState.overviewWorkspace : Workspaces.activeOn(root.screenName)
-        readonly property int activeIndex: ids.indexOf(activeId)
+        readonly property var ids: numbers.ids
 
         Spring {
             id: wsOpacity
@@ -150,121 +155,26 @@ Cay {
             target: root.shownForm === "workspaces" ? 1 : 0
         }
 
-        // The active pill slides between numerals.
-        Rectangle {
-            id: pill
-            visible: wsRow.activeIndex >= 0
-            width: Tokens.cayItemSm
-            height: Tokens.cayItemSm
-            radius: height / 2
-            anchors.verticalCenter: parent.verticalCenter
-            x: pillX.value
-            color: Colors.primary
-
-            Spring {
-                id: pillX
-                spec: Motion.spatialDefault
-                target: closeBtn.width + wsItems.spacing + Math.max(0, wsRow.activeIndex) * (Tokens.cayItemSm + wsItems.spacing)
-            }
+        CayButton {
+            id: closeBtn
+            icon: "grid_view"
+            label: root.overview ? "Close the overview" : "Close workspaces"
+            selected: true
+            onClicked: root.overview ? PanelState.closeAll() : (root.mode = "home")
         }
-
-        Row {
-            id: wsItems
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: Tokens.spaceHalf
-
-            CayButton {
-                id: closeBtn
-                icon: "grid_view"
-                label: root.overview ? "Close the overview" : "Close workspaces"
-                selected: true
-                anchors.verticalCenter: parent.verticalCenter
-                onClicked: root.overview ? PanelState.closeAll() : (root.mode = "home")
-            }
-
-            Repeater {
-                model: wsRow.ids
-
-                Item {
-                    id: ws
-                    required property int modelData
-                    readonly property bool active: modelData === wsRow.activeId
-                    readonly property bool occupied: Workspaces.occupied(modelData)
-
-                    width: Tokens.cayItemSm
-                    height: Tokens.cayItemSm
-                    anchors.verticalCenter: parent.verticalCenter
-
-                    activeFocusOnTab: true
-                    Accessible.role: Accessible.Button
-                    Accessible.name: `Workspace ${modelData}` + (active ? ", current" : occupied ? `, ${Workspaces.windowCount(modelData)} windows` : ", empty")
-                    Keys.onReturnPressed: ws.choose()
-                    Keys.onSpacePressed: ws.choose()
-
-                    // With the overview open this selects the workspace there; otherwise
-                    // it goes to it.
-                    function choose() {
-                        if (root.overview)
-                            PanelState.overviewWorkspace = modelData;
-                        else
-                            Workspaces.goTo(modelData);
-                    }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: height / 2
-                        // Hover, or a subtle tint on a workspace that has windows.
-                        color: ws.active ? "transparent"
-                            : wsMouse.containsMouse ? Colors.surfaceContainerHighest
-                            : ws.occupied ? Colors.surfaceContainerHigh : "transparent"
-                        border.width: ws.activeFocus ? 2 : 0
-                        border.color: Colors.primary
-                    }
-
-                    // The active numeral is 700: a crossfade between two fixed weights, since
-                    // animating the wght axis builds a new font instance every frame.
-                    Spring {
-                        id: boldness
-                        spec: Motion.effectsFast
-                        target: ws.active ? 1 : 0
-                    }
-                    ColorSpring {
-                        id: numColor
-                        spec: Motion.effectsDefault
-                        target: ws.active ? Colors.on.primary : ws.occupied ? Colors.on.surface : Colors.on.surfaceVariant
-                    }
-                    StyledText {
-                        anchors.centerIn: parent
-                        style: "barNumeral"
-                        text: ws.modelData
-                        color: numColor.value
-                        opacity: 1 - Math.max(0, Math.min(1, boldness.value))
-                    }
-                    StyledText {
-                        anchors.centerIn: parent
-                        style: "barNumeral"
-                        text: ws.modelData
-                        weight: 700
-                        color: numColor.value
-                        opacity: Math.max(0, Math.min(1, boldness.value))
-                    }
-
-                    MouseArea {
-                        id: wsMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: ws.choose()
-                    }
-                }
-            }
+        WorkspaceNumbers {
+            id: numbers
+            screenName: root.screenName
+            vertical: root.vertical
         }
     }
 
     // ── power ───────────────────────────────────────────────────
-    Row {
+    Grid {
         id: powerRow
-        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenter: root.vertical ? undefined : parent.verticalCenter
+        anchors.horizontalCenter: root.vertical ? parent.horizontalCenter : undefined
+        columns: root.vertical ? 1 : 99
         spacing: Tokens.space1
         opacity: powerOpacity.value
         visible: opacity > 0.01
@@ -292,7 +202,6 @@ Cay {
                 required property var modelData
                 required property int index
                 readonly property bool danger: modelData.danger ?? false
-                anchors.verticalCenter: parent.verticalCenter
                 size: Tokens.powerButton
                 icon: modelData.icon
                 label: modelData.label
@@ -306,6 +215,8 @@ Cay {
                 onClicked: modelData.run()
                 Keys.onLeftPressed: powerButtons.itemAt(Math.max(0, index - 1))?.forceActiveFocus()
                 Keys.onRightPressed: powerButtons.itemAt(Math.min(powerButtons.count - 1, index + 1))?.forceActiveFocus()
+                Keys.onUpPressed: powerButtons.itemAt(Math.max(0, index - 1))?.forceActiveFocus()
+                Keys.onDownPressed: powerButtons.itemAt(Math.min(powerButtons.count - 1, index + 1))?.forceActiveFocus()
 
                 // Pops in staggered once the cay has re-formed (Motion.stagger).
                 Spring {
@@ -326,11 +237,12 @@ Cay {
                     }
                 }
 
+                // Above the cay; beside it (to the right) with the bar on the left.
                 Rectangle {
                     visible: powerButton.danger
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.bottom: parent.top
-                    anchors.bottomMargin: (Tokens.powerCayHeight - Tokens.powerButton) / 2 + Tokens.space2
+                    readonly property real clearance: (Tokens.powerCayHeight - Tokens.powerButton) / 2 + Tokens.space2
+                    x: root.vertical ? parent.width + clearance : (parent.width - width) / 2
+                    y: root.vertical ? (parent.height - height) / 2 : -clearance - height
                     width: tip.implicitWidth + Tokens.cayPadding * 2
                     height: Tokens.chipHeight
                     radius: height / 2
@@ -356,9 +268,10 @@ Cay {
     // ── search ──────────────────────────────────────────────────
     SearchView {
         id: searchView
+        x: root.vertical ? Tokens.space2 : 0
         width: Tokens.searchWidth - Tokens.space2 * 2
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: Tokens.space2
+        anchors.bottomMargin: root.vertical ? 0 : Tokens.space2
         opacity: searchOpacity.value
         visible: opacity > 0.01
         enabled: root.searching

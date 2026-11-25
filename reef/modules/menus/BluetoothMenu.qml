@@ -10,6 +10,8 @@ Column {
     id: root
 
     property bool active: false
+    // Inside Settings → Bluetooth the button opens the advanced tools instead of Settings.
+    property bool inSettings: false
 
     width: Tokens.menuWifiWidth - Tokens.space4 * 2
     spacing: Tokens.space2_5
@@ -69,10 +71,13 @@ Column {
 
     MenuButton {
         width: parent.width
-        text: "Bluetooth settings"
+        text: root.inSettings ? "Advanced Bluetooth settings" : "Bluetooth settings"
         onClicked: {
             PanelState.closeAll();
-            Quickshell.execDetached(["sh", "-c", "blueman-manager || $TERMINAL -e bluetoothctl || kitty bluetoothctl || foot bluetoothctl"]);
+            if (root.inSettings)
+                Quickshell.execDetached(["sh", "-c", "blueman-manager || $TERMINAL -e bluetoothctl || kitty bluetoothctl || foot bluetoothctl"]);
+            else
+                Actions.openSettings("bluetooth");
         }
     }
 }

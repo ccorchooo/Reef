@@ -28,8 +28,21 @@ Singleton {
             showBar: m.showBar ?? true,
             showIsland: m.showIsland ?? true,
             showCorners: m.showCorners ?? true,
+            showWidgets: m.showWidgets ?? true,
             barPosition: m.barPosition ?? "bottom"
         };
+    }
+
+    // Home widgets on a monitor: [{ id, kind, x, y }] (x, y from the free desktop's
+    // top-left). null until edit mode saves a layout there; the default layout is used.
+    function widgets(name) {
+        return adapter.home.layouts?.[name] ?? null;
+    }
+
+    function setWidgets(name, list) {
+        const all = Object.assign({}, adapter.home.layouts);
+        all[name] = list;
+        adapter.home.layouts = all;
     }
 
     function setMonitor(name, key, value) {
@@ -62,7 +75,7 @@ Singleton {
 
             // Settings → Look
             property JsonObject look: JsonObject {
-                property string colorfulness: "tinted"   // neutral | tinted | vivid
+                property string colorfulness: "tinted"   // monochrome | neutral | tinted | vivid
                 property string theme: "dark"            // auto | light | dark
                 property string autoLightAt: "07:00"     // used when theme is auto
                 property string autoDarkAt: "19:00"
@@ -71,10 +84,12 @@ Singleton {
                 property string wallpaper: ""            // image path the scheme is generated from
                 property string homeLogo: "reef"         // reef | distro | custom
                 property string homeLogoPath: ""
+                property bool drawWallpaper: false       // Reef draws look.wallpaper itself (off: another program does)
             }
 
             // Settings → Scale (multipliers on the tokens)
             property JsonObject scale: JsonObject {
+                property real zoom: 1                    // the whole shell: sizes, spacing, corners and text
                 property real text: 1
                 property real spacing: 1
                 property real corners: 1
@@ -99,11 +114,37 @@ Singleton {
             // Settings → Bar & Island
             property JsonObject bar: JsonObject {
                 property bool showSpotlight: true
+                // Cay order: before "|" from the start of the bar, after it from the far end.
+                property list<string> cays: ["dock", "navigator", "workspaces", "spotlight", "|", "status"]
+                property bool workspacesCay: false       // workspace numbers in their own cay, always shown
+                // What the Spotlight cay shows: the first of these that's live, else `fallback`.
+                property JsonObject spotlight: JsonObject {
+                    property bool media: true
+                    property bool timers: true           // a timer or the stopwatch
+                    property bool events: true           // today's next calendar event
+                    property string fallback: "weather"  // weather | system | none
+                }
                 property list<string> pinnedApps: []     // desktop entry ids; empty = sensible defaults
                 property int workspaceCount: 5           // always shown in the Navigator; more appear when used
                 property string clockFormat: "hh:mm"     // Qt time format
+                property bool statusBluetooth: true      // a Bluetooth item in the Status cay (with an adapter)
                 property bool statusMenusOnHover: true   // rest on a Status item to open its menu; off = click it
                 property bool panelsPushBar: true        // Tide panels move the cays aside instead of covering them
+            }
+
+            // Settings → Bar & Island → Control center: the quick toggles in order. Wide ones
+            // (wifi, bluetooth, keepAwake, focus) take two of the four columns. Edit mode
+            // rearranges them.
+            property JsonObject controlCenter: JsonObject {
+                property list<string> tiles: ["wifi", "bluetooth", "dnd", "nightLight", "screenshot", "micMute", "keepAwake", "focus"]
+            }
+
+            // Home widgets (edit mode). Per-monitor on/off is monitors.<output>.showWidgets.
+            property JsonObject home: JsonObject {
+                property var layouts: ({})               // { "<output>": [ { id, kind, x, y } ] }; missing = default layout
+                property string weatherLocation: ""      // a city for wttr.in; empty = guessed from the IP address
+                property string temperatureUnit: "c"     // c | f
+                property bool wiggle: true               // widgets wiggle in edit mode (never with Reduce motion)
             }
 
             property JsonObject island: JsonObject {
@@ -190,6 +231,14 @@ Singleton {
 
             // Settings → Displays: { "<output>": { showBar, showIsland, showCorners, barPosition } }
             property var monitors: ({})
+
+            // Settings → Coral (the assistant arrives in M8)
+            property JsonObject coral: JsonObject {
+                property string endpoint: "http://localhost:11434/v1"   // any OpenAI-compatible API
+                property string model: ""
+                property string apiKeyEnv: "OPENAI_API_KEY"   // the environment variable holding the key (never stored here)
+                property bool voice: true
+            }
 
             property JsonObject debug: JsonObject {
                 property bool devWindow: false           // the M0 token/motion/shape inspector

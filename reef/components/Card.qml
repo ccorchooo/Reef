@@ -48,6 +48,8 @@ Rectangle {
         Column {
             id: body
             width: parent.width
+            // A header-only card (edit mode's "Edit mode · Done") has no gap below it.
+            visible: children.length > 0
             spacing: root.spacing
         }
     }

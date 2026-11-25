@@ -41,7 +41,7 @@ hypr/                ← Hyprland snippet (reef.lua) + generated tokens.lua
 
 ## Status
 
-**M0–M4 are done**: tokens, live colors, motion, type, icons, shapes, config, a dev window (`qs -p ./reef ipc call reef dev`), the rounded screen, the four-cay bar, the Island (live activities, peek, Now tab, notifications), the floating OSD, toasts, the control center and quick menus. M4 is done too: search (tap Super), the workspace overview (Super+Tab) and the Alt+Tab switcher. Next is **M5** in [docs/ROADMAP.md](docs/ROADMAP.md).
+**M0–M4 are done**: tokens, live colors, motion, type, icons, shapes, config, a dev window (`qs -p ./reef ipc call reef dev`), the rounded screen, the four-cay bar, the Island (live activities, peek, Now tab, notifications), the floating OSD, toasts, the control center and quick menus. M4 is done too: search (tap Super), the workspace overview (Super+Tab) and the Alt+Tab switcher. M5 (lock, power actions, polkit), M6 (Island tabs) and M7 (edit mode and home widgets, the bar on the left, the Settings app: `qs -p ./reef ipc call reef settings`) are built and waiting on hands-on checks. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Design at a glance
 

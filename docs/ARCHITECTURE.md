@@ -47,14 +47,19 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     WindowThumb.qml           ✓ a window's live picture (ScreencopyView), rounded, icon fallback
     PasswordField.qml         ✓ (M5) black pill; each character a shape, pop-in, wrong-password shake + tint
     PillButton.qml            ✓ (M5) full-width dialog button (Cancel, Authenticate)
-    AnalogClock.qml           ✓ (M5) the power-actions clock (a desktop widget later)
+    AnalogClock.qml           ✓ (M5) the power-actions clock (and the clock home widget)
+    SwitchRow  SegmentedButtons  SliderRow  TextFieldRow   ✓ (M7) settings rows, shared by edit mode
+                                and Settings; SettingsSection (label + card), OptionCard (Home logo)
+    HomeLogo.qml              ✓ (M7) Reef mark, distro logo or custom image (Settings → Look)
     IconButton.qml  Toggle.qml  Slider.qml  TidePanel.qml
   modules/
     ScreenScope.qml           ✓ one per monitor; surfaces get added here
     Commands.qml              ✓ IpcHandler "reef" (run, dev, scheme, status) + GlobalShortcut "reef:<action>"
     frame/ScreenCorners.qml   ✓ rounded-screen overlay (no input, no reserved space)
-    bar/                      ✓ Bar (PanelWindow, input mask = the cays), Dock, Navigator, Spotlight,
-                                Status (grows into a quick menu), StatusItem
+    bar/                      ✓ Bar (PanelWindow, input mask = the cays; places the cays from BarCays.order), Dock,
+                                Navigator, Spotlight, Status (grows into a quick menu), StatusItem
+                                (M7) WorkspacesCay + WorkspaceNumbers (shared with the Navigator), BarCays
+                                (singleton: the saved cay order), CayOrder (drag-to-reorder chips)
     island/                   ✓ Island (one morphing body), IslandState (singleton: activities in priority
                                 order, swap, simulate), Activity (one activity's data), IslandActivity,
                                 IslandPeek, NowTab, IslandTabs (circles), IslandActivities + ActivityRow
@@ -73,7 +78,12 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     lock/                     ✓ (M5) LockScreen (WlSessionLock + preview overlay), LockSurface (one monitor)
     polkit/                   ✓ (M5) AuthDialog (one per monitor, shown on the one that had focus)
                                 Power actions live in the bar: the Navigator's "power" form + Bar's scrim/clock
-    pearl/  editmode/  greeter/
+    home/                     ✓ (M7) Desktop (bottom layer: widgets, edit chrome, drops), HomeWidget (one widget +
+                                outline, badge, wiggle, drag), Clock/Weather/Media/System/CalendarWidget,
+                                Wallpaper (background layer, optional)
+    editmode/                 ✓ (M7) EditMode (left Tide panel: thumbnails, tile layout, bar card)
+    controlcenter/QuickTiles  ✓ (M7) the quick toggles' definitions and saved order (control center + edit mode)
+    pearl/  greeter/
   services/                   # singletons
     Config.qml                ✓ ~/.config/reef/config.json (FileView + JsonAdapter, live reload, write-back)
     Scheme.qml                ✓ runs matugen, caches ~/.cache/reef/scheme.json
@@ -85,11 +95,14 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     Clipboard  Shelf  Calculator  Emoji  ColorPicker   ✓ (M6) cliphist + pins, the Shelf's items,
                                 a safe expression parser, assets/emoji.json + recents, grim/slurp pixel pick
     Lock  Session  Keyboard  Polkit   ✓ (M5) lock state + PAM, power actions, keyboard layout, polkit agent
+    Home  Weather  SystemStats  OsInfo   ✓ (M7) widget layouts per monitor, wttr.in through curl, /proc +
+                                nvidia-smi/hwmon readings (only while a widget holds them), /etc/os-release
     Search                    ✓ (M4) results for search: apps, settings index, `/` commands, files (find)
                                 Apps also keeps when each app was last opened (~/.cache/reef/launches.json)
     Notifications  Bluetooth  Clipboard  Shelf  Coral  Wallpaper  Sounds
   dev/                        ✓ DevWindow (M0 inspector) + its small helpers
-  settings/                   # Settings app (its own window / entry point)
+  settings/                   ✓ (M7) Settings (FloatingWindow, sidebar + search), SettingsState (singleton: open,
+                                page, search index), one *Page.qml per page, loaded by a Loader
   assets/fonts → ../../design/fonts (symlink)   assets/logo/ (copied from design/logo)
   assets/pam.d/reef           ✓ (M5) the lock's PAM service: pam_unix (falls back to /etc/pam.d/login)
   scripts/                    ✓ gen-tokens.py, matugen.toml, gen-emoji.py (assets/emoji.json from
@@ -163,7 +176,17 @@ hypr/
 - **Lock.** `services/Lock` checks the password with `PamContext` against `assets/pam.d/reef` (`auth required pam_unix.so`: the user's own password through the setuid helper). If that can't start it retries with the system `login` stack. `ipc call lock preview` shows the lock screen in an overlay without locking (Escape closes it); its power buttons do nothing. If Reef dies while locked, Hyprland shows its "lockdead" screen: from a TTY run `hyprctl --instance 0 'keyword misc:allow_session_lock_restore 1'` and start Reef again. Don't drive the lock screen with synthetic keys while testing: `send_shortcut` goes to the focused *window*, not the lock surface.
 - **Island tabs (M6).** Clipboard lists `cliphist list` and refreshes on `wl-paste --watch echo`; pins and "first seen" times live in `$XDG_DATA_HOME/reef/clipboard.json` (cliphist has no times, so entries from before Reef ran show none). The Shelf keeps file paths and text in `$XDG_RUNTIME_DIR/reef/shelf.json`; tiles drag out with `Drag.Automatic` (`text/uri-list` or `text/plain`). The color picker reads one pixel with `grim -g "$(slurp -p)" -t ppm - | tail -c 3`, so it needs no extra tool. The calculator never uses `eval`. The Tools tab is `island-tools-width` (420), so the Island morphs width when you switch to it. To check tab layouts without a running shell, load them in a `FloatingWindow` with `QT_QPA_PLATFORM=offscreen` and save `grabToImage` results (layer-shell windows can't load offscreen).
 - **Polkit.** Only one authentication agent can register per session. While polkit-gnome or hyprpolkitagent runs, Reef's `PolkitAgent` logs "An authentication agent already exists" and that agent keeps answering; stop it (and drop it from autostart) to get Reef's dialog. Test with `pkexec true`. Settings: `session.polkitAgent`.
-- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|search|overview|calendar|wifi|bluetooth|audio>` (menus open inside the control center), `panel close`, `focus start <minutes>|stop|toggle`, `superHold down|up` (what holding Super does), `notifications dnd|clear`, `lock lock|preview`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
+- **Blur.** `BackgroundEffect.blurRegion: Region { item: … }` (attached, from `Quickshell.Wayland`; the ext-background-effect protocol) works on Hyprland 0.57: the compositor blurs what's behind that part of the surface. The power actions blur the whole screen; the overview blurs the bar's strip. Point the region at an empty item to turn it off.
+- **Dragging inside a list that reflows** (edit mode's tiles, the cay chips): keep where the drag started and add the drag offset to that, not to the item's current slot, which moves as the others make room.
+- **DragHandler zeroes `activeTranslation` before `onActiveChanged(false)` runs.** Keep the last translation yourself (in `onActiveTranslationChanged`) and use it on release, or the drop lands where the drag started (the home widgets did).
+- **Zoom.** `scale.zoom` multiplies spacing, corners, type and every pixel size token in `Tokens` (gen-tokens appends `* zoom` to px sizes; ratios and angles stay). Code that uses tokens zooms for free; raw numbers wouldn't.
+- An inline `component` whose root is a `QtObject`, declared in a `PanelWindow`, came up as "is not a type" in Quickshell 0.3.2; use plain objects (Bar.qml spells out one Spring per cay).
+- **A Spring only moves when its target changes.** To fade something in again with the same target (a new Settings page), use `restartFrom(0)`; assigning `value` alone leaves it there.
+- **New folders need a restart.** Hot reload picks up edits and new files in existing module folders (checked: new bar files loaded live), but a new folder under `reef/` (a new `qs.modules.x`) reports "module is not installed" until Quickshell starts again.
+- **Pages loaded by path don't see their folder.** A file a `Loader` loads by `source` (the Settings pages) doesn't resolve types from its own folder by name ("X is not a type"); keep the pieces it shares in `components/` (SettingsSection, OptionCard), which it imports.
+- **Checking QML without the live shell.** A throwaway `ShellRoot` file at the config root (so `qs.*` resolves) can `Qt.createComponent()` each file and log `errorString()` (run on the real display with nothing instantiated for layer-shell files, or with `QT_QPA_PLATFORM=offscreen` for the rest), and render Items or a `FloatingWindow`'s first child with `grabToImage`. Isolate it with `dbus-run-session`, no `HYPRLAND_INSTANCE_SIGNATURE`, and scratch `XDG_*` folders.
+- **Edit mode (M7).** Widgets live on a bottom-layer `PanelWindow` with `ExclusionMode.Normal` (it fits inside the bar's exclusive zone); its mask is the widgets' bounds, or the whole surface while editing so drops land. A thumbnail drags out of the panel with `Drag.Automatic` and the MIME type `application/x-reef-widget`; a click adds it too. The bar reserves its zone on the left by changing its anchors (top+bottom+left), so each cay has a `vertical` form.
+- IPC: `reef run <action>`, `reef settings [page]`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|editMode|search|overview|calendar|wifi|bluetooth|audio>` (menus open inside the control center), `panel close`, `overview select <n>|go <n>` (drive the open overview without input, e.g. to record its motion with `grim` in a loop), `focus start <minutes>|stop|toggle`, `superHold down|up` (what holding Super does), `notifications dnd|clear`, `lock lock|preview`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
 
 ## Configuration
 
@@ -176,7 +199,8 @@ hypr/
   - **Performance**: blur, shape morphs, visualizer FPS.
   - **Sound** toggles.
   - **Coral**: endpoint, model, voice, keybind.
-  - **Widgets and tile layout**, as saved by edit mode.
+  - **Widgets and tile layout**, as saved by edit mode: `home.layouts`, `controlCenter.tiles`, plus `home.weatherLocation`, `home.temperatureUnit`, `home.wiggle`.
+  - **Coral**: `coral.endpoint`, `coral.model`, `coral.apiKeyEnv` (the name of the variable holding the key), `coral.voice`.
 
 ## Fonts
 

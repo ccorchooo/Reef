@@ -131,6 +131,7 @@ Singleton {
         { title: "Dark theme", path: "Look", icon: "dark_mode", keys: "theme appearance", on: Config.options.look.theme === "dark", run: () => root.setTheme("dark") },
         { title: "Light theme", path: "Look", icon: "light_mode", keys: "theme appearance", on: Config.options.look.theme === "light", run: () => root.setTheme("light") },
         { title: "Automatic theme", path: "Look", icon: "brightness_auto", keys: "theme appearance auto schedule", on: Config.options.look.theme === "auto", run: () => root.setTheme("auto") },
+        { title: "Monochrome colors", path: "Look", icon: "contrast", keys: "colorfulness scheme gray black white", on: Config.options.look.colorfulness === "monochrome", run: () => root.setColorfulness("monochrome") },
         { title: "Neutral colors", path: "Look", icon: "palette", keys: "colorfulness scheme gray", on: Config.options.look.colorfulness === "neutral", run: () => root.setColorfulness("neutral") },
         { title: "Tinted colors", path: "Look", icon: "palette", keys: "colorfulness scheme", on: Config.options.look.colorfulness === "tinted", run: () => root.setColorfulness("tinted") },
         { title: "Vivid colors", path: "Look", icon: "palette", keys: "colorfulness scheme vibrant", on: Config.options.look.colorfulness === "vivid", run: () => root.setColorfulness("vivid") },

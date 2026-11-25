@@ -8,8 +8,10 @@ import qs.components
 // (role properties come from the generated ColorRoles base type).
 //
 // Source: the matugen scheme from services/Scheme for the current light/dark mode,
-// or the reference scheme in tokens.json when there is none. The Island roles and
-// scrim are always the token values. Any change crossfades with effects-slow.
+// or the reference scheme in tokens.json when there is none. The Island's body and grays
+// are always the token values (pure black); its accent follows the scheme's dark primary
+// (the Island is dark in every theme), and the heavy scrim is the scheme's surface at the
+// token's alpha. Any change crossfades with effects-slow.
 ColorRoles {
     id: root
 
@@ -26,7 +28,7 @@ ColorRoles {
     }
     readonly property bool dark: mode === "dark"
     // Reference theme id (tokens.json) for the fallback, island roles and shadows.
-    readonly property string themeId: mode + (Config.options.look.colorfulness === "neutral" ? "-neutral" : "")
+    readonly property string themeId: mode + (["neutral", "monochrome"].includes(Config.options.look.colorfulness) ? "-neutral" : "")
     readonly property bool fromWallpaper: Scheme.scheme !== null
 
     readonly property var shadowIsland: Tokens.shadows.shadowIsland[themeId]
@@ -47,6 +49,14 @@ ColorRoles {
         const out = {};
         for (const k of Object.keys(ref))
             out[k] = (gen && gen[k] && !Tokens.fixedRoles.includes(k)) ? gen[k] : ref[k];
+        // The Island's accent: the dark scheme's primary, whatever the theme.
+        const darkRef = Tokens.referenceSchemes[themeId.replace(/^light/, "dark")];
+        const genDark = Scheme.scheme ? Scheme.scheme.dark : null;
+        out.islandAccent = genDark?.primary ?? darkRef.primary;
+        out.onIslandAccent = genDark?.onPrimary ?? darkRef.onPrimary;
+        // The heavy scrim (power actions): the scheme's surface at the token's alpha.
+        const heavy = Qt.color(ref.scrimHeavy), base = Qt.color(out.surfaceContainer);
+        out.scrimHeavy = Qt.rgba(base.r, base.g, base.b, heavy.a);
         return out;
     }
 

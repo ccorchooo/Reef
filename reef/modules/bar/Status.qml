@@ -6,7 +6,7 @@ import qs.modules
 import qs.modules.menus
 
 // Status cay (SURFACES.md → Bar, Quick menus): the clock on the left, then a gap, then
-// the controls (notifications bell, network, volume, battery) on the right.
+// the controls (notifications bell, network, Bluetooth, volume, battery) on the right.
 //
 // Clicking anywhere on the row opens the control center. Resting the pointer on the
 // clock, network or volume opens its quick menu *in the cay*: the cay grows up and out
@@ -15,6 +15,9 @@ import qs.modules.menus
 // (the clock never moves). Leaving the cay closes it after menu-close-delay.
 // Scrolling over the row changes the volume. The bell fills when there are
 // notifications and shows Do not disturb.
+// With the bar on the left (`vertical`, screens/BarLeft) the row is a column: the clock
+// stacked as 09 over 41 in narrowed numerals, then network, volume, bell and battery.
+// A menu grows the cay up and to the right, above the column.
 Cay {
     id: root
 
@@ -22,8 +25,8 @@ Cay {
     // The bar is in keyboard mode (Super+B): menus then stay until Escape.
     property bool keyboardActive: false
 
-    leftPadding: Tokens.cayPadding
-    rightPadding: Tokens.cayPadding
+    leftPadding: vertical ? Tokens.space2_5 : Tokens.cayPadding
+    rightPadding: vertical ? Tokens.space2_5 : Tokens.cayPadding
     color: bg.value
     // The row's hover circles reach into the paddings; only the menu area clips.
     clipContent: false
@@ -56,7 +59,10 @@ Cay {
     readonly property real menuWidth: content.item ? content.item.width + Tokens.space4 * 2 : 0
     readonly property real menuHeight: content.item ? content.item.height + Tokens.space4 + Tokens.space2 : 0
 
-    targetHeight: menuOpen && content.item ? Tokens.cayHeight + menuHeight : Tokens.cayHeight
+    readonly property real rowHeight: vertical ? layout.height + leftPadding + rightPadding : Tokens.cayHeight
+    targetHeight: menuOpen && content.item ? rowHeight + menuHeight : rowHeight
+    targetWidth: !vertical ? contentWidth + leftPadding + rightPadding
+        : menuOpen && content.item ? Math.max(Tokens.cayHeight, menuWidth) : Tokens.cayHeight
     targetRadius: menuOpen ? Tokens.radiusXl : Tokens.cayHeight / 2
     contentWidth: layout.width
 
@@ -77,9 +83,10 @@ Cay {
     // The menu area above the row, clipped so the menu is uncovered as the cay grows.
     Item {
         id: menuArea
-        x: -root.leftPadding
+        x: root.vertical ? 0 : -root.leftPadding
+        y: root.vertical ? -root.leftPadding : 0
         width: root.width
-        height: row.y
+        height: row.y - y
         clip: true
 
         MenuContent {
@@ -99,9 +106,22 @@ Cay {
 
     // ── the row ─────────────────────────────────────────────────
     // x of every item (holder coordinates) and the row's width.
-    readonly property var layout: {
+    readonly property var layout: vertical ? columnLayout : rowLayout
+    // On the left: one column, no re-forming around a menu.
+    readonly property var columnLayout: {
+        const ys = {};
+        let y = 0;
+        for (const i of [clock, net, bt, vol, bell, battery].filter(i => i.visible)) {
+            if (y > 0)
+                y += Tokens.space2;
+            ys[i.key] = y;
+            y += i.implicitHeight;
+        }
+        return { xs: {}, ys: ys, width: Tokens.cayHeight, height: y };
+    }
+    readonly property var rowLayout: {
         const gap = Tokens.cayGapStatus;
-        const controls = [bell, net, vol, battery].filter(i => i.visible);
+        const controls = [bell, net, bt, vol, battery].filter(i => i.visible);
         const selected = controls.find(i => i.menu !== "" && i.menu === root.menu) ?? null;
         const inner = root.menuOpen ? root.menuWidth - root.leftPadding - root.rightPadding : 0;
         const xs = { clock: 0 };
@@ -131,8 +151,8 @@ Cay {
 
     Item {
         id: row
-        width: parent.width
-        height: Tokens.cayHeight
+        width: root.vertical ? Tokens.cayHeight : parent.width
+        height: root.vertical ? root.layout.height : Tokens.cayHeight
         y: parent.height - height
 
         StatusItem {
@@ -142,10 +162,31 @@ Cay {
             key: "clock"
             label: `${Time.time}. Calendar`
             targetX: root.layout.xs[key] ?? 0
+            targetY: root.layout.ys?.[key] ?? 0
+            vertical: root.vertical
             hovered: rowMouse.under === clock
             StyledText {
+                visible: !root.vertical
+                width: visible ? implicitWidth : 0
+                height: visible ? implicitHeight : 0
                 style: "barTitle"
                 text: Time.time
+            }
+            // 09 over 41
+            Column {
+                visible: root.vertical
+                width: visible ? implicitWidth : 0
+                height: visible ? implicitHeight : 0
+                Repeater {
+                    model: root.vertical ? Time.time.split(/[:.\s]/).slice(0, 2) : []
+                    StyledText {
+                        required property string modelData
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        style: "barClockVertical"
+                        wdth: 75
+                        text: modelData
+                    }
+                }
             }
         }
 
@@ -154,6 +195,8 @@ Cay {
             screenName: root.screenName
             key: "bell"
             targetX: root.layout.xs[key] ?? 0
+            targetY: root.layout.ys?.[key] ?? 0
+            vertical: root.vertical
             Icon {
                 name: Notifications.dnd ? "notifications_off" : Notifications.count > 0 ? "notifications_unread" : "notifications"
                 filled: Notifications.count > 0
@@ -168,6 +211,8 @@ Cay {
             menu: "wifi"
             label: Network.label
             targetX: root.layout.xs[key] ?? 0
+            targetY: root.layout.ys?.[key] ?? 0
+            vertical: root.vertical
             hovered: rowMouse.under === net
             Icon {
                 name: Network.icon
@@ -177,11 +222,30 @@ Cay {
         }
 
         StatusItem {
+            id: bt
+            screenName: root.screenName
+            menu: "bluetooth"
+            label: `Bluetooth, ${BluetoothState.label}`
+            visible: BluetoothState.available && Config.options.bar.statusBluetooth
+            targetX: root.layout.xs[key] ?? 0
+            targetY: root.layout.ys?.[key] ?? 0
+            vertical: root.vertical
+            hovered: rowMouse.under === bt
+            Icon {
+                name: !BluetoothState.enabled ? "bluetooth_disabled" : BluetoothState.connected.length > 0 ? "bluetooth_connected" : "bluetooth"
+                size: Tokens.iconSm
+                color: bt.hovered || bt.active ? Colors.on.surface : Colors.on.surfaceVariant
+            }
+        }
+
+        StatusItem {
             id: vol
             screenName: root.screenName
             menu: "audio"
             label: Audio.label
             targetX: root.layout.xs[key] ?? 0
+            targetY: root.layout.ys?.[key] ?? 0
+            vertical: root.vertical
             hovered: rowMouse.under === vol
             Icon {
                 name: Audio.icon
@@ -196,6 +260,8 @@ Cay {
             key: "battery"
             visible: Battery.present
             targetX: root.layout.xs[key] ?? 0
+            targetY: root.layout.ys?.[key] ?? 0
+            vertical: root.vertical
             Icon {
                 name: Battery.icon
                 size: Tokens.iconSm
@@ -217,9 +283,9 @@ Cay {
         parent: root
         z: 1
         anchors.left: parent.left
-        anchors.right: parent.right
         anchors.bottom: parent.bottom
-        height: Tokens.cayHeight
+        width: root.vertical ? Tokens.cayHeight : parent.width
+        height: root.rowHeight
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
 
@@ -228,12 +294,20 @@ Cay {
         property Item under: null
         property point last: Qt.point(-1, -1)
 
-        function itemAt(px) {
-            const half = Tokens.cayGapStatus / 2;
-            for (const i of [clock, bell, net, vol, battery]) {
-                const left = root.leftPadding + i.x;
-                if (i.visible && px >= left - half && px <= left + i.width + half)
-                    return i;
+        function itemAt(px, py) {
+            const half = (root.vertical ? Tokens.space2 : Tokens.cayGapStatus) / 2;
+            for (const i of [clock, bell, net, bt, vol, battery]) {
+                if (!i.visible)
+                    continue;
+                if (root.vertical) {
+                    const top = height - root.rightPadding - row.height + i.y;
+                    if (py >= top - half && py <= top + i.height + half)
+                        return i;
+                } else {
+                    const left = root.leftPadding + i.x;
+                    if (px >= left - half && px <= left + i.width + half)
+                        return i;
+                }
             }
             return null;
         }
@@ -244,7 +318,7 @@ Cay {
             if (Math.abs(p.x - last.x) < 1 && Math.abs(p.y - last.y) < 1)
                 return;
             last = p;
-            under = itemAt(x);
+            under = itemAt(x, y);
         }
         onEntered: track(mouseX, mouseY)
         onPositionChanged: mouse => track(mouse.x, mouse.y)

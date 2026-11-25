@@ -15,11 +15,12 @@ How every part of Reef looks and behaves. Each section links to its mockup in `d
 ## Bar (four cays)
 Mockups: `screens/Home.png`, `screens/Bar.png`, `screens/BarLeft.png`
 
-- Four separate pills, called **cays**, sit `space-2` (8px) apart and `space-2` above the bottom edge. Only the cays take clicks; the gaps between them click through. The bar reserves `cay-height` + `space-2`.
+- Separate pills, called **cays**, sit `space-2` (8px) apart and `space-2` above the bottom edge. Their order is a setting (`bar.cays`; edit mode's Bar card and Settings → Bar & Island, by dragging chips or with the arrow keys): the cays before the gap pack from the start of the bar, the rest from the far end, and a reorder slides into place. By default Dock, Navigator and Spotlight are at the start and Status at the end. Only the cays take clicks; the gaps between them click through. The bar reserves `cay-height` + `space-2`.
   - **Dock**: pinned and running apps, with icons from the user's icon theme (the colored tiles in the mockup stand in for them). A running app has a small dot under its tile; the focused app's tile sits on `secondary-container`. Click launches, focuses, or cycles that app's windows; middle-click opens a new window. With no pins set, Reef pins the first installed terminal, file manager, browser, editor and music app.
-  - **Navigator**: home (Reef logo), search, workspaces.
-  - **Spotlight**: the "special widget", which shows the current media or another chosen widget. For media: artwork (or a note on `tertiary-container`), title, artist, and play/pause. It folds away when nothing is playing.
-  - **Status**: the clock on the left, then a gap (at least `cay-status-split`), then the controls on the right: notifications bell, Wi-Fi (or wired), volume, battery (hidden without one). **Clicking anywhere on it opens the control center.** The items aren't buttons: resting the pointer on the clock, network or volume icon for `menu-hover-delay` opens its quick menu (calendar, Wi-Fi, audio output) **inside the cay**, which grows up and out into a `radius-xl` card holding the menu above the row (see Quick menus). Scrolling over it changes the volume. The bell fills when there are notifications and turns to `notifications_off` with Do not disturb. With "Status menus on hover" off (Settings → Bar & Island), clicking an item opens its menu instead.
+  - **Navigator**: home (Reef logo), search, workspaces. The home button opens the home screen: the first empty workspace.
+  - **Workspaces** (optional, Settings → Bar & Island → "Workspaces in their own cay"): the workspace numerals in their own cay, always shown, with the active one in the sliding `primary` pill; scrolling over it moves between workspaces. The Navigator then stays in its home form, and its grid button opens the overview.
+  - **Spotlight**: the "special widget". It shows the first live thing of: **media** (artwork or a note on `tertiary-container`, title, artist, play/pause), a **timer** (remaining, pause/resume), the **stopwatch** (elapsed, pause/resume) and **today's next calendar event** (title and time, or "In 12 min" once it's within `event-soon`). Clicking it opens the Island or the calendar. With none live it shows its **default widget**: the weather (icon, temperature, condition) or system load (CPU, memory), or nothing, folding away. Each source and the default are in Settings → Bar & Island → Spotlight.
+  - **Status**: the clock on the left, then a gap (at least `cay-status-split`), then the controls on the right: notifications bell, Wi-Fi (or wired), Bluetooth (with an adapter; it opens the Bluetooth menu; Settings → Bar & Island turns it off), volume, battery (hidden without one). **Clicking anywhere on it opens the control center.** The items aren't buttons: resting the pointer on the clock, network or volume icon for `menu-hover-delay` opens its quick menu (calendar, Wi-Fi, audio output) **inside the cay**, which grows up and out into a `radius-xl` card holding the menu above the row (see Quick menus). Scrolling over it changes the volume. The bell fills when there are notifications and turns to `notifications_off` with Do not disturb. With "Status menus on hover" off (Settings → Bar & Island), clicking an item opens its menu instead.
 - Each cay is `cay-height` (40px) tall, `radius-full`, on `surface-container`, with `shadow-float`. In Frosted mode it sits on a blurred surface.
 - **The Navigator cay re-forms in place** for each mode, using `spatial-default`:
   - **home**: the three icons.
@@ -28,7 +29,7 @@ Mockups: `screens/Home.png`, `screens/Bar.png`, `screens/BarLeft.png`
   - **With the workspace overview open**, this mode shows and drives the overview's selection: the pill follows the overview as it moves, and clicking a numeral or scrolling over the Navigator moves the overview.
   - The **grid button** opens the workspace overview (and closes it again).
   - **power**: Lock, Log out, Sleep, Restart, Power off and Cancel. The Dock and Spotlight cays hide (`screens/PowerActions.png`).
-- **Bar on the left**: the cays stack vertically, and the clock stacks as `09` over `41` using narrowed `wdth` numerals.
+- **Bar on the left** (`screens/BarLeft.png`; per monitor, Settings → Displays or edit mode's "Move bar to left"): the cays stack down the left edge `space-2` from it, with the Status cay at the bottom, and the bar reserves `cay-height` + `space-2` on the left. The Dock's tiles stack (the running dot sits on the edge side), the Navigator's forms stack (power buttons too, with the Power off tooltip to their right), the Spotlight cay is just the artwork over play/pause, and the Status cay is a column: the clock stacked as `09` over `41` in `bar-clock-vertical` with narrowed `wdth` 75 numerals, then network, volume, bell and battery. Search grows the Navigator out to the right (the field ends at the cay's bottom), and a Status quick menu grows the cay up and to the right above its column. Toasts then sit `space-4` above the bottom edge.
 - Per monitor, the bar can be turned off on any monitor.
 - **Keyboard:** Super+B moves keyboard focus into the bar. Tab and Shift+Tab move between controls, Enter or Space activates, and Escape, Super+B or a click elsewhere leaves.
 
@@ -67,6 +68,7 @@ Mockups: `parts/Island-Rest.png`, `parts/Island-*.png`, `screens/Working.png`, `
 - **Notification progress:** a notification that reports progress (hint `value`) becomes an Island activity with its percentage.
 - **Upcoming event:** 15 minutes before a calendar event, it becomes an Island activity ("In 4 min").
 - **Focus session:** a focus period (25 min) with Do not disturb on, then a toast offers a break (5 min). Both lengths are settings.
+- The Island's accent (`island-accent`: Done, play, progress) follows the scheme: the dark scheme's `primary` in every theme, since the Island is always black.
 - Inside the Island, containers use the island grays `island-container` (#1c1c1e) and `island-container-high` (#2c2c2e). Like `island`, they're fixed in every theme.
 - Per monitor, the Island can be turned off on any monitor.
 
@@ -114,8 +116,9 @@ Mockup: `screens/Workspaces.png`
 - Opened with **Super+Tab**, the Navigator's grid button, or `panel toggle overview`.
 - Like GNOME's: **the screen collapses into the card.** The overview waits (at most `overview-capture-wait`) until it has the windows' pictures, so its first frame is the screen itself: the card exactly over the screen with the windows live in it right where they are (`ScreencopyView`). Then it shrinks (`spatial-slow`) to the screen at `overview-scale`, a `radius-xl` card with a `primary` ring (`overview-ring`). Nothing is left behind it but the background: the wallpaper (`look.wallpaper`), or `surface` without one, dimmed by the `scrim` as the card settles. The windows are never shown twice. Inside the card the wallpaper repeats (or `surface-container-lowest`). Closing grows the card back to the screen, and the overview is gone the moment it fills it (the spring's overshoot is never drawn).
 - Going to a workspace or window waits `focus-handoff-delay` after the overview lets go of the keyboard, so Hyprland's refocus of the old window doesn't undo it. The Alt+Tab switcher does the same.
-- The neighboring workspaces peek in at the left and right edges, `space-12` away. The bar stays visible below it, with the Navigator showing the workspaces; the two share one selection, so moving in either moves both.
-- Below the card: the workspace number and its window count ("Empty" when it has none). Swipe, scroll, Left/Right or Tab move between workspaces (the card slides with `spatial-default`). Enter or a click on the current card goes there; a click on a neighbour selects it; a click on a window focuses it. Escape, Super+Tab or a click on the background closes.
+- The neighboring workspaces peek in at the left and right edges, `space-12` away. The background is the wallpaper blurred (`backdrop-blur`) under the scrim. The bar stays in front, sharp and usable, and draws the same blurred, dimmed wallpaper behind its cays, so the whole background reads as one layer with the bar over it.
+- Going to a workspace grows its card into the screen from wherever it sits: the strip freezes, so nothing slides (clicking a neighbour goes straight there). The workspace switches under the card as it grows, and the card stays over the screen until Hyprland's workspace slide has ended (its length is read from `hyprctl animations`), so the slide is never seen.
+- Below the card: the workspace number and its window count ("Empty" when it has none). Swipe, scroll, Left/Right or Tab move between workspaces (the card slides with `spatial-default`). Enter or a click on a card goes there; a click on a window focuses it. Escape, Super+Tab or a click on the background closes.
 - Settings → Power & performance → "Live window thumbnails" off shows one still frame per window.
 
 ## Window switcher (Alt+Tab)
@@ -162,19 +165,30 @@ Mockup: `screens/AuthDialog.png`
 Mockup: `screens/PowerActions.png`
 
 - Opened with **Ctrl+Alt+Delete**, the power button, or the power button in the header of the control center's Quick toggles card.
-- A heavy neutral scrim covers the desktop, with a big clock widget, the time, and the date and battery level.
+- The desktop is blurred by the compositor and covered with the heavy scrim (`scrim-heavy`'s alpha over the scheme's `surface-container`), with a big clock widget, the time, and the date and battery level.
 - The Navigator cay re-forms into the power actions. On hover, **Power off** turns `error-container` and shows a tooltip.
+
+## Home widgets
+Mockups: `screens/Home.png`, `screens/BarLeft.png`
+
+- Widgets sit on a bottom-layer surface over the wallpaper (under windows), inside the free desktop (clear of the bar). Each monitor keeps its own layout (`home.layouts.<output>` in Config); a monitor without one shows the default layout from the mockup, starting `widget-inset` from the left and `widget-inset-top` from the top. Settings → Displays → "Home widgets" turns them off per monitor.
+- **Clock**: the analog clock in a `widget-clock-size` circle on `surface-container-high`.
+- **Weather**: a `widget-weather-size` 12-sided cookie on `tertiary-container` with the condition icon, the temperature in `widget-temperature` (ROND 100) and the description. From wttr.in through `curl` every `weather-refresh` while shown; the place is Settings → Bar & Island → "Weather location" (empty: guessed from the IP address), °C or °F.
+- **Media**: a `widget-media-width` × `widget-media-height` `radius-2xl` squircle on `primary-container`: the artwork in a 4-leaf clover, title, artist, wavy progress (seekable) and a `radius-play` play/pause button. "Nothing playing" without media.
+- **System**: a `radius-xl` card on `surface-container-high` with CPU, memory and GPU temperature in `widget-stat` mono over thin `primary` meters, read every `stats-refresh` while shown (GPU from nvidia-smi or the GPU's hwmon; the row hides without one).
+- **Calendar**: the calendar quick menu's month and next event on the same card as System.
+- Reef can also draw the wallpaper itself (Settings → Look → "Draw the wallpaper", off by default so another program can): a background-layer surface with `look.wallpaper`, crossfading on change.
 
 ## Edit mode (Tide panel, left)
 Mockup: `screens/EditMode.png`
 
-- Full height and 320px wide, with fillets on its right edge.
+- Opened with **Super+E**, Settings → Bar & Island → "Edit home", or `panel toggle editMode`. It shows the home screen: when the monitor's workspace has windows, it goes to the first empty workspace and comes back afterwards (the Navigator's home button does the same). Full height and `edit-panel-width` (320px) wide, with fillets on its right edge; it slides in from the left with `spatial-default` and pushes the bar and the home widgets aside by its width. It holds the keyboard; **Done**, Escape or Super+E leave.
 - It has four cards:
   1. A header with "Edit mode" and a **Done** button.
-  2. **Home widgets**: draggable thumbnails for Clock, Weather, Media, System and Calendar.
-  3. **Control center**: a tile layout you can rearrange.
-  4. **Bar**: a "Move bar to left" button, "Show Spotlight cay", and "Bar on other monitors".
-- On the desktop, widgets get a dashed `primary` outline, a remove badge, and a slight wiggle (off when Reduce motion is on). The Island shows "Editing home · Done".
+  2. **Home widgets**: thumbnails (`edit-thumb-height`, two columns, Media across both) for Clock, Weather, Media, System and Calendar. Click one (or Enter) to add it near the top-left, or drag it onto the desktop to drop it there.
+  3. **Control center**: the quick toggles in their four-column layout as small `edit-tile-height` tiles, on `primary-container` pills when on. Drag one to a new place (the others make room as it moves) or move the focused one with the arrow keys; the control center follows (`controlCenter.tiles`).
+  4. **Bar**: "Move bar to left" (or back to the bottom) for this monitor, "Show Spotlight cay", and "Bar on other monitors".
+- On the desktop an `edit-scrim` of black dims the wallpaper, and widgets get a dashed `primary` outline `edit-outline-gap` outside their shape, a remove badge on the outline's top-left, and a slight wiggle (`edit-wiggle` degrees over `edit-wiggle-period`; off with Reduce motion or Settings → Bar & Island → "Wiggle while editing"). Drag a widget to move it anywhere inside the free desktop: it follows the pointer, dots show the `home-grid` it snaps to, and a `primary`-tinted outline shows the cell it will land in; let go and it springs there. The Island shows "Editing home · Done" (`island-editing-width` × `island-banner-height`), even over apps.
 
 ## Coral (AI assistant)
 Mockups: `screens/CoralVoice.png`, `parts/Island-Coral.png`
@@ -186,11 +200,22 @@ Mockups: `screens/CoralVoice.png`, `parts/Island-Coral.png`
 ## Settings app
 Mockup: `screens/Settings.png`
 
-- A normal window with a sidebar listing: Look, Displays, Bar & Island, Sound, Network, Bluetooth, Coral, Keyboard & shortcuts, Power & performance, Accessibility, and About.
+- A normal window (`settings-width` × `settings-height`; `hypr/reef.lua` floats and centers it, and Hyprland draws its rounding and border) with a `settings-nav-width` sidebar on `surface-container` listing: Look, Displays, Bar & Island, Sound, Network, Bluetooth, Coral, Keyboard & shortcuts, Power & performance, Accessibility, and About. The current page is a `secondary-container` pill. Above them, "Search settings" lists the matching settings across pages; picking one opens its page. A close button sits top-right.
+- Opened with the `settings` action (`/settings` in search), `qs -p ./reef ipc call reef settings <page>`, and the quick menus' "… settings" buttons (which open the matching page). Inside Settings those menus' buttons open the advanced tools instead (nm-connection-editor, blueman, pavucontrol).
+- Pages put their settings on `surface-container-high` `radius-xl` cards under `settings-section` labels; every change is saved to Config at once.
 - **Look page:**
-  - A wallpaper card with a preview, seed color swatches, "Change wallpaper", and "Use static color".
-  - Button groups for **Colorfulness** (Neutral / Tinted / Vivid), **Theme** (Auto / Light / Dark), and **Transparency** (Solid / Frosted). The selected option is a filled `primary` pill.
-  - **Home logo**: Reef / Distro logo / Custom image.
+  - A wallpaper card with a preview, seed color swatches (the wallpaper's most colorful colors), "Change wallpaper" (a file dialog), and "Use static color" (or "Use wallpaper colors" while a static color is set).
+  - Button groups for **Colorfulness** (Mono / Neutral / Tinted / Vivid), **Theme** (Auto / Light / Dark), and **Transparency** (Solid / Frosted). The selected option is a filled `primary` pill with a check.
+  - **Home logo**: Reef / Distro logo / Custom image (`radius-option` cards, the chosen one ringed in `primary`). The choice shows on the Navigator's home button and the lock screen.
+  - "Draw the wallpaper".
+- **Displays:** per monitor: bar (and its position), Island, home widgets, rounded corners; Night light and its warmth.
+- **Bar & Island:** the bar's switches, workspace count and clock format; the Island's peek, hiding over apps, recording detection and drops; each activity; home (Edit home, Reset widgets, wiggle, weather location and unit); notifications, OSD and toasts; clipboard size, file search, focus lengths and calendars.
+- **Sound, Network, Bluetooth:** the matching quick menu, plus the microphone on Sound.
+- **Coral:** endpoint, model, the environment variable holding the API key (the key itself is never stored), voice. Coral arrives in M8.
+- **Keyboard & shortcuts:** the layout and the default shortcuts.
+- **Power & performance:** lock before sleep, the authentication dialog, the low-battery level, blur, shape morphs, the visualizer and its frame rate, live thumbnails.
+- **Accessibility:** Reduce motion, animation speed, **Zoom** (75–150%: the whole shell, sizes, spacing, corners and text together), text size, spacing and corner roundness.
+- **About:** the Reef lockup, the system, Quickshell and Hyprland versions, and where the settings file lives.
 
 ## Keybinds (defaults)
 
@@ -204,7 +229,7 @@ Mockup: `screens/Settings.png`
 | `Super + N` | Control / notification center |
 | `Super + Tab` | Workspace overview |
 | `Alt + Tab` (hold Alt) | Window switcher; `Alt + Shift + Tab` steps back |
-| `Super + E` | Edit mode |
+| `Super + E` | Edit mode (Done, Escape or Super+E again to leave) |
 | `Super + L` | Lock |
 | `Ctrl + Alt + Delete` | Power actions |
 | `Super + B` | Keyboard focus to the bar (Tab between controls, Escape to leave) |

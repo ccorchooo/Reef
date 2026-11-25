@@ -25,6 +25,15 @@ hl.config({
 -- (a slide as the overview or switcher appears, the last frame sliding away as it goes).
 hl.layer_rule({ name = "reef", match = { namespace = "^reef-.*" }, no_anim = true })
 
+-- Settings (screens/Settings) floats, centered, at its designed size.
+hl.window_rule({
+    name   = "reef-settings",
+    match  = { class = "^(org\\.quickshell|quickshell)$", title = "^Settings$" },
+    float  = true,
+    size   = t.settings_size,
+    center = true,
+})
+
 -- Start the shell. `-n` keeps a second copy from starting on config reload.
 hl.on("hyprland.start", function()
     hl.exec_cmd("qs -c reef -n -d")

@@ -81,11 +81,13 @@ def main():
     w("Singleton {")
     w("    id: root")
     w("")
-    w("    // Scale multipliers from Settings → Scale. Spacing, radius and type below already include them;")
-    w("    // the raw* values don't.")
-    w("    readonly property real spacingScale: Config.options.scale.spacing")
-    w("    readonly property real cornerScale: Config.options.scale.corners")
-    w("    readonly property real textScale: Config.options.scale.text")
+    w("    // Scale multipliers from Settings → Scale, times the shell-wide zoom (Settings →")
+    w("    // Accessibility → Zoom). Spacing, radius, type and pixel sizes below already include")
+    w("    // them; the raw* values don't. Ratios and angles never zoom.")
+    w("    readonly property real zoom: Math.max(0.5, Config.options.scale.zoom)")
+    w("    readonly property real spacingScale: Config.options.scale.spacing * zoom")
+    w("    readonly property real cornerScale: Config.options.scale.corners * zoom")
+    w("    readonly property real textScale: Config.options.scale.text * zoom")
     w("")
 
     # spacing
@@ -105,9 +107,10 @@ def main():
     w("")
 
     # size
-    w("    // Fixed sizes for shell chrome")
+    w("    // Fixed sizes for shell chrome (pixel sizes follow the zoom)")
     for tok in t["size"]["tokens"]:
-        w(f"    readonly property real {camel(tok['name'])}: {num(tok['value'])}")
+        px = str(tok["value"]).strip().endswith("px")
+        w(f"    readonly property real {camel(tok['name'])}: {num(tok['value'])}" + (" * zoom" if px else ""))
     w("")
 
     # type
@@ -197,12 +200,14 @@ def main():
     # Hyprland
     sp = {tok["name"]: num(tok["value"]) for tok in t["spacing"]["tokens"]}
     rd = {tok["name"]: num(tok["value"]) for tok in t["radius"]["tokens"]}
+    sz = {tok["name"]: num(tok["value"]) for tok in t["size"]["tokens"]}
     lua = [f"-- {HEADER}", "return {"]
     lua += [f'    ["{k}"] = {v},' for k, v in {**sp, **rd}.items()]
     lua += [
         f"    gaps_in  = {sp['space-2']},  -- space-2",
         f"    gaps_out = {sp['space-4']}, -- space-4",
         f"    rounding = {rd['radius-lg']}, -- radius-lg",
+        f"    settings_size = \"{sz['settings-width']} {sz['settings-height']}\", -- the Settings window",
         "}",
     ]
     LUA_OUT.write_text("\n".join(lua) + "\n")

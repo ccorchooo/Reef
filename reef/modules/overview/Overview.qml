@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -12,11 +13,13 @@ import qs.modules
 // primary ring, the windows shrinking with it into their workspace, and only the
 // background (the wallpaper, or the surface color without one) is left around it.
 // The neighbouring workspaces peek in at the left and right edges, space-12 away.
-// Below the card: the workspace number and its window count. The bar stays visible
-// (the Navigator shows its workspaces). Closing grows the card back to the screen.
+// Below the card: the workspace number and its window count. The background is the
+// blurred, dimmed wallpaper; the bar stays in front, over the same backdrop.
+// Closing grows the card back to the screen; going to another workspace switches it under
+// the card and keeps the card over the screen until Hyprland's slide is done.
 //
 // Scroll, swipe or Left/Right to move between workspaces; Enter or a click on a card
-// goes there, a click on a window focuses it; Escape, Super+Tab or a click on the
+// goes there (growing from where it is), a click on a window focuses it; Escape, Super+Tab or a click on the
 // background closes.
 PanelWindow {
     id: root
@@ -31,7 +34,8 @@ PanelWindow {
         left: true
         right: true
     }
-    // Stays out of the bar's reserved zone, so the bar shows below it.
+    // Beside the bar (out of its reserved zone): the bar stays in front, and draws the same
+    // blurred background in its strip while the overview is open (Bar.qml).
     exclusionMode: ExclusionMode.Normal
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Top
@@ -51,7 +55,14 @@ PanelWindow {
 
     // Drawn until the card has grown back to fill the screen; gone the moment it does,
     // so the spring's overshoot past the screen is never seen.
-    readonly property bool shown: open || zoom.value > 0.02
+    readonly property bool shown: open || zoom.value > 0.02 || switching
+    // Going to another workspace: the card stays over the screen while Hyprland slides.
+    property bool switching: false
+    Timer {
+        id: switchHold
+        interval: Tokens.focusHandoffDelay + Workspaces.switchDuration + Motion.contentFadeDelay
+        onTriggered: root.switching = false
+    }
 
     // The collapse starts once the surface has its size and the current workspace's
     // windows have their first pictures (or after overview-capture-wait): until then
@@ -94,6 +105,8 @@ PanelWindow {
 
     onOpenChanged: {
         if (open) {
+            focusX = Qt.binding(() => root.cardX);
+            stripX.target = Qt.binding(() => root.width / 2 - root.cardWidth / 2 - root.selected * root.step);
             started = false;
             _waited = 0;
             startPoll.restart();
@@ -106,16 +119,45 @@ PanelWindow {
         }
     }
 
+    Connections {
+        target: PanelState
+        function onOverviewGoRequested(id) {
+            const i = root.ids.indexOf(id);
+            if (root.open && i >= 0)
+                root.goTo(i);
+        }
+    }
+
     function move(by) {
         select(selected + by);
     }
 
+    // Where the growing card's corner sits in the strip (see the stage's Translate).
+    property real focusX: cardX
+
     function goTo(index) {
         const id = ids[index];
+        // Freeze the strip where it is and grow the picked card from its own place.
+        const settledX = stripX.value + index * step;
+        stripX.target = stripX.value;
+        stripX.velocity = 0;
+        focusX = settledX;
+        if (id !== undefined && id !== Workspaces.activeOn(modelData.name)) {
+            switching = true;
+            switchHold.restart();
+        }
         PanelState.closeAll();
         if (id !== undefined)
             Workspaces.afterHandoff(() => Workspaces.goTo(id));
     }
+
+    // The bar's strip (its exclusive zone): part of the blurred background.
+    readonly property var monitorSettings: Config.monitor(modelData.name)
+    readonly property bool hasBar: monitorSettings.showBar
+    readonly property bool barLeft: monitorSettings.barPosition === "left"
+    readonly property real barZone: hasBar ? Tokens.cayHeight + Tokens.space2 : 0
+    // Where this surface starts on the screen (it's beside a left bar).
+    readonly property real originX: barLeft ? barZone : 0
 
     // ── motion ──────────────────────────────────────────────────
     Spring {
@@ -174,19 +216,39 @@ PanelWindow {
     }
 
     // ── background ──────────────────────────────────────────────
-    // Opaque from the first frame: the windows are in the card, not behind it.
-    Rectangle {
-        anchors.fill: parent
-        color: Colors.surface
-        visible: root.started && root.shown
+    // The wallpaper (or the surface color), blurred, laid out on the whole screen so it
+    // lines up with the same backdrop the bar draws in its strip. Opaque from the first
+    // frame: the windows are in the card, not behind it.
+    Item {
+        id: backdrop
+        x: -root.originX
+        width: root.modelData.width
+        height: root.modelData.height
+        visible: false
+
+        Rectangle {
+            anchors.fill: parent
+            color: Colors.surface
+        }
+        Image {
+            anchors.fill: parent
+            visible: root.wallpaper !== ""
+            source: root.wallpaper !== "" ? "file://" + root.wallpaper : ""
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: true
+            sourceSize.width: root.modelData.width
+        }
     }
-    Image {
-        anchors.fill: parent
-        visible: root.started && root.shown && root.wallpaper !== ""
-        source: root.wallpaper !== "" ? "file://" + root.wallpaper : ""
-        fillMode: Image.PreserveAspectCrop
-        asynchronous: true
-        sourceSize.width: root.modelData.width
+    MultiEffect {
+        x: backdrop.x
+        width: backdrop.width
+        height: backdrop.height
+        source: backdrop
+        visible: root.started && root.shown
+        blurEnabled: true
+        blur: 1
+        blurMax: Tokens.backdropBlur
+        autoPaddingEnabled: false
     }
     // Dims the background as the card settles, so the card stands out.
     Rectangle {
@@ -218,8 +280,11 @@ PanelWindow {
                 xScale: root.zoomScale
                 yScale: root.zoomScale
             },
+            // The card that grows into the screen keeps its corner at focusX while
+            // settled: the centered card, or (going somewhere) the one picked, wherever
+            // it is in the strip, so nothing slides as it grows.
             Translate {
-                x: root.cardX * root.z - root.cardX * root.zoomScale
+                x: root.focusX * root.z - root.focusX * root.zoomScale - root.originX * (1 - root.z)
                 y: root.cardTop * root.z - root.cardTop * root.zoomScale
             }
         ]
@@ -287,7 +352,8 @@ PanelWindow {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: card.current ? root.goTo(card.index) : root.select(card.index)
+                        // Straight there, growing from where it is.
+                        onClicked: root.goTo(card.index)
                     }
 
                     // Windows where they sit on the screen, scaled down.

@@ -49,6 +49,7 @@ Build Reef in thin, working slices. Each milestone should be usable every day be
 - [ ] Tools: calculator, emoji picker, color picker, screenshot.
 
 ## M7 — Customize
+Built and running; not ticked until checked by hand: edit mode (it now goes to an empty workspace, and widgets snap to a visible grid), the left bar, and Settings. Also done here: a Monochrome colorfulness, the Island accent and power scrim following the scheme (with real blur), the overview blurring the bar and hiding Hyprland's slide, and Spotlight sources with a default widget; Bluetooth in the Status cay, reorderable cays, an optional Workspaces cay, a shell-wide zoom, and the home button opening an empty workspace.
 - [ ] Edit mode Tide panel and desktop widgets: clock, weather, media, system, calendar.
 - [ ] Bar on the left.
 - [ ] Settings app: Look, Displays, Bar & Island, Sound, Network, Bluetooth, Coral, Keyboard, Power & performance, Accessibility, About.

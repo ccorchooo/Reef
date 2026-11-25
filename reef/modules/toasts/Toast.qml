@@ -22,8 +22,9 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "reef-toast"
 
-    // Above the bar when this monitor has one.
-    readonly property real barSpace: Config.monitor(modelData.name).showBar ? Tokens.cayHeight + Tokens.space2 * 2 : 0
+    // Above the bar when this monitor has one along the bottom.
+    readonly property var monitorSettings: Config.monitor(modelData.name)
+    readonly property real barSpace: monitorSettings.showBar && monitorSettings.barPosition !== "left" ? Tokens.cayHeight + Tokens.space2 * 2 : 0
     readonly property real shadowRoom: Colors.shadowToast.blur + Colors.shadowToast.y
     implicitWidth: Math.max(1, pill.implicitWidth + shadowRoom * 2)
     implicitHeight: barSpace + Tokens.space4 + Tokens.toastHeight + shadowRoom

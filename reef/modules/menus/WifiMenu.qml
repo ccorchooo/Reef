@@ -11,6 +11,8 @@ Column {
     id: root
 
     property bool active: false
+    // Inside Settings → Network the button opens the advanced tools instead of Settings.
+    property bool inSettings: false
     property var asking: null       // network waiting for a password
     readonly property bool holdOpen: asking !== null
 
@@ -122,10 +124,13 @@ Column {
 
     MenuButton {
         width: parent.width
-        text: "Network settings"
+        text: root.inSettings ? "Advanced network settings" : "Network settings"
         onClicked: {
             PanelState.closeAll();
-            Quickshell.execDetached(["sh", "-c", "nm-connection-editor || $TERMINAL -e nmtui || kitty nmtui || foot nmtui"]);
+            if (root.inSettings)
+                Quickshell.execDetached(["sh", "-c", "nm-connection-editor || $TERMINAL -e nmtui || kitty nmtui || foot nmtui"]);
+            else
+                Actions.openSettings("network");
         }
     }
 }

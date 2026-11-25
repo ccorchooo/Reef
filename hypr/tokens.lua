@@ -20,6 +20,10 @@ return {
     ["password-field-padding"] = 18,
     ["power-clock-inset"] = 120,
     ["power-clock-gap"] = 40,
+    ["widget-inset"] = 72,
+    ["widget-inset-top"] = 112,
+    ["settings-page-padding"] = 28,
+    ["settings-gap"] = 18,
     ["radius-fill-cap"] = 6,
     ["radius-xs"] = 4,
     ["radius-sm"] = 8,
@@ -34,7 +38,9 @@ return {
     ["radius-xl"] = 28,
     ["radius-2xl"] = 48,
     ["radius-full"] = 9999,
+    ["radius-option"] = 20,
     gaps_in  = 8,  -- space-2
     gaps_out = 16, -- space-4
     rounding = 16, -- radius-lg
+    settings_size = "1000 696", -- the Settings window
 }

@@ -10,6 +10,8 @@ import qs.modules.controlcenter
 import qs.modules.menus
 import qs.modules.overview
 import qs.modules.switcher
+import qs.modules.home
+import qs.modules.editmode
 
 // One per monitor. Each surface can be turned off per monitor (Settings → Displays).
 Scope {
@@ -22,6 +24,15 @@ Scope {
         active: root.settings.showCorners
         ScreenCorners { modelData: root.modelData }
     }
+
+    // The wallpaper, when Reef draws it (background layer).
+    LazyLoader {
+        active: Config.options.look.drawWallpaper && Config.options.look.wallpaper !== ""
+        Wallpaper { modelData: root.modelData }
+    }
+
+    // Home widgets on the desktop (bottom layer, under windows).
+    Desktop { modelData: root.modelData }
 
     LazyLoader {
         id: bar
@@ -41,6 +52,8 @@ Scope {
         // The bar stays clickable while the panel is open (it moves aside, not under it).
         barWindow: bar.item
     }
+
+    EditMode { modelData: root.modelData }
 
     Overview {
         modelData: root.modelData

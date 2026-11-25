@@ -24,7 +24,8 @@ Item {
     Keys.onReturnPressed: if (enabledState) clicked()
     Keys.onSpacePressed: if (enabledState) clicked()
 
-    readonly property color fill: accent ? Colors.primary : Colors.surfaceContainerHigh
+    property color neutralColor: Colors.surfaceContainerHigh
+    readonly property color fill: accent ? Colors.primary : neutralColor
     readonly property color content: accent ? Colors.on.primary : Colors.on.surface
 
     Spring {

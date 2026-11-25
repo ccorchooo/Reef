@@ -215,85 +215,35 @@ PanelWindow {
                         }
                     ]
 
-                    // Four columns, one button group per row; Wi-Fi, Bluetooth, Keep awake
-                    // and Focus span two. A pressed tile widens and its row makes room.
+                    // Four columns, one button group per row, in the order edit mode
+                    // saved (QuickTiles). A pressed tile widens and its row makes room.
                     Column {
                         width: parent.width
                         spacing: Tokens.space2
 
-                        ButtonGroup {
-                            width: parent.width
+                        Repeater {
+                            model: QuickTiles.rows
 
-                            Tile {
-                                wide: true
-                                icon: Network.wired ? "lan" : Network.wifiEnabled ? "wifi" : "wifi_off"
-                                label: Network.wired ? "Ethernet" : "Wi-Fi"
-                                sublabel: Network.shortLabel
-                                checked: Network.wired ? true : Network.wifiEnabled
-                                hasMenu: true
-                                onToggled: Network.wired ? PanelState.open("wifi") : Network.setWifiEnabled(!Network.wifiEnabled)
-                                onMenuRequested: PanelState.open("wifi")
-                            }
-                            Tile {
-                                wide: true
-                                icon: "bluetooth"
-                                label: "Bluetooth"
-                                sublabel: BluetoothState.label
-                                checked: BluetoothState.enabled
-                                enabledState: BluetoothState.available
-                                hasMenu: true
-                                onToggled: BluetoothState.toggle()
-                                onMenuRequested: PanelState.open("bluetooth")
-                            }
-                        }
-                        ButtonGroup {
-                            width: parent.width
+                            ButtonGroup {
+                                required property var modelData
+                                width: parent.width
 
-                            Tile {
-                                icon: "do_not_disturb_on"
-                                label: "Do not disturb"
-                                checked: Notifications.dnd
-                                onToggled: Notifications.setDnd(!Notifications.dnd)
-                            }
-                            Tile {
-                                icon: "nightlight"
-                                label: "Night light"
-                                checked: NightLight.enabled
-                                onToggled: NightLight.toggle()
-                            }
-                            Tile {
-                                icon: "screenshot_region"
-                                label: "Screenshot"
-                                onToggled: {
-                                    PanelState.closeAll();
-                                    Screenshot.region();
+                                Repeater {
+                                    model: modelData
+
+                                    Tile {
+                                        required property string modelData
+                                        wide: QuickTiles.wide(modelData)
+                                        icon: QuickTiles.icon(modelData)
+                                        label: QuickTiles.label(modelData)
+                                        sublabel: wide ? QuickTiles.sublabel(modelData) : ""
+                                        checked: QuickTiles.checked(modelData)
+                                        enabledState: QuickTiles.available(modelData)
+                                        hasMenu: QuickTiles.hasMenu(modelData)
+                                        onToggled: QuickTiles.toggle(modelData)
+                                        onMenuRequested: QuickTiles.openMenu(modelData)
+                                    }
                                 }
-                            }
-                            Tile {
-                                icon: "mic_off"
-                                label: "Mute microphone"
-                                checked: Audio.micMuted
-                                onToggled: Audio.toggleMicMute()
-                            }
-                        }
-                        ButtonGroup {
-                            width: parent.width
-
-                            Tile {
-                                wide: true
-                                icon: "coffee"
-                                label: "Keep awake"
-                                sublabel: KeepAwake.active ? (KeepAwake.until > 0 ? `${KeepAwake.text} left` : "On") : "Off"
-                                checked: KeepAwake.active
-                                onToggled: KeepAwake.toggle(0)
-                            }
-                            Tile {
-                                wide: true
-                                icon: "self_improvement"
-                                label: "Focus"
-                                sublabel: Focus.active ? `${Focus.phase === "focus" ? "Focus" : "Break"} · ${Focus.text}` : `${Config.options.focus.focusMinutes} min`
-                                checked: Focus.active
-                                onToggled: Focus.active ? Focus.stop() : Focus.start(0)
                             }
                         }
                     }

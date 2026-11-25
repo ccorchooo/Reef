@@ -7,11 +7,13 @@ import qs.services
 Singleton {
     id: root
 
-    // Scale multipliers from Settings → Scale. Spacing, radius and type below already include them;
-    // the raw* values don't.
-    readonly property real spacingScale: Config.options.scale.spacing
-    readonly property real cornerScale: Config.options.scale.corners
-    readonly property real textScale: Config.options.scale.text
+    // Scale multipliers from Settings → Scale, times the shell-wide zoom (Settings →
+    // Accessibility → Zoom). Spacing, radius, type and pixel sizes below already include
+    // them; the raw* values don't. Ratios and angles never zoom.
+    readonly property real zoom: Math.max(0.5, Config.options.scale.zoom)
+    readonly property real spacingScale: Config.options.scale.spacing * zoom
+    readonly property real cornerScale: Config.options.scale.corners * zoom
+    readonly property real textScale: Config.options.scale.text * zoom
 
     // Spacing (4px grid)
     readonly property real rawSpace1: 4
@@ -54,6 +56,14 @@ Singleton {
     readonly property real powerClockInset: 120 * spacingScale
     readonly property real rawPowerClockGap: 40
     readonly property real powerClockGap: 40 * spacingScale
+    readonly property real rawWidgetInset: 72
+    readonly property real widgetInset: 72 * spacingScale
+    readonly property real rawWidgetInsetTop: 112
+    readonly property real widgetInsetTop: 112 * spacingScale
+    readonly property real rawSettingsPagePadding: 28
+    readonly property real settingsPagePadding: 28 * spacingScale
+    readonly property real rawSettingsGap: 18
+    readonly property real settingsGap: 18 * spacingScale
 
     // Corner radius (M3 scale; concentric rule: inner = outer - padding)
     readonly property real rawRadiusFillCap: 6
@@ -84,134 +94,183 @@ Singleton {
     readonly property real radius2xl: 48 * cornerScale
     readonly property real rawRadiusFull: 9999
     readonly property real radiusFull: 9999 * cornerScale
+    readonly property real rawRadiusOption: 20
+    readonly property real radiusOption: 20 * cornerScale
 
-    // Fixed sizes for shell chrome
-    readonly property real cayHeight: 40
-    readonly property real islandCollapsedHeight: 32
-    readonly property real islandCollapsedWidth: 120
-    readonly property real pearlSize: 160
-    readonly property real panelWidth: 392
-    readonly property real iconMd: 20
-    readonly property real iconLg: 24
-    readonly property real cayButton: 32
-    readonly property real dockTile: 30
-    readonly property real cayItemSm: 28
-    readonly property real iconSm: 18
-    readonly property real iconXs: 16
-    readonly property real dockAppIcon: 24
-    readonly property real runningDot: 4
-    readonly property real spotlightTextMax: 160
-    readonly property real islandPeekWidth: 380
-    readonly property real islandPeekHeight: 64
-    readonly property real islandExpandedWidth: 520
-    readonly property real islandActivityTimerWidth: 180
-    readonly property real islandActivityMediaWidth: 220
-    readonly property real islandActivityRecordingWidth: 150
-    readonly property real islandArtSm: 22
-    readonly property real islandArtMd: 44
-    readonly property real islandArtLg: 72
-    readonly property real islandButton: 40
-    readonly property real islandButtonSm: 32
-    readonly property real islandTab: 36
-    readonly property real islandControl: 44
-    readonly property real islandPlayWidth: 64
-    readonly property real islandPlayHeight: 56
-    readonly property real islandTimeWidth: 32
-    readonly property real islandRevealStrip: 8
-    readonly property real waveHeight: 12
-    readonly property real waveLength: 20
-    readonly property real waveAmplitude: 3
-    readonly property real waveStroke: 3
-    readonly property real waveThumb: 10
-    readonly property real visualizerBar: 3
-    readonly property real visualizerHeight: 16
-    readonly property real recordingDot: 10
-    readonly property real coralRing: 12
-    readonly property real iconOsd: 22
-    readonly property real osdWidth: 72
-    readonly property real osdHeight: 260
-    readonly property real osdTrack: 40
-    readonly property real toastHeight: 44
-    readonly property real toastActionHeight: 32
-    readonly property real islandActivityWidth: 180
-    readonly property real editPanelWidth: 320
-    readonly property real tileHeight: 64
-    readonly property real pressGrow: 12
-    readonly property real sliderHeight: 44
-    readonly property real sliderHandleWidth: 4
-    readonly property real sliderHandleHeight: 52
-    readonly property real notificationIcon: 36
-    readonly property real islandNotificationWidth: 440
-    readonly property real islandNotificationIcon: 40
-    readonly property real chipHeight: 32
-    readonly property real menuWifiWidth: 300
-    readonly property real menuCalendarWidth: 320
-    readonly property real listRowHeight: 48
-    readonly property real searchWidth: 340
-    readonly property real searchFieldHeight: 48
-    readonly property real searchRowHeight: 52
-    readonly property real searchRowIcon: 36
-    readonly property real searchMaxHeight: 640
+    // Fixed sizes for shell chrome (pixel sizes follow the zoom)
+    readonly property real cayHeight: 40 * zoom
+    readonly property real islandCollapsedHeight: 32 * zoom
+    readonly property real islandCollapsedWidth: 120 * zoom
+    readonly property real pearlSize: 160 * zoom
+    readonly property real panelWidth: 392 * zoom
+    readonly property real iconMd: 20 * zoom
+    readonly property real iconLg: 24 * zoom
+    readonly property real cayButton: 32 * zoom
+    readonly property real dockTile: 30 * zoom
+    readonly property real cayItemSm: 28 * zoom
+    readonly property real iconSm: 18 * zoom
+    readonly property real iconXs: 16 * zoom
+    readonly property real dockAppIcon: 24 * zoom
+    readonly property real runningDot: 4 * zoom
+    readonly property real spotlightTextMax: 160 * zoom
+    readonly property real islandPeekWidth: 380 * zoom
+    readonly property real islandPeekHeight: 64 * zoom
+    readonly property real islandExpandedWidth: 520 * zoom
+    readonly property real islandActivityTimerWidth: 180 * zoom
+    readonly property real islandActivityMediaWidth: 220 * zoom
+    readonly property real islandActivityRecordingWidth: 150 * zoom
+    readonly property real islandArtSm: 22 * zoom
+    readonly property real islandArtMd: 44 * zoom
+    readonly property real islandArtLg: 72 * zoom
+    readonly property real islandButton: 40 * zoom
+    readonly property real islandButtonSm: 32 * zoom
+    readonly property real islandTab: 36 * zoom
+    readonly property real islandControl: 44 * zoom
+    readonly property real islandPlayWidth: 64 * zoom
+    readonly property real islandPlayHeight: 56 * zoom
+    readonly property real islandTimeWidth: 32 * zoom
+    readonly property real islandRevealStrip: 8 * zoom
+    readonly property real waveHeight: 12 * zoom
+    readonly property real waveLength: 20 * zoom
+    readonly property real waveAmplitude: 3 * zoom
+    readonly property real waveStroke: 3 * zoom
+    readonly property real waveThumb: 10 * zoom
+    readonly property real visualizerBar: 3 * zoom
+    readonly property real visualizerHeight: 16 * zoom
+    readonly property real recordingDot: 10 * zoom
+    readonly property real coralRing: 12 * zoom
+    readonly property real iconOsd: 22 * zoom
+    readonly property real osdWidth: 72 * zoom
+    readonly property real osdHeight: 260 * zoom
+    readonly property real osdTrack: 40 * zoom
+    readonly property real toastHeight: 44 * zoom
+    readonly property real toastActionHeight: 32 * zoom
+    readonly property real islandActivityWidth: 180 * zoom
+    readonly property real editPanelWidth: 320 * zoom
+    readonly property real tileHeight: 64 * zoom
+    readonly property real pressGrow: 12 * zoom
+    readonly property real sliderHeight: 44 * zoom
+    readonly property real sliderHandleWidth: 4 * zoom
+    readonly property real sliderHandleHeight: 52 * zoom
+    readonly property real notificationIcon: 36 * zoom
+    readonly property real islandNotificationWidth: 440 * zoom
+    readonly property real islandNotificationIcon: 40 * zoom
+    readonly property real chipHeight: 32 * zoom
+    readonly property real menuWifiWidth: 300 * zoom
+    readonly property real menuCalendarWidth: 320 * zoom
+    readonly property real listRowHeight: 48 * zoom
+    readonly property real searchWidth: 340 * zoom
+    readonly property real searchFieldHeight: 48 * zoom
+    readonly property real searchRowHeight: 52 * zoom
+    readonly property real searchRowIcon: 36 * zoom
+    readonly property real searchMaxHeight: 640 * zoom
     readonly property real overviewScale: 0.75
-    readonly property real overviewRing: 3
-    readonly property real switcherThumbWidth: 224
-    readonly property real switcherThumbHeight: 140
-    readonly property real menuButtonHeight: 40
-    readonly property real switchWidth: 52
-    readonly property real switchHeight: 32
-    readonly property real switchThumb: 24
-    readonly property real switchThumbOff: 16
-    readonly property real calendarWeekdayHeight: 32
-    readonly property real calendarDay: 36
-    readonly property real eventDot: 4
-    readonly property real eventBarHeight: 32
-    readonly property real replyFieldHeight: 40
-    readonly property real pearlLockSize: 260
-    readonly property real lockLogo: 28
-    readonly property real lockChipHeight: 36
-    readonly property real lockButton: 40
-    readonly property real passwordFieldWidth: 280
-    readonly property real passwordFieldHeight: 48
-    readonly property real passwordShape: 14
-    readonly property real passwordSubmit: 36
-    readonly property real shakeDistance: 8
-    readonly property real powerCayHeight: 48
-    readonly property real powerButton: 36
-    readonly property real powerClockSize: 260
-    readonly property real clockTick: 3
-    readonly property real clockTickLength: 10
-    readonly property real clockTickInset: 18
-    readonly property real clockHourHand: 10
-    readonly property real clockMinuteHand: 8
-    readonly property real clockHourLength: 58
-    readonly property real clockMinuteLength: 88
-    readonly property real clockCenter: 18
-    readonly property real dialogWidth: 400
-    readonly property real dialogIcon: 64
-    readonly property real dialogIconGlyph: 28
-    readonly property real dialogButtonHeight: 48
-    readonly property real userChipHeight: 40
-    readonly property real avatarSm: 32
-    readonly property real linkHeight: 28
-    readonly property real greeterAvatar: 140
-    readonly property real greeterFieldWidth: 320
-    readonly property real greeterFieldHeight: 52
-    readonly property real greeterSubmit: 38
-    readonly property real greeterUser: 48
-    readonly property real greeterLogo: 32
-    readonly property real greeterPillHeight: 44
-    readonly property real islandToolsWidth: 420
-    readonly property real islandFieldHeight: 44
-    readonly property real islandRowHeight: 44
-    readonly property real islandListMaxHeight: 332
-    readonly property real clipboardSwatch: 18
-    readonly property real shelfTileHeight: 112
-    readonly property real shelfTileIcon: 44
-    readonly property real toolSegmentWidth: 52
-    readonly property real calculatorDisplayHeight: 64
-    readonly property real calculatorKeyHeight: 40
-    readonly property real emojiCell: 40
-    readonly property real colorSwatch: 64
+    readonly property real overviewRing: 3 * zoom
+    readonly property real switcherThumbWidth: 224 * zoom
+    readonly property real switcherThumbHeight: 140 * zoom
+    readonly property real menuButtonHeight: 40 * zoom
+    readonly property real switchWidth: 52 * zoom
+    readonly property real switchHeight: 32 * zoom
+    readonly property real switchThumb: 24 * zoom
+    readonly property real switchThumbOff: 16 * zoom
+    readonly property real calendarWeekdayHeight: 32 * zoom
+    readonly property real calendarDay: 36 * zoom
+    readonly property real eventDot: 4 * zoom
+    readonly property real eventBarHeight: 32 * zoom
+    readonly property real replyFieldHeight: 40 * zoom
+    readonly property real pearlLockSize: 260 * zoom
+    readonly property real lockLogo: 28 * zoom
+    readonly property real lockChipHeight: 36 * zoom
+    readonly property real lockButton: 40 * zoom
+    readonly property real passwordFieldWidth: 280 * zoom
+    readonly property real passwordFieldHeight: 48 * zoom
+    readonly property real passwordShape: 14 * zoom
+    readonly property real passwordSubmit: 36 * zoom
+    readonly property real shakeDistance: 8 * zoom
+    readonly property real powerCayHeight: 48 * zoom
+    readonly property real powerButton: 36 * zoom
+    readonly property real powerClockSize: 260 * zoom
+    readonly property real clockTick: 3 * zoom
+    readonly property real clockTickLength: 10 * zoom
+    readonly property real clockTickInset: 18 * zoom
+    readonly property real clockHourHand: 10 * zoom
+    readonly property real clockMinuteHand: 8 * zoom
+    readonly property real clockHourLength: 58 * zoom
+    readonly property real clockMinuteLength: 88 * zoom
+    readonly property real clockCenter: 18 * zoom
+    readonly property real dialogWidth: 400 * zoom
+    readonly property real dialogIcon: 64 * zoom
+    readonly property real dialogIconGlyph: 28 * zoom
+    readonly property real dialogButtonHeight: 48 * zoom
+    readonly property real userChipHeight: 40 * zoom
+    readonly property real avatarSm: 32 * zoom
+    readonly property real linkHeight: 28 * zoom
+    readonly property real greeterAvatar: 140 * zoom
+    readonly property real greeterFieldWidth: 320 * zoom
+    readonly property real greeterFieldHeight: 52 * zoom
+    readonly property real greeterSubmit: 38 * zoom
+    readonly property real greeterUser: 48 * zoom
+    readonly property real greeterLogo: 32 * zoom
+    readonly property real greeterPillHeight: 44 * zoom
+    readonly property real islandToolsWidth: 420 * zoom
+    readonly property real islandFieldHeight: 44 * zoom
+    readonly property real islandRowHeight: 44 * zoom
+    readonly property real islandListMaxHeight: 332 * zoom
+    readonly property real clipboardSwatch: 18 * zoom
+    readonly property real shelfTileHeight: 112 * zoom
+    readonly property real shelfTileIcon: 44 * zoom
+    readonly property real toolSegmentWidth: 52 * zoom
+    readonly property real calculatorDisplayHeight: 64 * zoom
+    readonly property real calculatorKeyHeight: 40 * zoom
+    readonly property real emojiCell: 40 * zoom
+    readonly property real colorSwatch: 64 * zoom
+    readonly property real widgetClockSize: 260 * zoom
+    readonly property real widgetWeatherSize: 180 * zoom
+    readonly property real widgetWeatherIcon: 28 * zoom
+    readonly property real widgetSystemWidth: 220 * zoom
+    readonly property real widgetSystemBar: 8 * zoom
+    readonly property real widgetMediaWidth: 460 * zoom
+    readonly property real widgetMediaHeight: 132 * zoom
+    readonly property real widgetMediaArt: 100 * zoom
+    readonly property real widgetMediaArtIcon: 36 * zoom
+    readonly property real widgetMediaButton: 56 * zoom
+    readonly property real widgetCalendarWidth: 300 * zoom
+    readonly property real editOutline: 2 * zoom
+    readonly property real editOutlineGap: 6 * zoom
+    readonly property real editDash: 6 * zoom
+    readonly property real editBadge: 24 * zoom
+    readonly property real editBadgeIcon: 16 * zoom
+    readonly property real editWiggle: 1.5
+    readonly property real editThumbHeight: 80 * zoom
+    readonly property real editThumbGlyph: 40 * zoom
+    readonly property real editTileHeight: 36 * zoom
+    readonly property real editRowHeight: 44 * zoom
+    readonly property real islandEditingWidth: 240 * zoom
+    readonly property real islandBannerHeight: 40 * zoom
+    readonly property real islandBannerButton: 28 * zoom
+    readonly property real settingsWidth: 1000 * zoom
+    readonly property real settingsHeight: 696 * zoom
+    readonly property real settingsNavWidth: 248 * zoom
+    readonly property real settingsNavRow: 40 * zoom
+    readonly property real settingsSegmentHeight: 40 * zoom
+    readonly property real settingsOptionHeight: 88 * zoom
+    readonly property real settingsOptionGlyph: 32 * zoom
+    readonly property real settingsSwatch: 32 * zoom
+    readonly property real settingsPreviewWidth: 220 * zoom
+    readonly property real settingsPreviewHeight: 138 * zoom
+    readonly property real settingsButtonHeight: 36 * zoom
+    readonly property real settingsRowHeight: 56 * zoom
+    readonly property real settingsClose: 32 * zoom
+    readonly property real widgetMediaButtonIcon: 28 * zoom
+    readonly property real editThumbIcon: 22 * zoom
+    readonly property real editThumbCalendarIcon: 28 * zoom
+    readonly property real editThumbMediaWidth: 92 * zoom
+    readonly property real editThumbMediaHeight: 34 * zoom
+    readonly property real editThumbBarsWidth: 60 * zoom
+    readonly property real editThumbBar: 5 * zoom
+    readonly property real homeGrid: 24 * zoom
+    readonly property real homeGridDot: 2 * zoom
+    readonly property real backdropBlur: 48 * zoom
 
     // Type
     readonly property var fontFamilies: ({"sans": "Google Sans Flex", "mono": "Google Sans Code"})
@@ -219,18 +278,23 @@ Singleton {
         "numeralXl": {"family": "sans", "size": 112, "lineHeight": 104, "weight": 300, "letterSpacing": -2, "emphasized": false, "sample": "09:41"},
         "numeralLg": {"family": "sans", "size": 57, "lineHeight": 64, "weight": 400, "letterSpacing": -1, "emphasized": false, "sample": "24°"},
         "pearlClock": {"family": "sans", "size": 64, "lineHeight": 64, "weight": 300, "letterSpacing": -2, "emphasized": false, "sample": "09:41"},
+        "widgetTemperature": {"family": "sans", "size": 52, "lineHeight": 56, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "18°"},
         "displaySm": {"family": "sans", "size": 36, "lineHeight": 44, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Good evening, Augusto"},
         "headlineSm": {"family": "sans", "size": 24, "lineHeight": 32, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "Control center"},
         "headlineSmEmphasized": {"family": "sans", "size": 24, "lineHeight": 32, "weight": 700, "letterSpacing": 0, "emphasized": true, "sample": "Power off?"},
         "greeterName": {"family": "sans", "size": 28, "lineHeight": 36, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "[Your name]"},
         "greeterWordmark": {"family": "sans", "size": 26, "lineHeight": 32, "weight": 600, "letterSpacing": -0.5, "emphasized": false, "sample": "Reef"},
         "avatarInitialLg": {"family": "sans", "size": 56, "lineHeight": 56, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "A"},
+        "settingsTitle": {"family": "sans", "size": 28, "lineHeight": 36, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "Look"},
         "titleMd": {"family": "sans", "size": 16, "lineHeight": 24, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "Now playing"},
         "titleMdEmphasized": {"family": "sans", "size": 16, "lineHeight": 24, "weight": 700, "letterSpacing": 0, "emphasized": true, "sample": "Coral"},
         "bodyMd": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Your download finished in 4 seconds."},
         "bodySm": {"family": "sans", "size": 12, "lineHeight": 16, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "2 min ago"},
         "bodyLg": {"family": "sans", "size": 16, "lineHeight": 24, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Monday, 23 November · battery 82%"},
         "pearlDate": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Monday, 23 November"},
+        "widgetTitle": {"family": "sans", "size": 16, "lineHeight": 22, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "[Song title]"},
+        "rowLabel": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Show Spotlight cay"},
+        "settingsSection": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Colorfulness"},
         "labelLg": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "Do not disturb"},
         "labelMd": {"family": "sans", "size": 12, "lineHeight": 16, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "09:41"},
         "labelSm": {"family": "sans", "size": 11, "lineHeight": 16, "weight": 500, "letterSpacing": 0.4, "emphasized": false, "sample": "NOTIFICATIONS"},
@@ -240,13 +304,18 @@ Singleton {
         "avatarInitial": {"family": "sans", "size": 18, "lineHeight": 24, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "M"},
         "avatarInitialSm": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "A"},
         "greeterClock": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "09:41"},
+        "segmentLabel": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "Neutral"},
+        "segmentLabelEmphasized": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 700, "letterSpacing": 0, "emphasized": true, "sample": "Tinted"},
+        "optionLabel": {"family": "sans", "size": 12, "lineHeight": 16, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Distro logo"},
         "monoLg": {"family": "mono", "size": 15, "lineHeight": 20, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "04:12"},
         "monoMd": {"family": "mono", "size": 13, "lineHeight": 20, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Super + V  ·  192.168.1.24  ·  42.3 °C"},
         "monoSm": {"family": "mono", "size": 11, "lineHeight": 16, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "CPU 12%  RAM 6.1G"},
         "keyboardLayout": {"family": "mono", "size": 12, "lineHeight": 16, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "EN"},
+        "widgetStat": {"family": "mono", "size": 12, "lineHeight": 16, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "6.1 / 16G"},
         "barTitle": {"family": "sans", "size": 12, "lineHeight": 14, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "09:41"},
         "barSubtitle": {"family": "sans", "size": 11, "lineHeight": 14, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "[Song title]"},
         "barNumeral": {"family": "sans", "size": 13, "lineHeight": 16, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "1  2  3  4  5"},
+        "barClockVertical": {"family": "sans", "size": 14, "lineHeight": 16, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "09"},
         "islandTitle": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "[Song title]"},
         "toastLabel": {"family": "sans", "size": 13, "lineHeight": 20, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "Copied to clipboard"},
         "toastAction": {"family": "sans", "size": 13, "lineHeight": 20, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "Undo"},
@@ -314,7 +383,7 @@ Singleton {
             "islandTrack": "#3a3a3c",
             "scrim": "#80000000",
             "screenCorner": "#000000",
-            "scrimHeavy": "#b8282423"
+            "scrimHeavy": "#8c282423"
         },
         "light": {
             "primary": "#8c4e41",
@@ -356,7 +425,7 @@ Singleton {
             "islandTrack": "#3a3a3c",
             "scrim": "#52000000",
             "screenCorner": "#000000",
-            "scrimHeavy": "#b8f5ecea"
+            "scrimHeavy": "#8cf5ecea"
         },
         "dark-neutral": {
             "primary": "#f9b7a8",
@@ -398,7 +467,7 @@ Singleton {
             "islandTrack": "#3a3a3c",
             "scrim": "#80000000",
             "screenCorner": "#000000",
-            "scrimHeavy": "#b8282423"
+            "scrimHeavy": "#8c282423"
         },
         "light-neutral": {
             "primary": "#8c4e41",
@@ -440,7 +509,7 @@ Singleton {
             "islandTrack": "#3a3a3c",
             "scrim": "#52000000",
             "screenCorner": "#000000",
-            "scrimHeavy": "#b8f5ecea"
+            "scrimHeavy": "#8cf5ecea"
         }
     })
     // Roles that never change with the wallpaper (the Island family).
@@ -457,6 +526,10 @@ Singleton {
     readonly property real lockChipOpacity: 0.55
     readonly property real greeterScrimOpacity: 0.25
     readonly property real dropTargetOpacity: 0.08
+    readonly property real editScrimOpacity: 0.35
+    readonly property real widgetSecondaryOpacity: 0.85
+    readonly property real widgetTrackOpacity: 0.35
+    readonly property real homeGridDotsOpacity: 0.35
 
     // Motion (MOTION.md). Use through the Motion singleton, never directly.
     readonly property var springs: ({"spatialFast": {"stiffness": 800, "damping": 0.6, "duration": 350, "bezier": [0.42, 1.67, 0.21, 0.9]}, "spatialDefault": {"stiffness": 380, "damping": 0.8, "duration": 500, "bezier": [0.38, 1.21, 0.22, 1.0]}, "spatialSlow": {"stiffness": 200, "damping": 0.8, "duration": 650, "bezier": [0.39, 1.29, 0.35, 0.98]}, "effectsFast": {"stiffness": 3800, "damping": 1, "duration": 150, "bezier": [0.31, 0.94, 0.34, 1.0]}, "effectsDefault": {"stiffness": 1600, "damping": 1, "duration": 200, "bezier": [0.34, 0.8, 0.34, 1.0]}, "effectsSlow": {"stiffness": 800, "damping": 1, "duration": 300, "bezier": [0.34, 0.88, 0.34, 1.0]}})
@@ -482,4 +555,8 @@ Singleton {
     readonly property real eventSoon: 900000
     readonly property real errorTint: 600
     readonly property real unlockDelay: 350
+    readonly property real editWigglePeriod: 900
+    readonly property real weatherRefresh: 1800000
+    readonly property real statsRefresh: 2000
+    readonly property real workspaceSwitchFallback: 500
 }

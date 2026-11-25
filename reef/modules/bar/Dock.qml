@@ -7,18 +7,21 @@ import qs.components
 
 // Dock cay: pinned and running apps (SURFACES.md → Bar).
 // Click launches or focuses (and cycles windows); middle-click opens a new window.
+// On the left (`vertical`) the tiles stack and the running dot sits on the edge side.
 Cay {
     id: root
 
-    leftPadding: Tokens.space2
-    rightPadding: Tokens.space2
+    leftPadding: vertical ? Tokens.cayPaddingTight : Tokens.space2
+    rightPadding: vertical ? Tokens.cayPaddingTight : Tokens.space2
     visible: Apps.dock.length > 0
 
     Accessible.role: Accessible.ToolBar
     Accessible.name: "Dock"
 
-    Row {
-        anchors.verticalCenter: parent.verticalCenter
+    Grid {
+        anchors.verticalCenter: root.vertical ? undefined : parent.verticalCenter
+        anchors.horizontalCenter: root.vertical ? parent.horizontalCenter : undefined
+        columns: root.vertical ? 1 : 99   // one row, or one column on the left
         spacing: Tokens.space1
 
         Repeater {
@@ -69,11 +72,12 @@ Cay {
                     Behavior on scale { MotionAnimation { spec: Motion.spatialFast } }
                 }
 
-                // Running indicator, centered in the cay padding under the tile.
+                // Running indicator, centered in the cay padding on the screen-edge side
+                // (under the tile; left of it with the bar on the left).
                 Rectangle {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.top: parent.bottom
-                    anchors.topMargin: (Tokens.cayHeight - Tokens.dockTile) / 4 - height / 2
+                    readonly property real offset: (Tokens.cayHeight - Tokens.dockTile) / 4 - width / 2
+                    x: root.vertical ? -offset - width : (parent.width - width) / 2
+                    y: root.vertical ? (parent.height - height) / 2 : parent.height + offset
                     width: Tokens.runningDot
                     height: Tokens.runningDot
                     radius: width / 2

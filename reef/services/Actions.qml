@@ -10,7 +10,7 @@ Singleton {
 
     // name → [description, milestone]   (keybinds: SURFACES.md → Keybinds)
     readonly property var actions: ({
-            home: ["Home", "M4"],
+            home: ["Home: an empty workspace", "M7"],
             search: ["Open search", "M4"],
             island: ["Open the Island", "M2"],
             islandSwap: ["Swap the Island's activities", "M2"],
@@ -34,6 +34,7 @@ Singleton {
             switcher: ["Window switcher", "M4"],
             switcherBack: ["Window switcher, previous", "M4"],
             editMode: ["Edit mode", "M7"],
+            settings: ["Settings", "M7"],
             lock: ["Lock", "M5"],
             power: ["Power actions", "M5"],
             focusBar: ["Keyboard focus to the bar", "M1"],
@@ -52,11 +53,15 @@ Singleton {
     signal islandRequested(string tab)
     signal islandSwapRequested
     signal panelRequested(string name)
+    // The Settings app, on a page ("" = where it was).
+    signal settingsRequested(string page)
+    function openSettings(page) { settingsRequested(page ?? ""); }
     // Alt+Tab: open the switcher, or move its selection (1 forward, -1 back).
     signal switcherRequested(int step)
 
     readonly property var handlers: ({
             focusBar: () => root.focusBarRequested(),
+            home: () => Workspaces.openHome(Hyprland.focusedMonitor?.name ?? ""),
             lock: () => Lock.lock(),
             power: () => root.panelRequested("power"),
             search: () => root.panelRequested("search"),
@@ -70,6 +75,8 @@ Singleton {
             emoji: () => root.islandRequested("emoji"),
             islandSwap: () => root.islandSwapRequested(),
             controlCenter: () => root.panelRequested("controlCenter"),
+            editMode: () => root.panelRequested("editMode"),
+            settings: () => root.settingsRequested(""),
             calendar: () => root.panelRequested("calendar"),
             wifiMenu: () => root.panelRequested("wifi"),
             bluetoothMenu: () => root.panelRequested("bluetooth"),
