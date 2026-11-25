@@ -206,6 +206,14 @@ PanelWindow {
                     id: togglesCard
                     width: parent.width
                     title: "Quick toggles"
+                    // The power actions: the panel closes and the Navigator re-forms into them.
+                    header: [
+                        CayButton {
+                            icon: "power_settings_new"
+                            label: "Power actions"
+                            onClicked: PanelState.open("power", root.modelData.name)
+                        }
+                    ]
 
                     // Four columns, one button group per row; Wi-Fi, Bluetooth, Keep awake
                     // and Focus span two. A pressed tile widens and its row makes room.

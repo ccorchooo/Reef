@@ -38,14 +38,26 @@ PanelWindow {
     property bool keyboardActive: false
     // Search (the Navigator cay grown into the search panel) takes the keyboard.
     readonly property bool searching: navigator.searching
+    // Power actions (Ctrl+Alt+Delete): the Navigator re-forms into them over a heavy
+    // scrim with the clock; the Dock and Spotlight step aside. They take the keyboard.
+    readonly property bool power: navigator.power
     // A quick menu opened by hovering takes the keyboard only when clicked (OnDemand),
     // so it never steals typing from the focused app.
-    WlrLayershell.keyboardFocus: keyboardActive || searching ? WlrKeyboardFocus.Exclusive
+    WlrLayershell.keyboardFocus: keyboardActive || searching || power ? WlrKeyboardFocus.Exclusive
         : status.menuOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     onSearchingChanged: {
         if (searching)
             focusSearch.restart();
+    }
+    onPowerChanged: {
+        if (power)
+            focusPower.restart();
+    }
+    Timer {
+        id: focusPower
+        interval: 1
+        onTriggered: navigator.focusPower()
     }
     // Give the surface a moment to receive keyboard focus before typing goes into it.
     Timer {
@@ -83,7 +95,7 @@ PanelWindow {
     }
 
     // Typing in a menu (a Wi-Fi password) holds it open until a click elsewhere.
-    readonly property bool wantsGrab: keyboardActive || searching || status.holdOpen
+    readonly property bool wantsGrab: keyboardActive || searching || power || status.holdOpen
     onWantsGrabChanged: wantsGrab ? armGrab.restart() : (grab.armed = false)
 
     Item {
@@ -95,8 +107,8 @@ PanelWindow {
     // Escape closes search or the Status cay's menu first, then leaves the bar.
     Shortcut {
         sequence: "Escape"
-        enabled: root.keyboardActive || root.searching || status.menuOpen
-        onActivated: root.searching || status.menuOpen ? PanelState.closeAll() : (root.keyboardActive = false)
+        enabled: root.keyboardActive || root.searching || root.power || status.menuOpen
+        onActivated: root.searching || root.power || status.menuOpen ? PanelState.closeAll() : (root.keyboardActive = false)
     }
 
     // Clicking anywhere outside the bar gives the keyboard back and closes a menu.
@@ -107,7 +119,7 @@ PanelWindow {
         property bool armed: false
         onCleared: {
             root.keyboardActive = false;
-            if (status.menuOpen || root.searching)
+            if (status.menuOpen || root.searching || root.power)
                 PanelState.closeAll();
         }
     }
@@ -145,17 +157,80 @@ PanelWindow {
         }
     }
 
+    // ── power actions: heavy scrim, clock, time and date ────────
+    Spring {
+        id: powerFade
+        spec: Motion.effectsSlow
+        target: root.power ? 1 : 0
+    }
+    Spring {
+        id: powerContent
+        spec: Motion.effectsDefault
+        target: root.power ? 1 : 0
+    }
+    Rectangle {
+        anchors.fill: parent
+        color: Colors.scrimHeavy
+        opacity: powerFade.value
+        visible: opacity > 0.001
+    }
+    // A click on the scrim closes the power actions.
+    MouseArea {
+        id: powerInput
+        width: root.power ? root.width : 0
+        height: root.power ? root.height : 0
+        onClicked: PanelState.closeAll()
+    }
+    // Centered in the space above the bar.
+    Row {
+        x: Tokens.powerClockInset
+        y: (root.height - root.exclusiveZone - height) / 2
+        spacing: Tokens.powerClockGap
+        opacity: powerContent.value
+        visible: opacity > 0.01
+
+        AnalogClock {
+            anchors.verticalCenter: parent.verticalCenter
+        }
+        Column {
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: Tokens.cayPaddingTight
+            StyledText {
+                style: "numeralLg"
+                text: Time.time
+            }
+            StyledText {
+                style: "bodyLg"
+                text: Qt.formatDate(Time.now, "dddd, d MMMM") + (Battery.present ? " · battery " + Battery.percent : "")
+            }
+        }
+    }
+
     mask: Region {
+        Region { item: powerInput }
         Region { item: dock }
         Region { item: navigator }
         Region { item: spotlight }
         Region { item: status }
     }
 
+    // The Dock and Spotlight step aside for the power actions; the Navigator slides into
+    // the Dock's place.
+    Spring {
+        id: powerShift
+        spec: Motion.spatialDefault
+        target: root.power ? dock.width + Tokens.space2 : 0
+    }
+    Spring {
+        id: asideFade
+        spec: Motion.effectsFast
+        target: root.power ? 0 : 1
+    }
+
     Row {
         anchors.left: parent.left
         anchors.bottom: parent.bottom
-        anchors.leftMargin: Tokens.space2 + leftInset.value
+        anchors.leftMargin: Tokens.space2 + leftInset.value - powerShift.value
         anchors.bottomMargin: Tokens.space2
         spacing: Tokens.space2
 
@@ -163,6 +238,8 @@ PanelWindow {
         Dock {
             id: dock
             anchors.bottom: parent.bottom
+            opacity: asideFade.value
+            enabled: !root.power
         }
         Navigator {
             id: navigator
@@ -172,6 +249,8 @@ PanelWindow {
         Spotlight {
             id: spotlight
             anchors.bottom: parent.bottom
+            opacity: asideFade.value
+            enabled: !root.power
         }
     }
 

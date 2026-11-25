@@ -1,0 +1,4 @@
+#%PAM-1.0
+# Reef's lock screen checks the user's own password with pam_unix (through its setuid
+# helper, so no privileges are needed). Used by services/Lock.qml.
+auth required pam_unix.so

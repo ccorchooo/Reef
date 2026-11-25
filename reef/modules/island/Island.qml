@@ -92,8 +92,10 @@ PanelWindow {
 
     readonly property real formWidth: form === "notification" ? Tokens.islandNotificationWidth
         : form === "peek" ? Tokens.islandPeekWidth
-        : form === "expanded" ? Tokens.islandExpandedWidth
+        : form === "expanded" ? expandedWidth
         : activityWidth(form)
+    // The Tools tab is narrower (parts/Island-Tools); the Island morphs between them.
+    readonly property real expandedWidth: IslandState.tab === "tools" ? Tokens.islandToolsWidth : Tokens.islandExpandedWidth
     readonly property real formHeight: form === "peek" ? Tokens.islandPeekHeight
         : form === "expanded" ? expandedContent.implicitHeight + Tokens.space4 * 2
         : form === "notification" ? notificationHeight
@@ -127,6 +129,16 @@ PanelWindow {
         height: !root.hidesOverApps ? 0
             : root.mode === "hidden" ? Tokens.islandRevealStrip
             : Math.max(Tokens.islandRevealStrip, body.y + Math.min(body.height, Tokens.islandPeekHeight))
+        // Hidden over an app: dragging to the top center brings the Shelf down.
+        DropArea {
+            id: stripDrop
+            anchors.fill: parent
+            enabled: Config.options.island.dropToShelf
+            onEntered: drag => {
+                drag.accept(Qt.CopyAction);
+                IslandState.open("shelf", root.modelData.name);
+            }
+        }
         HoverHandler {
             id: stripHover
             onHoveredChanged: {
@@ -358,6 +370,21 @@ PanelWindow {
             id: bodyHover
         }
 
+        // Drop files or text anywhere on the Island: it opens on the Shelf and keeps them.
+        DropArea {
+            id: bodyDrop
+            anchors.fill: parent
+            enabled: Config.options.island.dropToShelf
+            onEntered: drag => {
+                drag.accept(Qt.CopyAction);
+                IslandState.open("shelf", root.modelData.name);
+            }
+            onDropped: drop => {
+                Shelf.addDrop(drop);
+                drop.accept(Qt.CopyAction);
+            }
+        }
+
         TapHandler {
             enabled: !root.expanded && root.form !== "notification"
             onTapped: IslandState.open("now", root.modelData.name)
@@ -434,7 +461,7 @@ PanelWindow {
             id: expandedContent
             x: Tokens.space4
             y: Tokens.space4
-            width: Tokens.islandExpandedWidth - Tokens.space4 * 2
+            width: root.expandedWidth - Tokens.space4 * 2
             spacing: Tokens.space3_5
             opacity: expandedOpacity.value
             visible: opacity > 0.01
@@ -449,6 +476,22 @@ PanelWindow {
             NowTab {
                 width: parent.width
                 visible: IslandState.tab === "now"
+            }
+            ShelfTab {
+                id: shelfTab
+                width: parent.width
+                visible: IslandState.tab === "shelf"
+                dragOver: bodyDrop.containsDrag || stripDrop.containsDrag
+            }
+            ClipboardTab {
+                id: clipboardTab
+                width: parent.width
+                visible: IslandState.tab === "clipboard"
+            }
+            ToolsTab {
+                id: toolsTab
+                width: parent.width
+                visible: IslandState.tab === "tools"
             }
         }
     }
@@ -481,11 +524,23 @@ PanelWindow {
         }
     }
 
+    // A new tab while open (a tab circle, Super+V): focus moves into it.
+    Connections {
+        target: IslandState
+        function onTabChanged() {
+            if (root.expanded)
+                focusFirst.restart();
+        }
+    }
+
     Timer {
         id: focusFirst
         interval: 1
         onTriggered: {
             keys.forceActiveFocus();
+            // The tab's own first control: the clipboard search, the calculator, …
+            const tab = ({ shelf: shelfTab, clipboard: clipboardTab, tools: toolsTab })[IslandState.tab];
+            tab?.focusFirst();
             armGrab.restart();
         }
     }

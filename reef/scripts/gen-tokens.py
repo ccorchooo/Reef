@@ -146,7 +146,7 @@ def main():
     w("    })")
     w("    // Roles that never change with the wallpaper (the Island family).")
     fixed = [camel(tok["name"]) for tok in t["color"]["tokens"]
-             if tok["name"].startswith("island") or tok["name"].startswith("on-island") or tok["name"] in ("scrim", "screen-corner")]
+             if tok["name"].startswith("island") or tok["name"].startswith("on-island") or tok["name"].startswith("scrim") or tok["name"] == "screen-corner"]
     w(f"    readonly property var fixedRoles: {js(fixed)}")
     w("")
 

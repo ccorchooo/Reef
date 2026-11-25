@@ -13,6 +13,8 @@ Singleton {
     property bool expanded: false
     property string screenName: ""
     property string tab: "now"
+    // The Tools tab's tool: calculator | emoji | color | screenshot (kept between opens).
+    property string toolsPage: "calculator"
 
     readonly property var settings: Config.options.island.activities
 
@@ -233,9 +235,14 @@ Singleton {
         { id: "coral", icon: "", label: "Coral" }
     ]
     // Tabs that exist so far; the others run their (stub) action.
-    readonly property var builtTabs: ["now"]
+    readonly property var builtTabs: ["now", "shelf", "clipboard", "tools"]
 
+    // `tab` may also name a tool ("emoji", Super+.): the Tools tab opens on it.
     function open(tab, screen) {
+        if (["calculator", "emoji", "color", "screenshot"].includes(tab)) {
+            toolsPage = tab;
+            tab = "tools";
+        }
         if (tab && !builtTabs.includes(tab)) {
             Actions.run(tab);
             return;
@@ -258,11 +265,22 @@ Singleton {
 
     Connections {
         target: Actions
+        // Super+I toggles; Super+V / Super+. close only when already on that tab.
         function onIslandRequested(tab) {
-            root.expanded ? root.close() : root.open(tab);
+            const same = tab === "now" || tab === root.tab || (tab === root.toolsPage && root.tab === "tools");
+            root.expanded && same ? root.close() : root.open(tab);
         }
         function onIslandSwapRequested() {
             root.swap();
+        }
+    }
+
+    // A color was picked from the Tools tab: show it there.
+    Connections {
+        target: ColorPicker
+        function onPicked(c) {
+            root.open("color");
+            Toasts.show({ text: `${ColorPicker.hex(c)} copied`, icon: "colorize" });
         }
     }
 }

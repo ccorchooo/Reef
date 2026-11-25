@@ -161,7 +161,7 @@ Mockup: `screens/AuthDialog.png`
 ## Power actions
 Mockup: `screens/PowerActions.png`
 
-- Opened with **Ctrl+Alt+Delete** or the power button.
+- Opened with **Ctrl+Alt+Delete**, the power button, or the power button in the header of the control center's Quick toggles card.
 - A heavy neutral scrim covers the desktop, with a big clock widget, the time, and the date and battery level.
 - The Navigator cay re-forms into the power actions. On hover, **Power off** turns `error-container` and shows a tooltip.
 

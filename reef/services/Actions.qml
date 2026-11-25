@@ -57,11 +57,17 @@ Singleton {
 
     readonly property var handlers: ({
             focusBar: () => root.focusBarRequested(),
+            lock: () => Lock.lock(),
+            power: () => root.panelRequested("power"),
             search: () => root.panelRequested("search"),
             overview: () => root.panelRequested("overview"),
             switcher: () => root.switcherRequested(1),
             switcherBack: () => root.switcherRequested(-1),
             island: () => root.islandRequested("now"),
+            clipboard: () => root.islandRequested("clipboard"),
+            shelf: () => root.islandRequested("shelf"),
+            tools: () => root.islandRequested("tools"),
+            emoji: () => root.islandRequested("emoji"),
             islandSwap: () => root.islandSwapRequested(),
             controlCenter: () => root.panelRequested("controlCenter"),
             calendar: () => root.panelRequested("calendar"),

@@ -28,6 +28,9 @@ hl.layer_rule({ name = "reef", match = { namespace = "^reef-.*" }, no_anim = tru
 -- Start the shell. `-n` keeps a second copy from starting on config reload.
 hl.on("hyprland.start", function()
     hl.exec_cmd("qs -c reef -n -d")
+    -- Clipboard history for the Island's Clipboard tab (cliphist + wl-clipboard).
+    hl.exec_cmd("wl-paste --type text --watch cliphist store")
+    hl.exec_cmd("wl-paste --type image --watch cliphist store")
 end)
 
 -- Default keybinds (SURFACES.md → Keybinds). Each fires a Reef global shortcut

@@ -51,7 +51,7 @@ The values in both tables live in `design/tokens.json` → `motion` (with the st
 | **Power menu** (Ctrl+Alt+Delete) | Navigator cay icons scale to 0 with `effects-fast`. The cay re-forms to fit the power actions (`spatial-default`), and the new icons pop in staggered. A `scrim` fades in behind. |
 | **Coral speaking** | The Pearl's outline is a shape driven by the audio: amplitude scales a set of radial waves (like a music-video audio orb), and the base shape morphs between cookie shapes on beats. `island-accent` glows at the peaks. When the reply finishes, the Pearl morphs into the chat card (`spatial-default`). |
 | **Wrong password** | All typed shapes morph back to circles, then shake horizontally ±8px with `spatial-fast`, and the field tints `error-container` for 600 ms. |
-| **Toggle on** | Squircle to pill (`spatial-fast`), fill to `primary-container` (`effects-default`), icon FILL 0→1 (`effects-fast`). |
+| **Toggle on** | Squircle to pill (`spatial-fast`), fill to `primary-container` (`effects-default`), icon FILL 0→1 (`effects-fast`, as a crossfade from the outlined glyph to the filled one). |
 | **Button groups** (press) | The pressed button widens by `press-grow` and the others in its row give up that width between them, all with `spatial-fast` (a small overshoot); its corners squash toward `radius-md`. On release everything springs back and the button morphs to its new on/off shape. Off with Reduce motion. |
 | **Status cay → quick menu** | The cay's width, height and corners spring to the menu's card (`spatial-default`) from its bottom edge; the items slide to their new places with the same spring; the menu fades in (`effects-default`) and crossfades when switching. |
 

@@ -28,6 +28,23 @@ QtObject {
         _snapping = false;
     }
 
+    // Push the value with a velocity and let it spring back to `target` (a shake).
+    // `peak` is how far the first swing should go; the velocity is solved from the spec
+    // (underdamped springs only). Reduce motion: no kick.
+    function kick(peak) {
+        if (Motion.reduceMotion && !spec.effects)
+            return;
+        const w = Math.sqrt(spec.stiffness), z = spec.damping;
+        if (z >= 1)
+            return;
+        const wd = w * Math.sqrt(1 - z * z);
+        const tp = Math.atan2(wd, z * w) / wd;   // time of the first peak
+        const gain = Math.exp(-z * w * tp) * Math.sin(wd * tp) / wd;
+        velocity += peak / gain;
+        _range = Math.max(Math.abs(peak), 1e-6);
+        anim.running = true;
+    }
+
     property real _range: 1
     property bool _ready: false
     property bool _snapping: false

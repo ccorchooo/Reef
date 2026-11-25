@@ -33,6 +33,7 @@ ColorRoles {
     readonly property var shadowFloat: Tokens.shadows.shadowFloat[themeId]
     readonly property var shadowToast: Tokens.shadows.shadowToast[themeId]
     readonly property var shadowMenu: Tokens.shadows.shadowMenu[themeId]
+    readonly property var shadowDialog: Tokens.shadows.shadowDialog[themeId]
 
     // Pick a role by token name at runtime (dev window, settings previews).
     function role(name) {

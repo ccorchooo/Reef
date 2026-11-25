@@ -33,6 +33,7 @@ Singleton {
     readonly property color islandTrack: roles.islandTrack ?? "transparent"
     readonly property color scrim: roles.scrim ?? "transparent"
     readonly property color screenCorner: roles.screenCorner ?? "transparent"
+    readonly property color scrimHeavy: roles.scrimHeavy ?? "transparent"
     readonly property QtObject on: QtObject {
         readonly property color primary: root.roles.onPrimary ?? "transparent"
         readonly property color primaryContainer: root.roles.onPrimaryContainer ?? "transparent"

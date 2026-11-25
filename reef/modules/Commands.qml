@@ -29,6 +29,7 @@ Scope {
         function status(): string {
             return JSON.stringify({
                 audio: { ready: Audio.ready, volume: Audio.volume, muted: Audio.muted, sink: Audio.sink?.description ?? null },
+                mic: { source: Audio.source?.description ?? null, id: Audio.source?.id ?? null, ready: Audio.source?.ready ?? false, muted: Audio.micMuted, inputs: Audio.inputs.map(n => n.description) },
                 network: { icon: Network.icon, label: Network.label },
                 battery: { present: Battery.present, level: Battery.level, icon: Battery.icon },
                 media: { active: Media.active, title: Media.title, playing: Media.playing },
@@ -89,6 +90,14 @@ Scope {
             IslandState.simulate(key);
             return IslandState.simulated[key] ? "on" : "off";
         }
+    }
+
+    IpcHandler {
+        target: "lock"
+
+        function lock(): void { Lock.lock(); }
+        // Show the lock screen without locking (Escape closes it).
+        function preview(): void { Lock.showPreview(!Lock.preview); }
     }
 
     IpcHandler {

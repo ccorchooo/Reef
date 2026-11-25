@@ -109,6 +109,7 @@ Singleton {
             property JsonObject island: JsonObject {
                 property bool detectRecording: true      // show other apps' screen recordings as an activity
                 property bool peek: true                 // hover the resting Island to peek at the activity
+                property bool dropToShelf: true          // dropping files or text on the Island keeps them on the Shelf
                 // Which live activities the Island shows.
                 property JsonObject activities: JsonObject {
                     property bool recording: true
@@ -124,6 +125,20 @@ Singleton {
                     property bool event: true            // calendar event starting soon
                     property bool focus: true            // focus session
                 }
+            }
+
+            // Settings → Lock screen
+            property JsonObject lock: JsonObject {
+                property bool greeting: true             // "Good evening" under the Pearl
+                property bool media: true                // the media chip under the greeting
+                property bool status: true               // network, battery and keyboard layout, bottom right
+                property bool powerButtons: true         // Sleep, Power off and Restart beside the field
+            }
+
+            // Settings → Power & session
+            property JsonObject session: JsonObject {
+                property bool lockBeforeSleep: true      // Sleep from the power actions locks first
+                property bool polkitAgent: true          // Reef answers polkit prompts (only one agent per session)
             }
 
             property JsonObject battery: JsonObject {
@@ -149,6 +164,11 @@ Singleton {
             // Settings → Calendar: .ics files or https links
             property JsonObject calendar: JsonObject {
                 property list<string> sources: []
+            }
+
+            // Settings → Bar & Island → Clipboard
+            property JsonObject clipboard: JsonObject {
+                property int limit: 200                  // entries the Clipboard tab lists (cliphist keeps its own)
             }
 
             property JsonObject screenshots: JsonObject {

@@ -48,6 +48,12 @@ Singleton {
     readonly property real toastPaddingStart: 18 * spacingScale
     readonly property real rawTilePadding: 18
     readonly property real tilePadding: 18 * spacingScale
+    readonly property real rawPasswordFieldPadding: 18
+    readonly property real passwordFieldPadding: 18 * spacingScale
+    readonly property real rawPowerClockInset: 120
+    readonly property real powerClockInset: 120 * spacingScale
+    readonly property real rawPowerClockGap: 40
+    readonly property real powerClockGap: 40 * spacingScale
 
     // Corner radius (M3 scale; concentric rule: inner = outer - padding)
     readonly property real rawRadiusFillCap: 6
@@ -160,31 +166,94 @@ Singleton {
     readonly property real eventDot: 4
     readonly property real eventBarHeight: 32
     readonly property real replyFieldHeight: 40
+    readonly property real pearlLockSize: 260
+    readonly property real lockLogo: 28
+    readonly property real lockChipHeight: 36
+    readonly property real lockButton: 40
+    readonly property real passwordFieldWidth: 280
+    readonly property real passwordFieldHeight: 48
+    readonly property real passwordShape: 14
+    readonly property real passwordSubmit: 36
+    readonly property real shakeDistance: 8
+    readonly property real powerCayHeight: 48
+    readonly property real powerButton: 36
+    readonly property real powerClockSize: 260
+    readonly property real clockTick: 3
+    readonly property real clockTickLength: 10
+    readonly property real clockTickInset: 18
+    readonly property real clockHourHand: 10
+    readonly property real clockMinuteHand: 8
+    readonly property real clockHourLength: 58
+    readonly property real clockMinuteLength: 88
+    readonly property real clockCenter: 18
+    readonly property real dialogWidth: 400
+    readonly property real dialogIcon: 64
+    readonly property real dialogIconGlyph: 28
+    readonly property real dialogButtonHeight: 48
+    readonly property real userChipHeight: 40
+    readonly property real avatarSm: 32
+    readonly property real linkHeight: 28
+    readonly property real greeterAvatar: 140
+    readonly property real greeterFieldWidth: 320
+    readonly property real greeterFieldHeight: 52
+    readonly property real greeterSubmit: 38
+    readonly property real greeterUser: 48
+    readonly property real greeterLogo: 32
+    readonly property real greeterPillHeight: 44
+    readonly property real islandToolsWidth: 420
+    readonly property real islandFieldHeight: 44
+    readonly property real islandRowHeight: 44
+    readonly property real islandListMaxHeight: 332
+    readonly property real clipboardSwatch: 18
+    readonly property real shelfTileHeight: 112
+    readonly property real shelfTileIcon: 44
+    readonly property real toolSegmentWidth: 52
+    readonly property real calculatorDisplayHeight: 64
+    readonly property real calculatorKeyHeight: 40
+    readonly property real emojiCell: 40
+    readonly property real colorSwatch: 64
 
     // Type
     readonly property var fontFamilies: ({"sans": "Google Sans Flex", "mono": "Google Sans Code"})
     readonly property var typeStyles: ({
         "numeralXl": {"family": "sans", "size": 112, "lineHeight": 104, "weight": 300, "letterSpacing": -2, "emphasized": false, "sample": "09:41"},
         "numeralLg": {"family": "sans", "size": 57, "lineHeight": 64, "weight": 400, "letterSpacing": -1, "emphasized": false, "sample": "24°"},
+        "pearlClock": {"family": "sans", "size": 64, "lineHeight": 64, "weight": 300, "letterSpacing": -2, "emphasized": false, "sample": "09:41"},
         "displaySm": {"family": "sans", "size": 36, "lineHeight": 44, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Good evening, Augusto"},
         "headlineSm": {"family": "sans", "size": 24, "lineHeight": 32, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "Control center"},
         "headlineSmEmphasized": {"family": "sans", "size": 24, "lineHeight": 32, "weight": 700, "letterSpacing": 0, "emphasized": true, "sample": "Power off?"},
+        "greeterName": {"family": "sans", "size": 28, "lineHeight": 36, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "[Your name]"},
+        "greeterWordmark": {"family": "sans", "size": 26, "lineHeight": 32, "weight": 600, "letterSpacing": -0.5, "emphasized": false, "sample": "Reef"},
+        "avatarInitialLg": {"family": "sans", "size": 56, "lineHeight": 56, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "A"},
         "titleMd": {"family": "sans", "size": 16, "lineHeight": 24, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "Now playing"},
         "titleMdEmphasized": {"family": "sans", "size": 16, "lineHeight": 24, "weight": 700, "letterSpacing": 0, "emphasized": true, "sample": "Coral"},
         "bodyMd": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Your download finished in 4 seconds."},
         "bodySm": {"family": "sans", "size": 12, "lineHeight": 16, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "2 min ago"},
+        "bodyLg": {"family": "sans", "size": 16, "lineHeight": 24, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Monday, 23 November · battery 82%"},
+        "pearlDate": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Monday, 23 November"},
         "labelLg": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "Do not disturb"},
         "labelMd": {"family": "sans", "size": 12, "lineHeight": 16, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "09:41"},
         "labelSm": {"family": "sans", "size": 11, "lineHeight": 16, "weight": 500, "letterSpacing": 0.4, "emphasized": false, "sample": "NOTIFICATIONS"},
+        "buttonLabel": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Cancel"},
+        "buttonLabelEmphasized": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 700, "letterSpacing": 0, "emphasized": true, "sample": "Authenticate"},
+        "tooltip": {"family": "sans", "size": 13, "lineHeight": 20, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "Power off"},
+        "avatarInitial": {"family": "sans", "size": 18, "lineHeight": 24, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "M"},
+        "avatarInitialSm": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "A"},
+        "greeterClock": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "09:41"},
         "monoLg": {"family": "mono", "size": 15, "lineHeight": 20, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "04:12"},
         "monoMd": {"family": "mono", "size": 13, "lineHeight": 20, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Super + V  ·  192.168.1.24  ·  42.3 °C"},
         "monoSm": {"family": "mono", "size": 11, "lineHeight": 16, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "CPU 12%  RAM 6.1G"},
+        "keyboardLayout": {"family": "mono", "size": 12, "lineHeight": 16, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "EN"},
         "barTitle": {"family": "sans", "size": 12, "lineHeight": 14, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "09:41"},
         "barSubtitle": {"family": "sans", "size": 11, "lineHeight": 14, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "[Song title]"},
         "barNumeral": {"family": "sans", "size": 13, "lineHeight": 16, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "1  2  3  4  5"},
         "islandTitle": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "[Song title]"},
         "toastLabel": {"family": "sans", "size": 13, "lineHeight": 20, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "Copied to clipboard"},
         "toastAction": {"family": "sans", "size": 13, "lineHeight": 20, "weight": 700, "letterSpacing": 0, "emphasized": false, "sample": "Undo"},
+        "islandRowLabel": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "Meeting moved to Thursday"},
+        "calculatorResult": {"family": "sans", "size": 28, "lineHeight": 32, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "576"},
+        "calculatorKey": {"family": "sans", "size": 18, "lineHeight": 24, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "7"},
+        "emoji": {"family": "sans", "size": 24, "lineHeight": 28, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "😀"},
         "cardTitle": {"family": "sans", "size": 16, "lineHeight": 22, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Quick toggles"},
         "notificationApp": {"family": "sans", "size": 12, "lineHeight": 16, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Messages"},
         "notificationTitle": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Download finished"},
@@ -197,7 +266,8 @@ Singleton {
         "calendarDay": {"family": "sans", "size": 13, "lineHeight": 18, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "23"},
         "searchSection": {"family": "sans", "size": 11, "lineHeight": 16, "weight": 600, "letterSpacing": 0.4, "emphasized": false, "sample": "APPS"},
         "searchTitle": {"family": "sans", "size": 14, "lineHeight": 20, "weight": 600, "letterSpacing": 0, "emphasized": false, "sample": "Terminal"},
-        "searchField": {"family": "sans", "size": 15, "lineHeight": 20, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "ter"}
+        "searchField": {"family": "sans", "size": 15, "lineHeight": 20, "weight": 400, "letterSpacing": 0, "emphasized": false, "sample": "ter"},
+        "dialogTitle": {"family": "sans", "size": 22, "lineHeight": 28, "weight": 500, "letterSpacing": 0, "emphasized": false, "sample": "Authentication required"}
     })
 
     // Reference color schemes (seed #e8735a). Colors.qml uses these with no wallpaper.
@@ -243,7 +313,8 @@ Singleton {
             "onIslandAccent": "#61342a",
             "islandTrack": "#3a3a3c",
             "scrim": "#80000000",
-            "screenCorner": "#000000"
+            "screenCorner": "#000000",
+            "scrimHeavy": "#b8282423"
         },
         "light": {
             "primary": "#8c4e41",
@@ -284,7 +355,8 @@ Singleton {
             "onIslandAccent": "#61342a",
             "islandTrack": "#3a3a3c",
             "scrim": "#52000000",
-            "screenCorner": "#000000"
+            "screenCorner": "#000000",
+            "scrimHeavy": "#b8f5ecea"
         },
         "dark-neutral": {
             "primary": "#f9b7a8",
@@ -325,7 +397,8 @@ Singleton {
             "onIslandAccent": "#61342a",
             "islandTrack": "#3a3a3c",
             "scrim": "#80000000",
-            "screenCorner": "#000000"
+            "screenCorner": "#000000",
+            "scrimHeavy": "#b8282423"
         },
         "light-neutral": {
             "primary": "#8c4e41",
@@ -366,20 +439,24 @@ Singleton {
             "onIslandAccent": "#61342a",
             "islandTrack": "#3a3a3c",
             "scrim": "#52000000",
-            "screenCorner": "#000000"
+            "screenCorner": "#000000",
+            "scrimHeavy": "#b8f5ecea"
         }
     })
     // Roles that never change with the wallpaper (the Island family).
-    readonly property var fixedRoles: ["island", "onIsland", "onIslandVariant", "islandContainer", "islandContainerHigh", "islandAccent", "onIslandAccent", "islandTrack", "scrim", "screenCorner"]
+    readonly property var fixedRoles: ["island", "onIsland", "onIslandVariant", "islandContainer", "islandContainerHigh", "islandAccent", "onIslandAccent", "islandTrack", "scrim", "screenCorner", "scrimHeavy"]
 
     // Shadows per theme: {x, y, blur, color}
-    readonly property var shadows: ({"shadowIsland": {"dark": {"x": 0, "y": 6, "blur": 20, "color": "#73000000"}, "light": {"x": 0, "y": 6, "blur": 20, "color": "#38000000"}, "dark-neutral": {"x": 0, "y": 6, "blur": 20, "color": "#73000000"}, "light-neutral": {"x": 0, "y": 6, "blur": 20, "color": "#38000000"}}, "shadowFloat": {"dark": {"x": 0, "y": 2, "blur": 8, "color": "#59000000"}, "light": {"x": 0, "y": 2, "blur": 8, "color": "#1f000000"}, "dark-neutral": {"x": 0, "y": 2, "blur": 8, "color": "#59000000"}, "light-neutral": {"x": 0, "y": 2, "blur": 8, "color": "#1f000000"}}, "shadowToast": {"dark": {"x": 0, "y": 4, "blur": 14, "color": "#59000000"}, "light": {"x": 0, "y": 4, "blur": 14, "color": "#2e000000"}, "dark-neutral": {"x": 0, "y": 4, "blur": 14, "color": "#59000000"}, "light-neutral": {"x": 0, "y": 4, "blur": 14, "color": "#2e000000"}}, "shadowMenu": {"dark": {"x": 0, "y": 8, "blur": 28, "color": "#73000000"}, "light": {"x": 0, "y": 8, "blur": 28, "color": "#33000000"}, "dark-neutral": {"x": 0, "y": 8, "blur": 28, "color": "#73000000"}, "light-neutral": {"x": 0, "y": 8, "blur": 28, "color": "#33000000"}}})
+    readonly property var shadows: ({"shadowIsland": {"dark": {"x": 0, "y": 6, "blur": 20, "color": "#73000000"}, "light": {"x": 0, "y": 6, "blur": 20, "color": "#38000000"}, "dark-neutral": {"x": 0, "y": 6, "blur": 20, "color": "#73000000"}, "light-neutral": {"x": 0, "y": 6, "blur": 20, "color": "#38000000"}}, "shadowFloat": {"dark": {"x": 0, "y": 2, "blur": 8, "color": "#59000000"}, "light": {"x": 0, "y": 2, "blur": 8, "color": "#1f000000"}, "dark-neutral": {"x": 0, "y": 2, "blur": 8, "color": "#59000000"}, "light-neutral": {"x": 0, "y": 2, "blur": 8, "color": "#1f000000"}}, "shadowToast": {"dark": {"x": 0, "y": 4, "blur": 14, "color": "#59000000"}, "light": {"x": 0, "y": 4, "blur": 14, "color": "#2e000000"}, "dark-neutral": {"x": 0, "y": 4, "blur": 14, "color": "#59000000"}, "light-neutral": {"x": 0, "y": 4, "blur": 14, "color": "#2e000000"}}, "shadowMenu": {"dark": {"x": 0, "y": 8, "blur": 28, "color": "#73000000"}, "light": {"x": 0, "y": 8, "blur": 28, "color": "#33000000"}, "dark-neutral": {"x": 0, "y": 8, "blur": 28, "color": "#73000000"}, "light-neutral": {"x": 0, "y": 8, "blur": 28, "color": "#33000000"}}, "shadowDialog": {"dark": {"x": 0, "y": 16, "blur": 48, "color": "#8c000000"}, "light": {"x": 0, "y": 16, "blur": 48, "color": "#40000000"}, "dark-neutral": {"x": 0, "y": 16, "blur": 48, "color": "#8c000000"}, "light-neutral": {"x": 0, "y": 16, "blur": 48, "color": "#40000000"}}})
 
     // Opacity (state layers, disabled)
     readonly property real stateHoverOpacity: 0.08
     readonly property real statePressedOpacity: 0.1
     readonly property real disabledOpacity: 0.38
     readonly property real scrimLightOpacity: 0.5
+    readonly property real lockChipOpacity: 0.55
+    readonly property real greeterScrimOpacity: 0.25
+    readonly property real dropTargetOpacity: 0.08
 
     // Motion (MOTION.md). Use through the Motion singleton, never directly.
     readonly property var springs: ({"spatialFast": {"stiffness": 800, "damping": 0.6, "duration": 350, "bezier": [0.42, 1.67, 0.21, 0.9]}, "spatialDefault": {"stiffness": 380, "damping": 0.8, "duration": 500, "bezier": [0.38, 1.21, 0.22, 1.0]}, "spatialSlow": {"stiffness": 200, "damping": 0.8, "duration": 650, "bezier": [0.39, 1.29, 0.35, 0.98]}, "effectsFast": {"stiffness": 3800, "damping": 1, "duration": 150, "bezier": [0.31, 0.94, 0.34, 1.0]}, "effectsDefault": {"stiffness": 1600, "damping": 1, "duration": 200, "bezier": [0.34, 0.8, 0.34, 1.0]}, "effectsSlow": {"stiffness": 800, "damping": 1, "duration": 300, "bezier": [0.34, 0.88, 0.34, 1.0]}})
@@ -403,4 +480,6 @@ Singleton {
     readonly property real activityNotice: 5000
     readonly property real notificationPopupTimeout: 6000
     readonly property real eventSoon: 900000
+    readonly property real errorTint: 600
+    readonly property real unlockDelay: 350
 }

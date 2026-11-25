@@ -45,6 +45,9 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     Card  Tile  ExpressiveSlider  Switch  Chip  ListRow  MenuButton   ✓ (M3)
     ButtonGroup.qml           ✓ M3E button group: shared width, the pressed one widens
     WindowThumb.qml           ✓ a window's live picture (ScreencopyView), rounded, icon fallback
+    PasswordField.qml         ✓ (M5) black pill; each character a shape, pop-in, wrong-password shake + tint
+    PillButton.qml            ✓ (M5) full-width dialog button (Cancel, Authenticate)
+    AnalogClock.qml           ✓ (M5) the power-actions clock (a desktop widget later)
     IconButton.qml  Toggle.qml  Slider.qml  TidePanel.qml
   modules/
     ScreenScope.qml           ✓ one per monitor; surfaces get added here
@@ -56,6 +59,8 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
                                 order, swap, simulate), Activity (one activity's data), IslandActivity,
                                 IslandPeek, NowTab, IslandTabs (circles), IslandActivities + ActivityRow
                                 (the pill under the expanded Island), IslandButton
+                                (M6) ShelfTab, ClipboardTab, ToolsTab (calculator, emoji, color, screenshot),
+                                IslandTextButton, IslandSearchField
     controlcenter/            ✓ ControlCenter (Tide panel), NotificationCard
     menus/                    ✓ MenuContent (one menu by name) + CalendarMenu, WifiMenu, BluetoothMenu,
                                 AudioMenu; hosted by the Status cay and the control center
@@ -65,7 +70,10 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     search/                   ✓ SearchView (results + field, inside the Navigator cay), SearchRow
     overview/                 ✓ Overview (workspace cards with live windows, Super+Tab)
     switcher/                 ✓ Switcher (Alt+Tab, most recently used windows)
-    pearl/  editmode/  power/  lock/  greeter/  polkit/
+    lock/                     ✓ (M5) LockScreen (WlSessionLock + preview overlay), LockSurface (one monitor)
+    polkit/                   ✓ (M5) AuthDialog (one per monitor, shown on the one that had focus)
+                                Power actions live in the bar: the Navigator's "power" form + Bar's scrim/clock
+    pearl/  editmode/  greeter/
   services/                   # singletons
     Config.qml                ✓ ~/.config/reef/config.json (FileView + JsonAdapter, live reload, write-back)
     Scheme.qml                ✓ runs matugen, caches ~/.cache/reef/scheme.json
@@ -74,13 +82,18 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     Countdown  Recording  Brightness  Toasts  Visualizer     ✓ (M2)
     Privacy  Stopwatch  KeepAwake  BluetoothNotice           ✓ (M2 activities)
     Notifications  NightLight  Calendar  Focus  BluetoothState  Screenshot   ✓ (M3)
+    Clipboard  Shelf  Calculator  Emoji  ColorPicker   ✓ (M6) cliphist + pins, the Shelf's items,
+                                a safe expression parser, assets/emoji.json + recents, grim/slurp pixel pick
+    Lock  Session  Keyboard  Polkit   ✓ (M5) lock state + PAM, power actions, keyboard layout, polkit agent
     Search                    ✓ (M4) results for search: apps, settings index, `/` commands, files (find)
                                 Apps also keeps when each app was last opened (~/.cache/reef/launches.json)
     Notifications  Bluetooth  Clipboard  Shelf  Coral  Wallpaper  Sounds
   dev/                        ✓ DevWindow (M0 inspector) + its small helpers
   settings/                   # Settings app (its own window / entry point)
   assets/fonts → ../../design/fonts (symlink)   assets/logo/ (copied from design/logo)
-  scripts/                    ✓ gen-tokens.py, matugen.toml
+  assets/pam.d/reef           ✓ (M5) the lock's PAM service: pam_unix (falls back to /etc/pam.d/login)
+  scripts/                    ✓ gen-tokens.py, matugen.toml, gen-emoji.py (assets/emoji.json from
+                                Unicode's emoji-test.txt; oh-my-zsh ships a copy)
 hypr/
   reef.lua                    ✓ Hyprland snippet (gaps, rounding, start command, binds)
   tokens.lua                  ✓ GENERATED: spacing/radius values for reef.lua
@@ -127,6 +140,8 @@ hypr/
 - Debug service state with `qs -p ./reef ipc call reef status`.
 - Resizing a layer surface under a resting pointer makes Hyprland send a leave and no enter until the pointer moves, so a surface that grows on hover (the bar, for the Status cay's menus) is created at full height up front with an input mask instead.
 - **Performance.** Qt redraws a whole surface on every change and Hyprland then recomposites all of it, so keep surfaces that animate often small: the Island's window is only as wide as its widest form (not the screen). Build heavy content only while it's shown: the overview's window captures exist only while it's open, search computes nothing while closed and lists results in a lazy `ListView`. Avoid rebuilding paths every frame: the wavy progress draws its wave once and slides it inside a clip.
+- **Never animate a variable-font axis.** Each new `font.variableAxes` value (FILL, wght, ROND, wdth) makes Qt build a new font instance, which blocks the GUI thread for 100+ ms: the Island ran at ~5 fps while its tab icons filled. `Icon` crossfades an outlined and a filled glyph instead, and the Navigator's active numeral crossfades two weights. Animate opacity between fixed axis values, never the axis itself.
+- A child `Process` gets an open stdin pipe. `slurp` reads preset boxes from stdin when it isn't a terminal and never shows its overlay, so run it as `slurp </dev/null`. Send `wl-copy`'s output to `/dev/null`: its background child keeps the pipe open and the `Process` never reports `exited`.
 - A `MouseArea` with `hoverEnabled` takes hover from a sibling `HoverHandler` beneath it; to know whether the pointer is anywhere on an item, check both.
 - Qt Quick re-sends hover when items move under a still pointer. Where items re-form on hover (the Status row), compare positions in window coordinates and act only on real pointer movement.
 - `clip` is rectangular; to clip to a rounded shape, mask a layer with `MultiEffect` (`maskEnabled`, `maskSource`), as the OSD's fill does.
@@ -145,7 +160,10 @@ hypr/
 - QML's JavaScript engine lacks some newer built-ins (`String.prototype.matchAll`, `Object.fromEntries`); use `RegExp.exec` loops and `reduce`.
 - Don't start a `Process` from a change handler with a bound `command`: the binding may not have updated yet. Set `command` right before `running = true`.
 - The visualizer writes its cava config to `~/.cache/reef/cava.conf` and runs cava only while a waveform is visible and media plays.
-- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|search|overview|calendar|wifi|bluetooth|audio>` (menus open inside the control center), `panel close`, `focus start <minutes>|stop|toggle`, `superHold down|up` (what holding Super does), `notifications dnd|clear`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
+- **Lock.** `services/Lock` checks the password with `PamContext` against `assets/pam.d/reef` (`auth required pam_unix.so`: the user's own password through the setuid helper). If that can't start it retries with the system `login` stack. `ipc call lock preview` shows the lock screen in an overlay without locking (Escape closes it); its power buttons do nothing. If Reef dies while locked, Hyprland shows its "lockdead" screen: from a TTY run `hyprctl --instance 0 'keyword misc:allow_session_lock_restore 1'` and start Reef again. Don't drive the lock screen with synthetic keys while testing: `send_shortcut` goes to the focused *window*, not the lock surface.
+- **Island tabs (M6).** Clipboard lists `cliphist list` and refreshes on `wl-paste --watch echo`; pins and "first seen" times live in `$XDG_DATA_HOME/reef/clipboard.json` (cliphist has no times, so entries from before Reef ran show none). The Shelf keeps file paths and text in `$XDG_RUNTIME_DIR/reef/shelf.json`; tiles drag out with `Drag.Automatic` (`text/uri-list` or `text/plain`). The color picker reads one pixel with `grim -g "$(slurp -p)" -t ppm - | tail -c 3`, so it needs no extra tool. The calculator never uses `eval`. The Tools tab is `island-tools-width` (420), so the Island morphs width when you switch to it. To check tab layouts without a running shell, load them in a `FloatingWindow` with `QT_QPA_PLATFORM=offscreen` and save `grabToImage` results (layer-shell windows can't load offscreen).
+- **Polkit.** Only one authentication agent can register per session. While polkit-gnome or hyprpolkitagent runs, Reef's `PolkitAgent` logs "An authentication agent already exists" and that agent keeps answering; stop it (and drop it from autostart) to get Reef's dialog. Test with `pkexec true`. Settings: `session.polkitAgent`.
+- IPC: `reef run <action>`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|search|overview|calendar|wifi|bluetooth|audio>` (menus open inside the control center), `panel close`, `focus start <minutes>|stop|toggle`, `superHold down|up` (what holding Super does), `notifications dnd|clear`, `lock lock|preview`. With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
 
 ## Configuration
 
