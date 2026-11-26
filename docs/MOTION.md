@@ -8,9 +8,10 @@ These are M3 Expressive's spring tokens. Spatial springs bounce; effects springs
 
 | Token | Stiffness | Damping | Use in Reef |
 | --- | --- | --- | --- |
-| `spatial-fast` | 800 | 0.6 | Password shapes popping in, toggle thumb, pressed-button squash, cay hover grow |
+| `spatial-fast` | 800 | 0.6 | Toggle thumb, pressed-button squash, cay hover grow, wrong-password shake |
 | `spatial-default` | 380 | 0.8 | The Island expanding and collapsing, Tide panels sliding in, search popping up from the Navigator cay |
-| `spatial-slow` | 200 | 0.8 | Island to Pearl morph, lock-screen entry, workspace overview zoom, bar moving to the left in edit mode |
+| `spatial-slow` | 200 | 0.8 | Island to Pearl morph (power actions, voice), workspace overview zoom, bar moving to the left in edit mode |
+| `spatial-bouncy` | 320 | 0.42 | Reef's own, beyond M3E: playful hops. The Pearl dropping into the lock screen and hopping, password shapes landing |
 | `effects-fast` | 3800 | 1 | Icon FILL, label weight on press, hover tint |
 | `effects-default` | 1600 | 1 | Fades of panel content, color changes when a toggle turns on |
 | `effects-slow` | 800 | 1 | Wallpaper-scheme crossfade, scrim in and out |
@@ -46,9 +47,12 @@ The values in both tables live in `design/tokens.json` → `motion` (with the st
 
 | Moment | Motion |
 | --- | --- |
-| **Island → Pearl** (lock) | Pill widens, then rounds into a circle and scales up to `pearl-size` with `spatial-slow`. The content inside crossfades to the Pearl's default display. |
+| **Island → Pearl** (lock) | The resting Island drops from the top center, rounding into the Pearl's shape as it grows to `pearl-lock-size` on `spatial-bouncy`: it overshoots and bounces back, stretched along the fall and squashed as it lands (`pearl-squash`). The content inside fades in once it's nearly there. |
+| **Pearl alive** | Hops `pearl-hop` on the minute and when its activity changes; swells `pearl-pulse` per typed character; rocks `pearl-wobble` on a wrong password. All `spatial-bouncy` kicks, none with Reduce motion. |
+| **Password shapes** | Each new shape pops up from below, spins in from `password-spin` and blooms from a circle into its shape (`spatial-bouncy`); its neighbours hop `password-hop`, less with distance, staggered. |
 | **Island hover reveal** (app open) | The Island hides up behind the top edge. A pointer at the top center for 150 ms drops it back down with `spatial-default` over the app, with `shadow-island`. It does not reserve space. |
-| **Power menu** (Ctrl+Alt+Delete) | Navigator cay icons scale to 0 with `effects-fast`. The cay re-forms to fit the power actions (`spatial-default`), and the new icons pop in staggered. A `scrim` fades in behind. |
+| **Power menu** (Ctrl+Alt+Delete) | Navigator cay icons scale to 0 with `effects-fast`. The cay re-forms to fit the power actions (`spatial-default`), and the new icons pop in staggered. A `scrim` fades in behind. The Island becomes the Pearl: it leaves the top center as the pill and drops into the Pearl's place on `spatial-bouncy`, rounding into its shape; closing folds it back into the Island (`spatial-default`), which then shows again. |
+| **Power → Lock** | Locking (or sleeping) from the power actions hands the Pearl to the lock screen: it carries on from where it is, keeping its shape and content, and lands at the lock screen's center on `spatial-bouncy`. Unlocking folds it into the Island. |
 | **Coral speaking** | The Pearl's outline is a shape driven by the audio: amplitude scales a set of radial waves (like a music-video audio orb), and the base shape morphs between cookie shapes on beats. `island-accent` glows at the peaks. When the reply finishes, the Pearl morphs into the chat card (`spatial-default`). |
 | **Wrong password** | All typed shapes morph back to circles, then shake horizontally ±8px with `spatial-fast`, and the field tints `error-container` for 600 ms. |
 | **Toggle on** | Squircle to pill (`spatial-fast`), fill to `primary-container` (`effects-default`), icon FILL 0→1 (`effects-fast`, as a crossfade from the outlined glyph to the filled one). |

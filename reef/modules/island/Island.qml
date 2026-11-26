@@ -36,6 +36,22 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "reef-island"
 
+    // While the Island is out being the Pearl (power actions), it isn't here.
+    readonly property bool away: IslandState.pearlScreen === modelData.name
+    Binding {
+        target: root.contentItem
+        property: "opacity"
+        value: root.away ? 0 : 1
+    }
+    readonly property var _bodyRect: () => ({
+            x: (root.modelData.width - root.width) / 2 + body.x,
+            y: body.y,
+            w: body.width,
+            h: body.height
+        })
+    Component.onCompleted: IslandState.registerBody(modelData.name, _bodyRect)
+    Component.onDestruction: IslandState.unregisterBody(modelData.name, _bodyRect)
+
     // Tall enough for the expanded Island plus its shadow; only the body takes input.
     readonly property real shadowRoom: Colors.shadowIsland.blur + Colors.shadowIsland.y * 2
     readonly property real activitiesHeight: activityRows.implicitHeight + Tokens.space3 * 2

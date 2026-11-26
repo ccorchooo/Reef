@@ -12,12 +12,16 @@ Scope {
 
     WlSessionLock {
         locked: Lock.locked
+        // Lets a waiting sleep go once every monitor is covered (Lock → lid and sleep).
+        onSecureChanged: Lock.secure = secure
 
         WlSessionLockSurface {
+            id: lockSurface
             color: Colors.surface
             LockSurface {
                 anchors.fill: parent
                 focus: true
+                screenName: lockSurface.screen?.name ?? ""
             }
         }
     }
@@ -42,6 +46,7 @@ Scope {
             LockSurface {
                 anchors.fill: parent
                 focus: true
+                screenName: Lock.previewScreen
             }
         }
     }

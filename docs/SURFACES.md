@@ -76,22 +76,27 @@ Mockups: `parts/Island-Rest.png`, `parts/Island-*.png`, `screens/Working.png`, `
 ## The Pearl
 Mockups: `parts/Pearl-States.png`, `parts/Pearl-Lock.png`, `screens/Lock.png`, `screens/CoralVoice.png`
 
-- The Pearl is the round form of the Island: a soft 9-lobed cookie shape filled with `island` black.
+- The Pearl is the round form of the Island: a soft 9-lobed cookie shape filled with `island` black by default. Settings → Lock screen changes its shape (the clock's shapes), its color (black, or the primary, secondary or tertiary container with its on-color) and its face. The same Pearl (`modules/lock/Pearl.qml`) sits on the lock screen and behind the power actions.
 - **States:**
-  - **Default:** a clock, or system stats in mono. The user chooses which.
-  - **Media:** a progress ring in `island-accent` (or the album art's color).
-  - **Timer:** a progress ring in `tertiary-container`.
+  - **Default (the face):** a digital clock with the date (the date can be turned off), an analog clock whose face is the Pearl (hands, ticks and numbers follow the clock widget's settings), or system stats in mono.
+  - **Activity:** with "Show the current activity" on, it shows the Island's main activity instead (paused media too, so it can be resumed), with the time small on top:
+    - **Media:** a small player: album art (cookie-12), title, artist, previous / play-pause / next, inside a progress ring in `island-accent` (the color's accent on a tinted Pearl).
+    - **Timer:** the readout and its action inside a progress ring in `tertiary-container`.
+    - **Anything else:** its icon, readout (or title and subtitle) and first action.
+- **Alive:** it hops `pearl-hop` on the minute and when its activity changes (Settings can turn the hop off), stretching as it moves and squashing as it lands (`pearl-squash`), all on `spatial-bouncy`. On the lock screen it swells `pearl-pulse` with each typed character and rocks `pearl-wobble` on a wrong password.
   - **Coral speaking:** layered outline shapes that morph and pulse with the audio.
 - The **Island → Pearl** morph uses `spatial-slow` (see MOTION.md).
 
 ## Lock screen
 Mockup: `screens/Lock.png`
 
-- Shows the wallpaper, with the Pearl in the center showing the clock and date, a greeting in `display-sm`, and a small media chip.
+- Shows the wallpaper, with the Pearl in the center (its face, or the Island's main activity; media plays as a small player in the Pearl). No greeting.
 - **Bottom-left:** the password field, a black pill where **each typed character appears as the next M3E shape** (circle, cookie-4, clover, sunny, flower…). Next to it is a small cay with Sleep, Power off and Restart.
+- **Typing:** each shape pops up from below, spins in from `password-spin` and blooms from a circle into its shape (`spatial-bouncy`); the shapes beside it hop (`password-hop`, less with distance, staggered) on each character typed or erased.
 - **Wrong password:** the shapes morph back to circles, shake with `spatial-fast`, and the field tints `error-container`.
 - **Bottom-right:** network, battery and keyboard layout.
 - Use `WlSessionLock` plus PAM. Fingerprint support is optional.
+- **Closing the lid locks** (Settings → Lock screen → Lock when the lid closes). Reef holds a logind sleep delay so a lid-close suspend waits until the lock covers every monitor.
 
 ## Login greeter
 Mockup: `screens/Greeter.png`
@@ -166,7 +171,7 @@ Mockup: `screens/AuthDialog.png`
 Mockup: `screens/PowerActions.png`
 
 - Opened with **Ctrl+Alt+Delete**, the power button, or the power button in the header of the control center's Quick toggles card.
-- The desktop is blurred by the compositor and covered with the heavy scrim (`scrim-heavy`'s alpha over the scheme's `surface-container`), with a big clock widget, the time, and the date and battery level.
+- The desktop is blurred by the compositor and covered with the heavy scrim (`scrim-heavy`'s alpha over the scheme's `surface-container`), with the Pearl where the big clock was (its face, or the Island's main activity, e.g. a small media player), the time, and the date and battery level. The Pearl comes out of the Island (which is gone while it's out) and goes back into it; locking from here hands it on to the lock screen.
 - The Navigator cay re-forms into the power actions. On hover, **Power off** turns `error-container` and shows a tooltip.
 
 ## Home widgets
@@ -214,10 +219,11 @@ Mockup: `screens/Settings.png`
 - **Bar & Island:** the bar's switches, workspace count and clock format; the Island's peek, hiding over apps, recording detection and drops; each activity; home (Edit home, Reset widgets, wiggle, weather location and unit); notifications, OSD and toasts; clipboard size, file search, focus lengths and calendars.
 - **Apps:** **Default apps**: one row per kind (web browser, files, terminal, email, text editor, images, videos, music, PDF) with the current app; a row opens the apps that can handle it as pills, the chosen one on `primary-container`. **Dock**: the pins in order, each with move earlier / later and unpin. **Apps in search**: a filter field, then every app with a pin button and a "Show in search" switch (the first 40 until "Show all").
 - **Widgets:** the clock's live preview, then hour ticks, second hand, numbers, face color and shape.
+- **Lock screen:** the Pearl's live preview on the wallpaper (show the current activity, date, hop on the minute, Preview lock screen), then its face (clock, analog, system), color (black, primary, secondary, tertiary) and shape; the status and power buttons; locking (when the lid closes, before sleep).
 - **Sound, Network, Bluetooth:** the matching quick menu, plus the microphone on Sound.
 - **Coral:** endpoint, model, the environment variable holding the API key (the key itself is never stored), voice. Coral arrives in M8.
 - **Keyboard & shortcuts:** the layout and the default shortcuts.
-- **Power & performance:** lock before sleep, the authentication dialog, the low-battery level, blur, shape morphs, the visualizer and its frame rate, live thumbnails.
+- **Power & performance:** the authentication dialog, the low-battery level, blur, shape morphs, the visualizer and its frame rate, live thumbnails.
 - **Accessibility:** Reduce motion, animation speed, **Zoom** (75–150%: the whole shell, sizes, spacing, corners and text together), text size, spacing and corner roundness.
 - **About:** the Reef lockup, the system, Quickshell and Hyprland versions, and where the settings file lives.
 

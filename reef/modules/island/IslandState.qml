@@ -213,6 +213,26 @@ Singleton {
         return all.some(a => a.key === key);
     }
 
+    // ── the Island as the Pearl ─────────────────────────────────
+    // Each monitor's Island tells where its body is (screen coordinates), so the Pearl
+    // can grow out of it (power actions, lock screen) and fold back into it.
+    property var _bodies: ({})
+    function registerBody(screen, rect) {
+        _bodies[screen] = rect;
+    }
+    function unregisterBody(screen, rect) {
+        if (_bodies[screen] === rect)
+            delete _bodies[screen];
+    }
+    // { x, y, w, h }; the resting Island when there's none on that monitor.
+    function bodyRect(screen, screenWidth) {
+        const f = _bodies[screen];
+        return f ? f() : { x: (screenWidth - Tokens.islandCollapsedWidth) / 2, y: Tokens.space2, w: Tokens.islandCollapsedWidth, h: Tokens.islandCollapsedHeight };
+    }
+    // The monitor whose Island is out being the Pearl (the power actions): it hides there
+    // until the Pearl has folded back into it.
+    property string pearlScreen: ""
+
     // The one the user put on the main Island by swapping; forgotten when it ends.
     property string preferred: ""
 

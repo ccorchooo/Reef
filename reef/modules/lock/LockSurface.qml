@@ -7,24 +7,32 @@ import qs.modules.island
 // The lock screen on one monitor (SURFACES.md → Lock screen; screens/Lock, parts/Pearl-Lock).
 // Hosted by a WlSessionLockSurface, or by an overlay for the preview.
 //
-// The wallpaper, the Pearl with the clock and date, a greeting and a media chip. Bottom
-// left: the password field (each character a shape) and a black cay with Sleep, Power
-// off and Restart. Bottom right: network, battery and keyboard layout.
+// The wallpaper and the Pearl (its face, or the Island's main activity: media is a small
+// player). Bottom left: the password field (each character a shape) and a black cay with
+// Sleep, Power off and Restart. Bottom right: network, battery and keyboard layout.
 //
 // Entry (MOTION.md → Island → Pearl): the Pearl starts as the resting Island at the top
-// center, widens and rounds into the 9-lobed cookie as it grows to pearl-lock-size and
-// settles with spatial-slow. One hero: everything else only fades in after it. A correct
+// center, drops and rounds into its shape as it grows to pearl-lock-size on
+// spatial-bouncy, stretching as it falls and squashing as it lands. One hero: everything
+// else only fades in after it. Typing makes it swell, a wrong password rocks it. A correct
 // password folds it back toward the Island while the rest fades, then the lock lifts.
 FocusScope {
     id: root
 
+    // The monitor it covers: its Island is where the Pearl comes from and goes back to.
+    property string screenName: ""
     readonly property bool leaving: Lock.unlocking
+    // Locked from the power actions: the Pearl already out there carries on from where it
+    // is instead of dropping from the Island. Read once, when the lock appears.
+    property var handoff: null
+    readonly property bool fromPearl: handoff !== null && !leaving
     readonly property string wallpaper: Config.options.look.wallpaper
 
-    // 0 = the resting Island, 1 = the Pearl in place.
+    // 0 = the resting Island, 1 = the Pearl in place. It drops in on spatial-bouncy,
+    // overshoots and bounces back; leaving folds it up with spatial-default.
     Spring {
         id: form
-        spec: root.leaving ? Motion.spatialDefault : Motion.spatialSlow
+        spec: root.leaving ? Motion.spatialDefault : Motion.spatialBouncy
         target: 0
     }
     // Everything but the Pearl, and the Pearl's own clock.
@@ -34,10 +42,15 @@ FocusScope {
         target: form.target === 1 && form.value > 0.75 ? 1 : 0
     }
 
-    Component.onCompleted: Qt.callLater(() => {
+    Component.onCompleted: {
+        if (Lock.handoff && Lock.handoff.screen === screenName)
+            handoff = Lock.handoff;
+        Qt.callLater(enter);
+    }
+    function enter() {
         form.target = 1;
         field.focusField();
-    })
+    }
     onLeavingChanged: {
         if (leaving)
             form.target = 0;
@@ -47,6 +60,7 @@ FocusScope {
         target: Lock
         function onFailed() {
             field.fail();
+            pearl.wobble();
         }
     }
 
@@ -78,136 +92,33 @@ FocusScope {
         opacity: content.value
     }
 
-    // ── the Pearl, greeting and media ───────────────────────────
+    // ── the Pearl ───────────────────────────────────────────────
     // Centered in the space above the bottom row.
     readonly property real bottomRow: Tokens.space8 + Tokens.passwordFieldHeight + Tokens.space8
-    readonly property bool showChip: Config.options.lock.media && Media.active
-    readonly property real columnHeight: Tokens.pearlLockSize
-        + (Config.options.lock.greeting ? Tokens.space8 + greeting.height : 0)
-        + (showChip ? Tokens.space2_5 + chip.height : 0)
-    readonly property real columnTop: (height - bottomRow - columnHeight) / 2
+    readonly property real columnTop: (height - bottomRow - Tokens.pearlLockSize) / 2
 
-    Item {
+    Pearl {
         id: pearl
 
         readonly property real t: form.value
-        readonly property real restX: (root.width - Tokens.islandCollapsedWidth) / 2
+        // Where it starts: the handed-over Pearl, else this monitor's Island (and where
+        // it folds back to on unlock).
+        readonly property var from: root.fromPearl ? root.handoff : IslandState.bodyRect(root.screenName, root.width)
         readonly property real placeX: (root.width - Tokens.pearlLockSize) / 2
+        readonly property real fall: root.columnTop - from.y
 
-        x: restX + (placeX - restX) * t
-        y: Tokens.space2 + (root.columnTop - Tokens.space2) * t
-        width: Tokens.islandCollapsedWidth + (Tokens.pearlLockSize - Tokens.islandCollapsedWidth) * t
-        height: Tokens.islandCollapsedHeight + (Tokens.pearlLockSize - Tokens.islandCollapsedHeight) * t
+        x: from.x + (placeX - from.x) * t
+        y: from.y + fall * t
+        width: from.w + (Tokens.pearlLockSize - from.w) * t
+        height: from.h + (Tokens.pearlLockSize - from.h) * t
 
-        ShapeMorph {
-            anchors.fill: parent
-            shape: form.target === 1 ? "cookie9" : "pill"
-            spec: form.spec
-            color: Colors.island
-        }
-
-        Column {
-            anchors.centerIn: parent
-            spacing: Tokens.space1
-            opacity: content.value
-
-            StyledText {
-                anchors.horizontalCenter: parent.horizontalCenter
-                style: "pearlClock"
-                rond: 100
-                text: Time.time
-                color: Colors.on.island
-                font.features: ({ tnum: 1 })
-                Accessible.name: "Time " + Time.time
-            }
-            StyledText {
-                anchors.horizontalCenter: parent.horizontalCenter
-                style: "pearlDate"
-                text: Qt.formatDate(Time.now, "dddd, d MMMM")
-                color: Colors.on.islandVariant
-            }
-        }
-    }
-
-    StyledText {
-        id: greeting
-        visible: Config.options.lock.greeting
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: root.columnTop + Tokens.pearlLockSize + Tokens.space8
-        style: "displaySm"
-        color: Colors.on.surface
-        opacity: content.value
-        text: {
-            const h = Time.now.getHours();
-            return h >= 5 && h < 12 ? "Good morning" : h >= 12 && h < 17 ? "Good afternoon" : h >= 17 && h < 22 ? "Good evening" : "Good night";
-        }
-    }
-
-    Rectangle {
-        id: chip
-        visible: root.showChip
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: root.columnTop + Tokens.pearlLockSize + (greeting.visible ? Tokens.space8 + greeting.height : 0) + Tokens.space2_5
-        width: chipRow.implicitWidth + Tokens.cayPadding * 2
-        height: Tokens.lockChipHeight
-        radius: height / 2
-        color: Qt.alpha(Colors.island, Tokens.lockChipOpacity)
-        opacity: content.value
-
-        Row {
-            id: chipRow
-            anchors.centerIn: parent
-            spacing: Tokens.space2
-
-            Icon {
-                anchors.verticalCenter: parent.verticalCenter
-                name: "music_note"
-                size: Tokens.iconXs
-                filled: true
-                color: Colors.islandAccent
-            }
-            StyledText {
-                anchors.verticalCenter: parent.verticalCenter
-                width: Math.min(implicitWidth, root.width / 3)
-                elide: Text.ElideRight
-                style: "bodySm"
-                color: Colors.on.island
-                text: Media.artist !== "" ? `${Media.title} · ${Media.artist}` : Media.title
-            }
-            Item {
-                id: playPause
-                anchors.verticalCenter: parent.verticalCenter
-                width: Tokens.iconXs
-                height: Tokens.iconXs
-                activeFocusOnTab: true
-                Accessible.role: Accessible.Button
-                Accessible.name: Media.playing ? "Pause" : "Play"
-                Keys.onReturnPressed: Media.togglePlaying()
-                Keys.onSpacePressed: Media.togglePlaying()
-
-                Icon {
-                    anchors.centerIn: parent
-                    name: Media.playing ? "pause" : "play_arrow"
-                    size: Tokens.iconXs
-                    filled: true
-                    color: Colors.on.island
-                }
-                Rectangle {
-                    anchors.fill: parent
-                    anchors.margins: -Tokens.spaceHalf
-                    radius: width / 2
-                    color: "transparent"
-                    border.width: playPause.activeFocus ? 2 : 0
-                    border.color: Colors.islandAccent
-                }
-                MouseArea {
-                    anchors.fill: parent
-                    anchors.margins: -Tokens.space1
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: Media.togglePlaying()
-                }
-            }
-        }
+        activity: Config.options.lock.activity
+        // A handed-over Pearl keeps its shape and content; leaving folds into the pill.
+        resting: form.target !== 1 && !root.fromPearl
+        spec: form.spec
+        contentOpacity: root.fromPearl ? 1 : content.value
+        // The drop stretches it; the bounce at the bottom squashes it.
+        travel: form.velocity * fall
     }
 
     // ── bottom left: password and power ─────────────────────────
@@ -222,6 +133,8 @@ FocusScope {
             focus: true
             busy: Lock.busy || Lock.unlocking
             onSubmitted: text => Lock.submit(text)
+            // The Pearl swells a little with each character.
+            onTextChanged: if (text !== "") pearl.pulse()
         }
 
         Rectangle {

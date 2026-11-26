@@ -6,7 +6,9 @@ import qs.theme
 //
 //   PasswordField { onSubmitted: text => Lock.submit(text) }
 //
-// New shapes pop in with spatial-fast; the newest is island-accent. fail() plays the
+// New shapes pop up from below, spin in and bloom from a circle into their shape with
+// spatial-bouncy, and the ones beside them hop in a small wave (typing or erasing); the
+// newest is island-accent. fail() plays the
 // wrong-password moment (MOTION.md): every shape morphs back to a circle, the row shakes
 // ±shake-distance with spatial-fast and the field tints error-container for error-tint,
 // then it clears. The text itself is never drawn. A focus scope: giving the field focus
@@ -47,6 +49,9 @@ FocusScope {
     }
 
     property bool _failing: false
+    // A character was typed (at = its index) or erased (at = the new length).
+    signal rippled(int at)
+    property int _length: 0
 
     Timer {
         id: errorTint
@@ -78,8 +83,9 @@ FocusScope {
         anchors.right: submit.visible ? submit.left : parent.right
         anchors.leftMargin: Tokens.passwordFieldPadding
         anchors.rightMargin: submit.visible ? Tokens.space2_5 : Tokens.passwordFieldPadding
-        anchors.verticalCenter: parent.verticalCenter
-        height: Tokens.passwordShape
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        // The field's full height, so hops and bounces aren't cut off.
         clip: true
 
         Spring {
@@ -90,6 +96,7 @@ FocusScope {
 
         Row {
             x: Math.min(0, area.width - width) + shake.value
+            y: (area.height - Tokens.passwordShape) / 2
             spacing: Tokens.space2
 
             Repeater {
@@ -102,12 +109,53 @@ FocusScope {
                     width: Tokens.passwordShape
                     height: Tokens.passwordShape
 
+                    // Arrives alive: pops up from below, spins into place and blooms from a
+                    // circle into its shape, all on spatial-bouncy.
                     Spring {
                         id: pop
-                        spec: Motion.spatialFast
+                        spec: Motion.spatialBouncy
                     }
-                    // After the spring is ready, so the change animates.
-                    Component.onCompleted: Qt.callLater(() => pop.target = 1)
+                    Spring {
+                        id: rise
+                        spec: Motion.spatialBouncy
+                        target: 0
+                    }
+                    Spring {
+                        id: spin
+                        spec: Motion.spatialBouncy
+                        target: 0
+                    }
+                    property bool bloomed: false
+                    Component.onCompleted: {
+                        rise.snap(Tokens.passwordShape);
+                        spin.snap(Tokens.passwordSpin);
+                        // After the springs are ready, so the changes animate.
+                        Qt.callLater(() => {
+                            pop.target = 1;
+                            rise.target = 0;
+                            spin.target = 0;
+                            glyph.bloomed = true;
+                        });
+                    }
+
+                    // A shape typed or erased nearby: hop, less the further away, in a wave.
+                    Timer {
+                        id: ripple
+                        property int distance: 1
+                        onTriggered: rise.kick(-Tokens.passwordHop / distance)
+                    }
+                    Connections {
+                        target: root
+                        function onRippled(at) {
+                            const d = at - glyph.index;
+                            if (d < 1 || d > Tokens.staggerMax)
+                                return;
+                            ripple.distance = d;
+                            ripple.interval = Math.max(1, Motion.stagger(d));
+                            ripple.restart();
+                        }
+                    }
+
                     ColorSpring {
                         id: tone
                         spec: Motion.effectsDefault
@@ -117,8 +165,12 @@ FocusScope {
                     ShapeMorph {
                         anchors.fill: parent
                         scale: Math.max(0, pop.value)
-                        spec: Motion.spatialFast
-                        shape: root._failing ? "circle" : Shapes.passwordSequence[glyph.index % Shapes.passwordSequence.length]
+                        rotation: spin.value
+                        transform: Translate {
+                            y: rise.value
+                        }
+                        spec: Motion.spatialBouncy
+                        shape: root._failing || !glyph.bloomed ? "circle" : Shapes.passwordSequence[glyph.index % Shapes.passwordSequence.length]
                         color: tone.value
                     }
                 }
@@ -135,6 +187,14 @@ FocusScope {
         echoMode: TextInput.Password
         readOnly: root.busy || root._failing
         inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoPredictiveText
+        onTextChanged: {
+            const n = text.length;
+            if (n > root._length)
+                root.rippled(n - 1);
+            else if (n < root._length && n > 0)
+                root.rippled(n);
+            root._length = n;
+        }
         Accessible.role: Accessible.EditableText
         Accessible.name: root.label
         Accessible.passwordEdit: true

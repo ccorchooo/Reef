@@ -5,6 +5,8 @@ import Quickshell.Hyprland
 import qs.theme
 import qs.services
 import qs.components
+import qs.modules.lock
+import qs.modules.island
 import qs.modules
 
 // The bar (SURFACES.md → Bar): four separate cays along the bottom edge,
@@ -46,7 +48,7 @@ PanelWindow {
     // Search (the Navigator cay grown into the search panel) takes the keyboard.
     readonly property bool searching: navigator.searching
     // Power actions (Ctrl+Alt+Delete): the Navigator re-forms into them over a heavy
-    // scrim with the clock; the Dock and Spotlight step aside. They take the keyboard.
+    // scrim with the Pearl; the Dock and Spotlight step aside. They take the keyboard.
     readonly property bool power: navigator.power
     // A quick menu opened by hovering takes the keyboard only when clicked (OnDemand),
     // so it never steals typing from the focused app.
@@ -59,8 +61,16 @@ PanelWindow {
             focusSearch.restart();
     }
     onPowerChanged: {
-        if (power)
+        if (power) {
+            // The Pearl grows out of this monitor's Island (MOTION.md → Island → Pearl).
+            pearlFrom = IslandState.bodyRect(modelData.name, width);
+            pearlHandedOff = false;
+            IslandState.pearlScreen = modelData.name;
+            pearlForm.target = 1;
             focusPower.restart();
+        } else {
+            pearlForm.target = 0;
+        }
     }
     Timer {
         id: focusPower
@@ -199,7 +209,7 @@ PanelWindow {
         height: root.overviewOpen ? overviewStrip.height : 0
     }
 
-    // ── power actions: heavy scrim, clock, time and date ────────
+    // ── power actions: heavy scrim, the Pearl, time and date ────────
     Spring {
         id: powerFade
         spec: Motion.effectsSlow
@@ -236,14 +246,19 @@ PanelWindow {
     }
     // Centered in the space above (or beside) the bar.
     Row {
+        id: powerRow
         x: Tokens.powerClockInset
         y: (root.height - (root.barLeft ? 0 : root.exclusiveZone) - height) / 2
         spacing: Tokens.powerClockGap
         opacity: powerContent.value
         visible: opacity > 0.01
 
-        AnalogClock {
+        // Where the Pearl lands (it's drawn below, so it can fly in from the Island).
+        Item {
+            id: pearlSlot
             anchors.verticalCenter: parent.verticalCenter
+            width: Tokens.powerClockSize
+            height: Tokens.powerClockSize
         }
         Column {
             anchors.verticalCenter: parent.verticalCenter
@@ -257,6 +272,59 @@ PanelWindow {
                 text: Qt.formatDate(Time.now, "dddd, d MMMM") + (Battery.present ? " · battery " + Battery.percent : "")
             }
         }
+    }
+
+    // ── the Pearl, out of the Island ────────────────────────────
+    // Where the clock was: its face, or the Island's main activity. 0 = the Island's body,
+    // 1 = in its slot. Opening drops it there on spatial-bouncy as the pill rounds into the
+    // Pearl; closing folds it back into the Island (spatial-default), which then returns.
+    // Locking from here hands it to the lock screen, which carries on from where it is.
+    property var pearlFrom: ({ x: 0, y: 0, w: 0, h: 0 })
+    property bool pearlHandedOff: false
+    Spring {
+        id: pearlForm
+        spec: root.power ? Motion.spatialBouncy : Motion.spatialDefault
+        target: 0
+    }
+    Spring {
+        id: pearlContent
+        spec: Motion.effectsDefault
+        target: pearlForm.target === 1 && pearlForm.value > 0.75 ? 1 : 0
+    }
+    // Out until it has folded back; then the Island shows again.
+    readonly property bool pearlOut: power || pearlForm.running || pearlForm.value > 0.001
+    onPearlOutChanged: {
+        if (!pearlOut && IslandState.pearlScreen === modelData.name)
+            IslandState.pearlScreen = "";
+    }
+    Connections {
+        target: Lock
+        function onAboutToLock() {
+            if (!powerPearl.visible)
+                return;
+            Lock.handoff = { screen: root.modelData.name, x: powerPearl.x, y: powerPearl.y, w: powerPearl.width, h: powerPearl.height };
+            root.pearlHandedOff = true;
+        }
+    }
+
+    Pearl {
+        id: powerPearl
+
+        readonly property real t: pearlForm.value
+        readonly property real placeX: powerRow.x + pearlSlot.x
+        readonly property real placeY: powerRow.y + pearlSlot.y
+
+        x: root.pearlFrom.x + (placeX - root.pearlFrom.x) * t
+        y: root.pearlFrom.y + (placeY - root.pearlFrom.y) * t
+        width: root.pearlFrom.w + (Tokens.powerClockSize - root.pearlFrom.w) * t
+        height: root.pearlFrom.h + (Tokens.powerClockSize - root.pearlFrom.h) * t
+        visible: root.pearlOut && !root.pearlHandedOff
+
+        activity: Config.options.lock.activity
+        resting: pearlForm.target !== 1
+        spec: pearlForm.spec
+        contentOpacity: pearlContent.value
+        travel: pearlForm.velocity * (placeY - root.pearlFrom.y)
     }
 
     mask: Region {

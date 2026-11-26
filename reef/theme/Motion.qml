@@ -19,6 +19,8 @@ Singleton {
     readonly property var spatialFast: _spec("spatialFast")
     readonly property var spatialDefault: _spec("spatialDefault")
     readonly property var spatialSlow: _spec("spatialSlow")
+    // Beyond M3E's set: a looser spring for playful hops (the Pearl, password shapes).
+    readonly property var spatialBouncy: _spec("spatialBouncy")
     readonly property var effectsFast: _spec("effectsFast")
     readonly property var effectsDefault: _spec("effectsDefault")
     readonly property var effectsSlow: _spec("effectsSlow")

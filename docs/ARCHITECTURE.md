@@ -76,7 +76,8 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     search/                   ✓ SearchView (results + field, inside the Navigator cay), SearchRow
     overview/                 ✓ Overview (workspace cards with live windows, Super+Tab)
     switcher/                 ✓ Switcher (Alt+Tab, most recently used windows)
-    lock/                     ✓ (M5) LockScreen (WlSessionLock + preview overlay), LockSurface (one monitor)
+    lock/                     ✓ (M5) LockScreen (WlSessionLock + preview overlay), LockSurface (one monitor),
+                                Pearl (shape, color, face, the Island's main activity; also behind the power actions)
     polkit/                   ✓ (M5) AuthDialog (one per monitor, shown on the one that had focus)
                                 Power actions live in the bar: the Navigator's "power" form + Bar's scrim/clock
     home/                     ✓ (M7) Desktop (bottom layer: widgets, edit chrome, drops), HomeWidget (one widget +
@@ -97,7 +98,7 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
     Notifications  NightLight  Calendar  Focus  BluetoothState  Screenshot   ✓ (M3)
     Clipboard  Shelf  Calculator  Emoji  ColorPicker   ✓ (M6) cliphist + pins, the Shelf's items,
                                 a safe expression parser, assets/emoji.json + recents, grim/slurp pixel pick
-    Lock  Session  Keyboard  Polkit   ✓ (M5) lock state + PAM, power actions, keyboard layout, polkit agent
+    Lock  Session  Keyboard  Polkit   ✓ (M5) lock state + PAM + lid (logind), power actions, keyboard layout, polkit agent
     Home  Weather  SystemStats  OsInfo   ✓ (M7) widget layouts per monitor, wttr.in through curl, /proc +
                                 nvidia-smi/hwmon readings (only while a widget holds them), /etc/os-release
     Search                    ✓ (M4) results for search: apps, settings index, `/` commands, files (find)
@@ -130,7 +131,7 @@ hypr/
 | Tray | `Quickshell.Services.SystemTray`, shown inside the Status cay overflow. |
 | Battery | `Quickshell.Services.UPower` |
 | Network / Bluetooth | Quickshell's networking and Bluetooth modules if your version has them, otherwise `nmcli` and `bluetoothctl` through `Process`. |
-| Lock | `WlSessionLock` plus `Quickshell.Services.Pam`. Idle handled with hypridle or Quickshell's idle support. |
+| Lock | `WlSessionLock` plus `Quickshell.Services.Pam`. Idle handled with hypridle or Quickshell's idle support. Lid: `gdbus monitor` on logind (`LidClosed`, `PrepareForSleep`) and a `systemd-inhibit --mode=delay` sleep lock released once the lock is secure; both ship with glib2 and systemd, which Qt and Hyprland already need. |
 | Greeter | greetd plus a Quickshell greeter (`Quickshell.Services.Greetd`), with its own entry point and the same theme. |
 | Polkit | Quickshell's polkit agent if available, otherwise a small agent process that the UI talks to. |
 | Clipboard | `cliphist` plus `wl-clipboard`. The Clipboard tab lists, searches and pins entries. |

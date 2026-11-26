@@ -179,8 +179,16 @@ Singleton {
     readonly property real eventBarHeight: 32 * zoom
     readonly property real replyFieldHeight: 40 * zoom
     readonly property real pearlLockSize: 260 * zoom
+    readonly property real pearlRingGap: 8 * zoom
+    readonly property real pearlRingWidth: 8 * zoom
+    readonly property real pearlArt: 56 * zoom
+    readonly property real pearlButton: 36 * zoom
+    readonly property real pearlPlay: 48 * zoom
+    readonly property real pearlTextWidth: 160 * zoom
+    readonly property real pearlHop: 14 * zoom
+    readonly property real passwordHop: 5 * zoom
+    readonly property real settingsPearlPreview: 180 * zoom
     readonly property real lockLogo: 28 * zoom
-    readonly property real lockChipHeight: 36 * zoom
     readonly property real lockButton: 40 * zoom
     readonly property real passwordFieldWidth: 280 * zoom
     readonly property real passwordFieldHeight: 48 * zoom
@@ -548,7 +556,6 @@ Singleton {
     readonly property real statePressedOpacity: 0.1
     readonly property real disabledOpacity: 0.38
     readonly property real scrimLightOpacity: 0.5
-    readonly property real lockChipOpacity: 0.55
     readonly property real greeterScrimOpacity: 0.25
     readonly property real dropTargetOpacity: 0.08
     readonly property real editScrimOpacity: 0.35
@@ -556,9 +563,10 @@ Singleton {
     readonly property real widgetTrackOpacity: 0.35
     readonly property real homeGridDotsOpacity: 0.35
     readonly property real clockBackdropOpacity: 0.14
+    readonly property real pearlRingTrackOpacity: 0.45
 
     // Motion (MOTION.md). Use through the Motion singleton, never directly.
-    readonly property var springs: ({"spatialFast": {"stiffness": 800, "damping": 0.6, "duration": 350, "bezier": [0.42, 1.67, 0.21, 0.9]}, "spatialDefault": {"stiffness": 380, "damping": 0.8, "duration": 500, "bezier": [0.38, 1.21, 0.22, 1.0]}, "spatialSlow": {"stiffness": 200, "damping": 0.8, "duration": 650, "bezier": [0.39, 1.29, 0.35, 0.98]}, "effectsFast": {"stiffness": 3800, "damping": 1, "duration": 150, "bezier": [0.31, 0.94, 0.34, 1.0]}, "effectsDefault": {"stiffness": 1600, "damping": 1, "duration": 200, "bezier": [0.34, 0.8, 0.34, 1.0]}, "effectsSlow": {"stiffness": 800, "damping": 1, "duration": 300, "bezier": [0.34, 0.88, 0.34, 1.0]}})
+    readonly property var springs: ({"spatialFast": {"stiffness": 800, "damping": 0.6, "duration": 350, "bezier": [0.42, 1.67, 0.21, 0.9]}, "spatialDefault": {"stiffness": 380, "damping": 0.8, "duration": 500, "bezier": [0.38, 1.21, 0.22, 1.0]}, "spatialSlow": {"stiffness": 200, "damping": 0.8, "duration": 650, "bezier": [0.39, 1.29, 0.35, 0.98]}, "spatialBouncy": {"stiffness": 320, "damping": 0.42, "duration": 700, "bezier": [0.34, 1.9, 0.45, 0.85]}, "effectsFast": {"stiffness": 3800, "damping": 1, "duration": 150, "bezier": [0.31, 0.94, 0.34, 1.0]}, "effectsDefault": {"stiffness": 1600, "damping": 1, "duration": 200, "bezier": [0.34, 0.8, 0.34, 1.0]}, "effectsSlow": {"stiffness": 800, "damping": 1, "duration": 300, "bezier": [0.34, 0.88, 0.34, 1.0]}})
     readonly property real staggerStep: 20
     readonly property real staggerMax: 8
     readonly property real contentFadeDelay: 50
@@ -585,4 +593,8 @@ Singleton {
     readonly property real weatherRefresh: 1800000
     readonly property real statsRefresh: 2000
     readonly property real workspaceSwitchFallback: 500
+    readonly property real pearlSquash: 0.14
+    readonly property real pearlWobble: 8
+    readonly property real passwordSpin: -120
+    readonly property real pearlPulse: 0.04
 }

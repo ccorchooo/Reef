@@ -14,7 +14,9 @@ import qs.services
 //            behind the hands; decorative, so it sits at clock-backdrop opacity)
 //   ticks    hour ticks around the edge
 //   seconds  a thin second hand (the clock then ticks every second)
-//   tone     surface | primary | secondary | tertiary: the face's container color
+//   tone     surface | primary | secondary | tertiary: the face's container color;
+//            island: black with island inks (inside the Pearl)
+//   face     false draws only the hands, ticks and numerals (the Pearl is the face)
 //
 //   AnalogClock { size: Tokens.powerClockSize }
 Item {
@@ -26,6 +28,7 @@ Item {
     property bool ticks: true
     property bool seconds: false
     property string tone: "surface"
+    property bool face: true
 
     readonly property real k: size / Tokens.powerClockSize
     readonly property date now: seconds ? secondClock.date : Time.now
@@ -34,14 +37,18 @@ Item {
     readonly property real secondAngle: now.getSeconds() * 6
 
     // Colors for the face's tone.
-    readonly property color faceColor: tone === "primary" ? Colors.primaryContainer
+    readonly property color faceColor: tone === "island" ? Colors.island
+        : tone === "primary" ? Colors.primaryContainer
         : tone === "secondary" ? Colors.secondaryContainer
         : tone === "tertiary" ? Colors.tertiaryContainer : Colors.surfaceContainerHigh
-    readonly property color inkColor: tone === "primary" ? Colors.on.primaryContainer
+    readonly property color inkColor: tone === "island" ? Colors.on.island
+        : tone === "primary" ? Colors.on.primaryContainer
         : tone === "secondary" ? Colors.on.secondaryContainer
         : tone === "tertiary" ? Colors.on.tertiaryContainer : Colors.on.surface
-    readonly property color softInkColor: tone === "surface" ? Colors.on.surfaceVariant : inkColor
-    readonly property color accentColor: tone === "tertiary" ? Colors.tertiary : Colors.primary
+    readonly property color softInkColor: tone === "surface" ? Colors.on.surfaceVariant
+        : tone === "island" ? Colors.on.islandVariant : inkColor
+    readonly property color accentColor: tone === "island" ? Colors.islandAccent
+        : tone === "tertiary" ? Colors.tertiary : Colors.primary
     readonly property color secondColor: tone === "tertiary" ? Colors.primary : Colors.tertiary
 
     // Wavy shapes and polygons dip inward; ticks and numerals move in by the dip.
@@ -63,13 +70,13 @@ Item {
     // Face
     Rectangle {
         anchors.fill: parent
-        visible: root.shape === "circle"
+        visible: root.face && root.shape === "circle"
         radius: width / 2
         color: root.faceColor
     }
     ShapeItem {
         anchors.fill: parent
-        visible: root.shape !== "circle"
+        visible: root.face && root.shape !== "circle"
         radii: visible ? Shapes.sample(root.shape, width, height) : []
         color: root.faceColor
     }

@@ -11,17 +11,6 @@ Column {
     spacing: Tokens.settingsGap
 
     readonly property var clock: Config.options.home.clock
-    readonly property var shapes: [
-        { value: "circle", label: "Circle" },
-        { value: "squircle", label: "Squircle" },
-        { value: "cookie4", label: "Cookie" },
-        { value: "cookie9", label: "Scallop" },
-        { value: "cookie12", label: "Gear" },
-        { value: "sunny", label: "Sunny" },
-        { value: "flower", label: "Flower" },
-        { value: "clover8", label: "Clover" },
-        { value: "pentagon", label: "Pentagon" }
-    ]
 
     // ── clock ──
     Rectangle {
@@ -119,7 +108,7 @@ Column {
             Accessible.name: "Clock shape"
 
             Repeater {
-                model: root.shapes
+                model: Shapes.choices
                 OptionCard {
                     id: shapeCard
                     required property var modelData

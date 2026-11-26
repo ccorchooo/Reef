@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import Quickshell.Services.Pam
 import qs.theme
 
@@ -15,6 +16,11 @@ import qs.theme
 //
 // `preview` shows the lock screen in an ordinary overlay without locking the session
 // (`ipc call lock preview`), to check how it looks; Escape or a correct password closes it.
+//
+// Lid (lock.onLidClose): logind's LidClosed turning true locks. Closing the lid usually
+// suspends too, so Reef holds a logind sleep "delay" inhibitor (systemd-inhibit) and lets
+// it go only once the lock is secure (every monitor covered), so the screen never shows
+// the desktop on wake. logind is watched with `gdbus monitor` (glib, systemd).
 Singleton {
     id: root
 
@@ -29,13 +35,25 @@ Singleton {
     // PAM's own message when it isn't a password prompt (fingerprint, account locked).
     readonly property string message: pam.active && !pam.responseRequired ? pam.message : ""
 
+    // Set by modules/lock: the compositor confirmed every monitor is covered.
+    property bool secure: false
+    property bool lidClosed: false
+
+    // The Pearl the lock grows out of when one is already out (the power actions):
+    // { screen, x, y, w, h } in screen coordinates. Set during aboutToLock.
+    property var handoff: null
+
     signal failed
+    // Just before locking, so a Pearl on screen can hand itself over.
+    signal aboutToLock
 
     function lock() {
         if (locked)
             return;
         preview = false;
         unlocking = false;
+        handoff = null;
+        aboutToLock();
         locked = true;
     }
 
@@ -80,7 +98,60 @@ Singleton {
             root.locked = false;
             root.preview = false;
             root.unlocking = false;
+            root.handoff = null;
         }
+    }
+
+    // ── lid and sleep (logind) ──────────────────────────────────
+    readonly property bool watchLid: Config.options.lock.onLidClose
+    // Holding the delay inhibitor; dropped while a sleep is waiting on the lock.
+    property bool _inhibit: watchLid
+    property bool _sleeping: false
+
+    function _onSleep(start) {
+        _sleeping = start;
+        if (!start) {
+            _inhibit = watchLid;
+            return;
+        }
+        if (lidClosed && watchLid)
+            lock();
+        // Let the sleep go now, or once the lock is up (see onSecureChanged).
+        if (!locked || secure)
+            _inhibit = false;
+    }
+    onSecureChanged: {
+        if (secure && _sleeping)
+            _inhibit = false;
+    }
+    onWatchLidChanged: _inhibit = watchLid && !_sleeping
+
+    Process {
+        id: logind
+        running: root.watchLid
+        command: ["gdbus", "monitor", "--system", "--dest", "org.freedesktop.login1", "--object-path", "/org/freedesktop/login1"]
+        stdout: SplitParser {
+            onRead: line => {
+                const lid = line.match(/'LidClosed': <(true|false)>/);
+                if (lid) {
+                    root.lidClosed = lid[1] === "true";
+                    if (root.lidClosed && root.watchLid)
+                        root.lock();
+                }
+                const sleep = line.match(/PrepareForSleep \((true|false)/);
+                if (sleep)
+                    root._onSleep(sleep[1] === "true");
+            }
+        }
+        onExited: code => {
+            if (root.watchLid)
+                console.warn("Lock: gdbus monitor exited (" + code + "); closing the lid won't lock");
+        }
+    }
+
+    Process {
+        running: root._inhibit
+        command: ["systemd-inhibit", "--what=sleep", "--mode=delay", "--who=Reef", "--why=Locking the screen first", "sleep", "infinity"]
     }
 
     PamContext {

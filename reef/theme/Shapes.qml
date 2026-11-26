@@ -40,6 +40,19 @@ Singleton {
 
     readonly property var names: Object.keys(defs)
     // DESIGN.md §4 / Lock mockup: the sequence typed password characters take.
+    // The shapes Settings offers for the clock and the Pearl, in order.
+    readonly property var choices: [
+        { value: "circle", label: "Circle" },
+        { value: "squircle", label: "Squircle" },
+        { value: "cookie4", label: "Cookie" },
+        { value: "cookie9", label: "Scallop" },
+        { value: "cookie12", label: "Gear" },
+        { value: "sunny", label: "Sunny" },
+        { value: "flower", label: "Flower" },
+        { value: "clover8", label: "Clover" },
+        { value: "pentagon", label: "Pentagon" }
+    ]
+
     readonly property var passwordSequence: ["circle", "cookie4", "clover4", "sunny", "flower", "pentagon", "gem", "cookie6", "cookie9", "verySunny"]
 
     // Radii in pixels for `name` drawn in a w×h box, at angles starting from the top, clockwise.

@@ -289,6 +289,7 @@ FloatingWindow {
                         look: "LookPage.qml",
                         apps: "AppsPage.qml",
                         widgets: "WidgetsPage.qml",
+                        lock: "LockPage.qml",
                         displays: "DisplaysPage.qml",
                         bar: "BarIslandPage.qml",
                         sound: "SoundPage.qml",

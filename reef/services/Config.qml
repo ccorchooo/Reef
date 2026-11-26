@@ -180,10 +180,18 @@ Singleton {
 
             // Settings → Lock screen
             property JsonObject lock: JsonObject {
-                property bool greeting: true             // "Good evening" under the Pearl
-                property bool media: true                // the media chip under the greeting
+                property bool activity: true             // the Island's main activity inside the Pearl (media: a player)
                 property bool status: true               // network, battery and keyboard layout, bottom right
                 property bool powerButtons: true         // Sleep, Power off and Restart beside the field
+                property bool onLidClose: true           // closing the laptop lid locks the session
+                // The Pearl (lock screen, power actions, Settings → Lock screen)
+                property JsonObject pearl: JsonObject {
+                    property string shape: "cookie9"     // a Shapes name (as home.clock.shape)
+                    property string color: "island"      // island (black) | primary | secondary | tertiary (container)
+                    property string face: "digital"      // digital | analog | stats: what it shows with no activity
+                    property bool date: true             // the date under the digital clock
+                    property bool hop: true              // hops on the minute and when its activity changes
+                }
             }
 
             // Settings → Power & session

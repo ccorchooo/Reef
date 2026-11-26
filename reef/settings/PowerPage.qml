@@ -17,12 +17,6 @@ Column {
         title: "Session"
         SwitchRow {
             width: parent.width
-            text: "Lock before sleep"
-            checked: Config.options.session.lockBeforeSleep
-            onToggled: Config.options.session.lockBeforeSleep = !checked
-        }
-        SwitchRow {
-            width: parent.width
             text: "Authentication dialog"
             description: "Reef answers apps that ask for your password. Only one program can."
             checked: Config.options.session.polkitAgent
