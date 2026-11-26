@@ -215,8 +215,28 @@ def main():
         f"    gaps_in  = {sp['space-2']},  -- space-2",
         f"    gaps_out = {sp['space-4']}, -- space-4",
         f"    rounding = {rd['radius-lg']}, -- radius-lg",
-        "}",
+        "    -- M3E springs (MOTION.md): stiffness and the damping *ratio* (1 = no bounce).",
+        "    -- Hyprland's spring curves take a damping coefficient: 2 * ratio * sqrt(stiffness).",
+        "    -- duration (ms) and bezier are MOTION.md's fallback curve for each.",
+        "    springs = {",
     ]
+    for k, v in t["motion"]["springs"].items():
+        b = ", ".join(str(x) for x in v["bezier"])
+        lua.append(f'        ["{k}"] = {{ stiffness = {num(v["stiffness"])}, damping = {num(v["damping"])}, '
+                   f'duration = {num(v["duration"])}, bezier = {{ {b} }} }},')
+    lua += ["    },"]
+    # The reference scheme (no wallpaper yet), "rrggbb" per role, for Hyprland's colors.
+    lua.append("    -- The reference scheme (tokens.json), used before Reef has made one from a wallpaper.")
+    lua.append("    scheme = {")
+    for mode in ("dark", "light"):
+        lua.append(f"        {mode} = {{")
+        for tok in t["color"]["tokens"]:
+            v = tok["value"]
+            v = v.get(mode) if isinstance(v, dict) else v
+            if isinstance(v, str) and v.startswith("#") and len(v) == 7:
+                lua.append(f'            {camel(tok["name"])} = "{v[1:].lower()}",')
+        lua.append("        },")
+    lua += ["    },", "}"]
     LUA_OUT.write_text("\n".join(lua) + "\n")
     for p in (QML_OUT, ROLES_OUT, LUA_OUT):
         print(f"wrote {p.relative_to(ROOT)}")

@@ -14,6 +14,8 @@ Singleton {
     readonly property real level: device.percentage > 1 ? device.percentage / 100 : device.percentage
     readonly property bool charging: device.state === UPowerDeviceState.Charging || device.state === UPowerDeviceState.PendingCharge
     readonly property bool full: device.state === UPowerDeviceState.FullyCharged
+    // Running on the battery (no charger), as UPower says.
+    readonly property bool unplugged: present && UPower.onBattery
     readonly property string percent: `${Math.round(level * 100)}%`
 
     // Settings → Power & performance → Low battery

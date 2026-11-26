@@ -33,14 +33,18 @@ Singleton {
         } else if (drop.hasText && drop.text.trim() !== "") {
             added.push({ kind: "text", path: "", name: "", text: drop.text });
         }
-        if (added.length > 0)
+        if (added.length > 0) {
             store.items = items.concat(added);
+            Sounds.play("shelf");
+        }
         return added.length;
     }
 
     function addText(text) {
-        if (text.trim() !== "")
+        if (text.trim() !== "") {
             store.items = items.concat([{ kind: "text", path: "", name: "", text: text }]);
+            Sounds.play("shelf");
+        }
     }
 
     function remove(index) {

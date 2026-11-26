@@ -19,7 +19,7 @@ Scope {
     id: root
 
     required property ShellScreen modelData
-    readonly property var settings: Config.monitor(modelData.name)
+    readonly property var settings: Config.monitor((modelData?.name ?? ""))
 
     LazyLoader {
         active: root.settings.showCorners

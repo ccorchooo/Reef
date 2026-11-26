@@ -1,0 +1,54 @@
+# Reef, a Quickshell desktop shell for Hyprland, built from the latest commit.
+# Build:  cd packaging/arch && makepkg -si
+# Installs the shell to /etc/xdg/quickshell/reef (start it with `qs -c reef`) and the
+# Hyprland snippet to /usr/share/reef/hypr/reef.lua: add
+#     dofile("/usr/share/reef/hypr/reef.lua")
+# to ~/.config/hypr/hyprland.lua (Hyprland 0.57+, Lua config) to start Reef with Hyprland.
+# Keep depends in step with install.sh's program list.
+pkgname=reef-git
+pkgver=r0
+pkgrel=1
+pkgdesc="Reef: a Quickshell desktop shell for Hyprland, with M3 Expressive motion"
+arch=('any')
+url="https://github.com/ccorchooo/Reef"
+# Reef has no license file yet; the bundled fonts are OFL-1.1 (Google Sans Flex, Google
+# Sans Code) and Apache-2.0 (Material Symbols Rounded).
+license=('LicenseRef-unknown' 'OFL-1.1' 'Apache-2.0')
+depends=(
+    'quickshell'      # 0.3.2 or newer (AUR: quickshell or quickshell-git)
+    'hyprland'
+    'pipewire' 'pipewire-audio'   # audio; pw-play for the UI sounds
+    'wl-clipboard' 'cliphist'
+    'grim' 'slurp'
+    'curl' 'ffmpeg' 'file' 'xdg-utils'
+    'glib2' 'systemd' 'util-linux' 'procps-ng'
+    'brightnessctl' 'bluez-utils'
+    'upower' 'power-profiles-daemon'
+)
+optdepends=(
+    'cava: the audio visualizer'
+    'whisper-cpp: Coral listening and the wake word on this computer'
+    'piper-tts: Coral speaking on this computer'
+    'poppler: PDF attachments in Coral'
+    'nvidia-utils: GPU temperature in the system widget'
+    'gpu-screen-recorder: screen recording'
+    'networkmanager: Wi-Fi'
+    'network-manager-applet: advanced Wi-Fi settings'
+    'blueman: advanced Bluetooth settings'
+    'pavucontrol: the volume mixer'
+)
+makedepends=('git')
+provides=('reef')
+conflicts=('reef')
+source=("reef::git+https://github.com/ccorchooo/Reef.git")
+sha256sums=('SKIP')
+
+pkgver() {
+    cd reef
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+package() {
+    cd reef
+    ./install.sh --prefix "$pkgdir"
+}

@@ -41,7 +41,7 @@ PanelWindow {
         : Brightness.level < 0.34 ? "brightness_low" : Brightness.level < 0.67 ? "brightness_medium" : "brightness_high"
 
     function show(what) {
-        if (!Config.options.osd.enabled || Hyprland.focusedMonitor?.name !== modelData.name)
+        if (!Config.options.osd.enabled || Monitors.focused !== (modelData?.name ?? ""))
             return;
         // The control center and audio menu already show the level.
         if (PanelState.panel === "controlCenter" || PanelState.menu === "audio")

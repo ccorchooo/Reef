@@ -59,7 +59,7 @@ Item {
             id: view
             anchors.fill: parent
             captureSource: root.toplevel?.wayland ?? null
-            live: root.live && root.visible && Config.options.performance.liveThumbnails
+            live: root.live && root.visible && Performance.liveThumbnails
             constraintSize: Qt.size(root.width, root.height)
         }
     }

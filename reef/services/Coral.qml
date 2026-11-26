@@ -673,6 +673,8 @@ Singleton {
             _setReply({ text: `I couldn't reach ${base(target.endpoint)}: ${_errorText()}`, error: true, actions: [{ label: "Open Settings", id: "settings", value: "coral" }] });
         else if (!_watching)
             unread = true;
+        if (!empty && !_stopping)
+            Sounds.play("reply");
         _store();
         if (!empty)
             _nameChat();

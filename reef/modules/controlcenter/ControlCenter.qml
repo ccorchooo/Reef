@@ -36,7 +36,7 @@ PanelWindow {
     WlrLayershell.namespace: "reef-controlcenter"
     implicitWidth: Tokens.panelWidth + Tokens.radiusXl
 
-    readonly property bool open: PanelState.panel === "controlCenter" && PanelState.screenName === modelData.name
+    readonly property bool open: PanelState.panel === "controlCenter" && PanelState.screenName === (modelData?.name ?? "")
     readonly property string menu: open ? PanelState.menu : ""
     readonly property bool menuOpen: menu !== ""
     // The last menu shown, so it can animate out.
@@ -188,7 +188,7 @@ PanelWindow {
                             NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Motion.duration(Motion.effectsDefault) }
                         }
                         displaced: Transition {
-                            NumberAnimation { property: "y"; duration: Motion.duration(Motion.spatialDefault); easing.type: Easing.BezierSpline; easing.bezierCurve: Motion.curve(Motion.spatialDefault) }
+                            NumberAnimation { property: "y"; duration: Motion.reduceMotion ? 0 : Motion.duration(Motion.spatialDefault); easing.type: Easing.BezierSpline; easing.bezierCurve: Motion.curve(Motion.spatialDefault) }
                         }
 
                         StyledText {
@@ -211,7 +211,7 @@ PanelWindow {
                         CayButton {
                             icon: "power_settings_new"
                             label: "Power actions"
-                            onClicked: PanelState.open("power", root.modelData.name)
+                            onClicked: PanelState.open("power", (root.modelData?.name ?? ""))
                         }
                     ]
 

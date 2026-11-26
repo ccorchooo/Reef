@@ -14,7 +14,7 @@ Singleton {
     readonly property bool reduceMotion: Config.options.motion.reduceMotion
     readonly property real speed: Math.max(0.1, Config.options.motion.speed)
     // Shape morphs can be turned off for performance; Reduce motion turns them off too.
-    readonly property bool shapeMorphs: Config.options.performance.shapeMorphs && !reduceMotion
+    readonly property bool shapeMorphs: Performance.shapeMorphs && !reduceMotion
 
     readonly property var spatialFast: _spec("spatialFast")
     readonly property var spatialDefault: _spec("spatialDefault")

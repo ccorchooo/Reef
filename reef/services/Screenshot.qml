@@ -45,7 +45,7 @@ Singleton {
             }[shot.mode];
             shot.command = ["sh", "-c",
                 `out="$1"; mkdir -p "$(dirname "$out")" && { ${geometry}; } && grim "$@" "$out" && wl-copy --type image/png < "$out" >/dev/null 2>&1`,
-                "reef-screenshot", shot.path, Hyprland.focusedMonitor?.name ?? ""];
+                "reef-screenshot", shot.path, Monitors.focused];
             shot.running = true;
         }
     }

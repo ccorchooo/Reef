@@ -195,7 +195,7 @@ Column {
                 height: Tokens.settingsButtonHeight
                 neutralColor: Colors.surfaceContainerHighest
                 text: "Reset widgets"
-                onClicked: Home.reset(Hyprland.focusedMonitor?.name ?? Quickshell.screens[0]?.name ?? "")
+                onClicked: Home.reset(Monitors.focused)
             }
         }
         SwitchRow {

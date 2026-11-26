@@ -133,6 +133,8 @@ Singleton {
                 return;
             if (n.transient && root.dnd)
                 return;
+            if (!root.dnd)
+                Sounds.play("notification");
             if (root.popup)
                 root._queue = root._queue.concat([n]);
             else

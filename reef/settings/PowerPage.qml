@@ -4,7 +4,8 @@ import qs.services
 import qs.components
 
 // Settings → Power & performance: the session, the battery, and what Reef spends on
-// looks.
+// looks. Performance mode (always, or on battery) turns the heavy effects off at once
+// (services/Performance); the switches under it are what applies the rest of the time.
 Column {
     id: root
 
@@ -44,10 +45,36 @@ Column {
     SettingsSection {
         width: parent.width
         title: "Performance"
+        Column {
+            width: parent.width
+            spacing: Tokens.space2
+            StyledText {
+                style: "rowLabel"
+                text: "Performance mode"
+            }
+            SegmentedButtons {
+                width: parent.width
+                label: "Performance mode"
+                options: Battery.present
+                    ? [{ value: "off", label: "Off" }, { value: "battery", label: "On battery" }, { value: "on", label: "On" }]
+                    : [{ value: "off", label: "Off" }, { value: "on", label: "On" }]
+                current: root.perf.mode === "battery" && !Battery.present ? "off" : root.perf.mode
+                onSelected: v => Config.options.performance.mode = v
+            }
+            StyledText {
+                width: parent.width
+                style: "bodySm"
+                color: Colors.on.surfaceVariant
+                wrapMode: Text.Wrap
+                text: Performance.active
+                    ? "On now: blur, shape morphs, the visualizer, live thumbnails and the wiggle and hop are off."
+                    : "Off now: the switches below apply."
+            }
+        }
         SwitchRow {
             width: parent.width
             text: "Blur"
-            description: "Used by Frosted transparency."
+            description: "Behind the power actions and the overview."
             checked: root.perf.blur
             onToggled: Config.options.performance.blur = !checked
         }

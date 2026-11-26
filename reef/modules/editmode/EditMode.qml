@@ -33,7 +33,7 @@ PanelWindow {
     WlrLayershell.namespace: "reef-editmode"
     implicitWidth: Tokens.editPanelWidth + Tokens.radiusXl
 
-    readonly property string screenName: modelData.name
+    readonly property string screenName: (modelData?.name ?? "")
     readonly property bool open: PanelState.panel === "editMode" && PanelState.screenName === screenName
 
     Spring {

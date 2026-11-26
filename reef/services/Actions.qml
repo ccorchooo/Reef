@@ -43,11 +43,14 @@ Singleton {
             volumeDown: ["Volume down", "M2"],
             volumeMute: ["Mute", "M2"],
             brightnessUp: ["Brightness up", "M2"],
-            brightnessDown: ["Brightness down", "M2"]
+            brightnessDown: ["Brightness down", "M2"],
+            mediaToggle: ["Play or pause", "M9"],
+            mediaNext: ["Next track", "M9"],
+            mediaPrevious: ["Previous track", "M9"]
         })
 
     // Actions with a global shortcut (bound in hypr/reef.lua).
-    readonly property var shortcuts: ["search", "island", "islandSwap", "clipboard", "emoji", "coral", "coralApp", "controlCenter", "overview", "switcher", "switcherBack", "editMode", "lock", "power", "focusBar", "volumeUp", "volumeDown", "volumeMute", "brightnessUp", "brightnessDown"]
+    readonly property var shortcuts: ["search", "island", "islandSwap", "clipboard", "emoji", "coral", "coralApp", "controlCenter", "overview", "switcher", "switcherBack", "editMode", "lock", "power", "focusBar", "volumeUp", "volumeDown", "volumeMute", "brightnessUp", "brightnessDown", "screenshot", "mediaToggle", "mediaNext", "mediaPrevious"]
 
     // Surfaces listen to these.
     signal focusBarRequested
@@ -62,7 +65,7 @@ Singleton {
 
     readonly property var handlers: ({
             focusBar: () => root.focusBarRequested(),
-            home: () => Workspaces.openHome(Hyprland.focusedMonitor?.name ?? ""),
+            home: () => Workspaces.openHome(Monitors.focused),
             lock: () => Lock.lock(),
             power: () => root.panelRequested("power"),
             search: () => root.panelRequested("search"),
@@ -95,7 +98,10 @@ Singleton {
             volumeDown: () => Audio.setVolume(Audio.volume - 0.05),
             volumeMute: () => Audio.toggleMute(),
             brightnessUp: () => Brightness.step(0.05),
-            brightnessDown: () => Brightness.step(-0.05)
+            brightnessDown: () => Brightness.step(-0.05),
+            mediaToggle: () => Media.togglePlaying(),
+            mediaNext: () => Media.next(),
+            mediaPrevious: () => Media.previous()
         })
 
     function run(name) {

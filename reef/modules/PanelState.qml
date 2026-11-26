@@ -16,6 +16,7 @@ Singleton {
     id: root
 
     property string panel: ""
+    onPanelChanged: if (panel === "power") Sounds.play("power")
     property string menu: ""
     property string screenName: ""
 
@@ -57,14 +58,20 @@ Singleton {
     }
 
     function _screen(screen) {
-        return screen || Hyprland.focusedMonitor?.name || "";
+        return screen || Monitors.focused;
+    }
+    // Search and the power actions live in the bar: on a monitor without one they open on
+    // the first monitor that has it.
+    function _screenFor(name, screen) {
+        const s = _screen(screen);
+        return ["search", "power"].includes(name) ? (Monitors.showing("bar", s) || s) : s;
     }
 
     function toggle(name, screen) {
         // The Super release that ends a hold isn't a tap.
         if (name === "search" && (superHeld || Date.now() < _skipSearchUntil))
             return;
-        const s = _screen(screen);
+        const s = _screenFor(name, screen);
         if (menus.includes(name)) {
             if (panel === "controlCenter" && menu === name && screenName === s)
                 closeAll();
@@ -79,7 +86,7 @@ Singleton {
     }
 
     function open(name, screen) {
-        const s = _screen(screen);
+        const s = _screenFor(name, screen);
         if (menus.includes(name)) {
             if (screenName !== s)
                 panel = "";
@@ -119,5 +126,16 @@ Singleton {
     Connections {
         target: Actions
         function onPanelRequested(name) { root.toggle(name); }
+    }
+    // A panel or menu on a monitor that was unplugged closes (it had no surface left to
+    // close it), and a held Super there lets go.
+    Connections {
+        target: Monitors
+        function onNamesChanged() {
+            if (root.screenName !== "" && !Monitors.has(root.screenName))
+                root.closeAll();
+            if (root.superScreen !== "" && !Monitors.has(root.superScreen))
+                root.superUp();
+        }
     }
 }

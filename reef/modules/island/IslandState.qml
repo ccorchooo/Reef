@@ -11,6 +11,7 @@ Singleton {
     id: root
 
     property bool expanded: false
+    onExpandedChanged: if (expanded) Sounds.play("island")
     property string screenName: ""
     property string tab: "now"
     // The Tools tab's tool: calculator | emoji | color | screenshot (kept between opens).
@@ -283,7 +284,8 @@ Singleton {
             return;
         }
         root.tab = tab || "now";
-        screenName = screen || Hyprland.focusedMonitor?.name || "";
+        // On a monitor whose Island is off, the first monitor that shows one.
+        screenName = Monitors.showing("island", screen) || screen || Monitors.focused;
         expanded = true;
     }
 
@@ -296,6 +298,17 @@ Singleton {
             close();
         else
             open("now", screen);
+    }
+
+    // The monitor it was open on (or the Pearl was out on) was unplugged.
+    Connections {
+        target: Monitors
+        function onNamesChanged() {
+            if (root.expanded && !Monitors.has(root.screenName))
+                root.close();
+            if (root.pearlScreen !== "" && !Monitors.has(root.pearlScreen))
+                root.pearlScreen = "";
+        }
     }
 
     Connections {

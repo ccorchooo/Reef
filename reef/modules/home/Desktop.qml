@@ -32,7 +32,7 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Bottom
     WlrLayershell.namespace: "reef-home"
 
-    readonly property string screenName: modelData.name
+    readonly property string screenName: (modelData?.name ?? "")
     readonly property bool editing: PanelState.panel === "editMode" && PanelState.screenName === screenName
     readonly property var layout: Home.layout(screenName)
 
@@ -71,7 +71,7 @@ PanelWindow {
     Spring {
         id: wiggle
         spec: Motion.effectsDefault
-        target: root.editing && Config.options.home.wiggle && !Motion.reduceMotion ? 1 : 0
+        target: root.editing && Config.options.home.wiggle && Performance.idleMotion && !Motion.reduceMotion ? 1 : 0
     }
     property real phase: 0
     FrameAnimation {

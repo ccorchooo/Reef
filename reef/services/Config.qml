@@ -86,6 +86,7 @@ Singleton {
                 property string homeLogo: "reef"         // reef | distro | custom
                 property string homeLogoPath: ""
                 property bool drawWallpaper: false       // Reef draws look.wallpaper itself (off: another program does)
+                property bool themeHyprland: true        // Hyprland's borders follow the scheme (Reef's Hyprland config)
             }
 
             // Settings → Scale (multipliers on the tokens)
@@ -105,11 +106,27 @@ Singleton {
 
             // Settings → Power & performance
             property JsonObject performance: JsonObject {
+                // Performance mode turns off the heavy effects below at once (Performance.qml):
+                // off | battery (while on battery or in Power saver) | on
+                property string mode: "off"
                 property bool blur: true
                 property bool shapeMorphs: true          // false = crossfade instead of morphing
                 property bool visualizer: true           // cava-driven waveforms (Island, Pearl)
                 property int visualizerFps: 30
                 property bool liveThumbnails: true       // overview/switcher windows update live; off = one still frame
+            }
+
+            // Settings → Sound → Sounds (DESIGN.md § 8): short, soft UI sounds. Never on hover.
+            property JsonObject sounds: JsonObject {
+                property bool enabled: true              // the master toggle
+                property real volume: 0.6                // 0–1, on top of the output's volume
+                property bool lock: true                 // lock and unlock
+                property bool power: true                // the power actions open
+                property bool island: true               // the Island expands
+                property bool shelf: true                // something lands on the Shelf
+                property bool coralListen: true          // Coral starts listening
+                property bool coralReply: true           // Coral finishes a reply
+                property bool notification: true        // a notification arrives (never with Do not disturb)
             }
 
             // Settings → Bar & Island

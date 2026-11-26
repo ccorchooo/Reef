@@ -117,7 +117,9 @@ Setting: **Home logo** = Reef mark *(default)* · distro logo (from `/etc/os-rel
 
 ## 8. Sound
 
-Sounds are **very subtle**, short (under 150 ms) and soft, at low volume, with one master toggle and per-category toggles. Planned sounds: lock and unlock, power menu open, Island expand, a file landing on the Shelf, Coral starting to listen, Coral finishing a reply, notification (only when Do not disturb is off). Never a sound on hover.
+Sounds are **very subtle**, short (under 150 ms) and soft, at low volume, with one master toggle, a volume and per-category toggles. The sounds: lock and unlock, power menu open, Island expand (when you open it), a file landing on the Shelf, Coral starting to listen, Coral finishing a reply, notification (only when Do not disturb is off). Never a sound on hover.
+
+They are synthesized, not recorded: each is one or two soft sine notes with gentle overtones and a quick decay (lock falls a fourth, unlock rises it; Coral's listen rises, its reply falls back). The notes live in `tokens.json` → `sound`, and `reef/scripts/gen-sounds.py` renders them to `reef/assets/sounds/`.
 
 ## 9. Voice (UI copy)
 
@@ -137,6 +139,6 @@ Sounds are **very subtle**, short (under 150 ms) and soft, at low volume, with o
 | Scale | Text size, Spacing, Corner roundness (multipliers on the tokens) |
 | Motion | Reduce motion, Animation speed multiplier, Island hover reveal on/off |
 | Per monitor | Show bar, show Island, bar position (bottom / left) |
-| Performance | Disable blur, disable shape morphs (use crossfades), lower Pearl frame rate, disable the audio visualizer |
+| Performance | Performance mode (Off / On battery / On: everything below off at once), disable blur, disable shape morphs (use crossfades), lower Pearl frame rate, disable the audio visualizer, still window thumbnails |
 | Sound | Master toggle, per-category toggles |
 | Coral | Local or cloud for chat, listening and speaking; local server and cloud service (endpoint, key, models, voice); voice on/off |

@@ -1,7 +1,10 @@
 -- Reef for Hyprland (Lua config, Hyprland 0.57+).
 --
 -- Load it from your config, e.g. at the end of hyprland.lua or a user file:
---     dofile(os.getenv("HOME") .. "/Documents/Reef/hypr/reef.lua")
+--     dofile(os.getenv("HOME") .. "/Documents/Reef/hypr/reef.lua")   -- a checkout
+--     dofile("/usr/share/reef/hypr/reef.lua")                          -- the reef-git package
+-- Or use the whole config in hypr/config (./install.sh --hypr-config), which loads this file.
+-- (`./install.sh --hypr` adds the checkout's line for you.)
 --
 -- Don't load it while another shell (Caelestia) is running: it starts Reef and takes
 -- the same keys. Design values come from tokens.lua, generated from design/tokens.json.
@@ -74,6 +77,12 @@ local binds = {
     { "XF86AudioMute",         "volumeMute",     { locked = true } },
     { "XF86MonBrightnessUp",   "brightnessUp",   { locked = true, repeating = true } },
     { "XF86MonBrightnessDown", "brightnessDown", { locked = true, repeating = true } },
+    { "XF86AudioPlay",         "mediaToggle",    { locked = true } },
+    { "XF86AudioPause",        "mediaToggle",    { locked = true } },
+    { "XF86AudioNext",         "mediaNext",      { locked = true } },
+    { "XF86AudioPrev",         "mediaPrevious",  { locked = true } },
+    -- A region screenshot, saved and copied (Reef's Screenshot service).
+    { "Print",                 "screenshot",     { locked = true } },
 }
 
 for _, b in ipairs(binds) do

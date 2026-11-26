@@ -37,11 +37,26 @@ design/
 mockup/              ← original hand-drawn Excalidraw flow + images
 reef/                ← the Quickshell config (run: qs -p ./reef, or symlink to ~/.config/quickshell/reef)
 hypr/                ← Hyprland snippet (reef.lua) + generated tokens.lua
+  config/            ← a whole Hyprland config around Reef (./install.sh --hypr-config)
+install.sh           ← installer (link or copy, dependency check, Hyprland hookup, --prefix for packages)
+packaging/arch/      ← PKGBUILD for reef-git
 ```
 
 ## Status
 
-**M0–M4 are done**: tokens, live colors, motion, type, icons, shapes, config, a dev window (`qs -p ./reef ipc call reef dev`), the rounded screen, the four-cay bar, the Island (live activities, peek, Now tab, notifications), the floating OSD, toasts, the control center and quick menus. M4 is done too: search (tap Super), the workspace overview (Super+Tab) and the Alt+Tab switcher. M5 (lock, power actions, polkit), M6 (Island tabs) and M7 (edit mode and home widgets, the bar on the left, the Settings app: `qs -p ./reef ipc call reef settings`) are built and waiting on hands-on checks. See [docs/ROADMAP.md](docs/ROADMAP.md).
+**M0–M4 are done**: tokens, live colors, motion, type, icons, shapes, config, a dev window (`qs -p ./reef ipc call reef dev`), the rounded screen, the four-cay bar, the Island (live activities, peek, Now tab, notifications), the floating OSD, toasts, the control center and quick menus. M4 is done too: search (tap Super), the workspace overview (Super+Tab) and the Alt+Tab switcher. M5 (lock, power actions, polkit), M6 (Island tabs) and M7 (edit mode and home widgets, the bar on the left, the Settings app: `qs -p ./reef ipc call reef settings`) are built and waiting on hands-on checks. M9 is built and waiting on hands-on checks: sounds, Vivid, performance mode, multi-monitor fixes, an accessibility pass and an installer; Frosted comes later. See [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## Install
+
+```bash
+./install.sh --check   # which programs are missing
+./install.sh --hypr    # link ~/.config/quickshell/reef here and load hypr/reef.lua from hyprland.lua
+qs -c reef             # start it now
+```
+
+`./install.sh --hypr-config` installs Reef's whole Hyprland config as `~/.config/hypr` instead: windows share Reef's gaps and corners, move on Reef's M3 springs and take their border colors from the wallpaper live, with dialogs that float at sensible sizes, music and chat apps on their own special workspaces, a resize mode and a layout switcher. Your current config is moved to `~/.config/hypr.bak.<date>`, your keyboard layout comes along, and your changes go in `~/.config/hypr/user/` (never overwritten). The keys are listed at the top of `hypr/config/reef/binds.lua`.
+
+`./install.sh --copy` copies instead of linking; `--uninstall` removes it (your settings stay in `~/.config/reef`). On Arch, `packaging/arch/PKGBUILD` builds `reef-git`, which installs to `/etc/xdg/quickshell/reef` and `/usr/share/reef/hypr/reef.lua`.
 
 ## Design at a glance
 

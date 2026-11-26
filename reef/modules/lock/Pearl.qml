@@ -67,7 +67,7 @@ Item {
 
     // ── life ──
     function hop() {
-        if (options.hop && visible)
+        if (options.hop && Performance.idleMotion && visible)
             hopY.kick(-Tokens.pearlHop);
     }
     function wobble() {

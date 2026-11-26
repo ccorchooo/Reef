@@ -353,5 +353,12 @@ Column {
             checked: root.look.drawWallpaper
             onToggled: Config.options.look.drawWallpaper = !root.look.drawWallpaper
         }
+        SwitchRow {
+            width: parent.width
+            text: "Color Hyprland's borders"
+            description: "Window borders and shadows follow these colors. Needs Reef's Hyprland config."
+            checked: root.look.themeHyprland
+            onToggled: Config.options.look.themeHyprland = !root.look.themeHyprland
+        }
     }
 }

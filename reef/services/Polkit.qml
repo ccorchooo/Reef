@@ -23,7 +23,7 @@ Singleton {
         active: Config.options.session.polkitAgent
 
         PolkitAgent {
-            onAuthenticationRequestStarted: root.screenName = Hyprland.focusedMonitor?.name ?? ""
+            onAuthenticationRequestStarted: root.screenName = Monitors.focused
             onIsRegisteredChanged: {
                 if (!isRegistered)
                     console.info("Polkit: another agent answers polkit prompts; Reef's dialog is off");

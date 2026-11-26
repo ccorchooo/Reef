@@ -56,13 +56,14 @@ Singleton {
         handoff = null;
         aboutToLock();
         locked = true;
+        Sounds.play("lock");
     }
 
     function showPreview(on) {
         if (locked)
             return;
         unlocking = false;
-        previewScreen = Hyprland.focusedMonitor?.name ?? "";
+        previewScreen = Monitors.focused;
         preview = on;
     }
 
@@ -89,6 +90,8 @@ Singleton {
 
     function _unlock() {
         unlocking = true;
+        if (locked)
+            Sounds.play("unlock");
         lift.restart();
     }
 

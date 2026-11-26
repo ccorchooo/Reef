@@ -17,6 +17,9 @@ ShellRoot {
 
     Commands {}
 
+    // Hyprland's borders follow Reef's colors (a singleton starts on first use).
+    readonly property bool _compositorTheme: CompositorTheme.enabled
+
     // Session (M5): the lock covers every monitor; the polkit dialog opens on the focused one.
     LockScreen {}
     Variants {

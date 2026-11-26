@@ -23,7 +23,7 @@ PanelWindow {
     required property ShellScreen modelData
     screen: modelData
 
-    readonly property bool barLeft: Config.monitor(modelData.name).barPosition === "left"
+    readonly property bool barLeft: Config.monitor((modelData?.name ?? "")).barPosition === "left"
 
     anchors {
         top: barLeft
@@ -35,8 +35,8 @@ PanelWindow {
     // search) without resizing it: on a resize Hyprland sends the pointer a leave and no
     // enter until it moves, so a menu under a still pointer would close and reopen in a
     // loop. Only the cays take input, and the exclusive zone stays cay-height + space-2.
-    implicitHeight: modelData.height
-    implicitWidth: modelData.width
+    implicitHeight: (modelData?.height ?? 0)
+    implicitWidth: (modelData?.width ?? 0)
     exclusiveZone: Tokens.cayHeight + Tokens.space2
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Top
@@ -63,9 +63,9 @@ PanelWindow {
     onPowerChanged: {
         if (power) {
             // The Pearl grows out of this monitor's Island (MOTION.md → Island → Pearl).
-            pearlFrom = IslandState.bodyRect(modelData.name, width);
+            pearlFrom = IslandState.bodyRect((modelData?.name ?? ""), width);
             pearlHandedOff = false;
-            IslandState.pearlScreen = modelData.name;
+            IslandState.pearlScreen = (modelData?.name ?? "");
             pearlForm.target = 1;
             focusPower.restart();
         } else {
@@ -87,7 +87,7 @@ PanelWindow {
     Connections {
         target: Actions
         function onFocusBarRequested() {
-            if (Hyprland.focusedMonitor?.name !== root.modelData.name)
+            if (Monitors.showing("bar") !== (root.modelData?.name ?? ""))
                 return;
             root.keyboardActive = !root.keyboardActive;
             if (root.keyboardActive)
@@ -145,7 +145,7 @@ PanelWindow {
     }
 
     // ── Tide panels push the bar ───────────────────────────────
-    readonly property bool pushable: Config.options.bar.panelsPushBar && PanelState.screenName === modelData.name
+    readonly property bool pushable: Config.options.bar.panelsPushBar && PanelState.screenName === (modelData?.name ?? "")
     Spring {
         id: rightInset
         spec: Motion.spatialDefault
@@ -181,7 +181,7 @@ PanelWindow {
     // The overview blurs the screen behind it and dims it lightly; the bar's strip gets the
     // same compositor blur and scrim, so the whole background reads as one and the cays
     // stay in front.
-    readonly property bool overviewOpen: PanelState.panel === "overview" && PanelState.screenName === modelData.name
+    readonly property bool overviewOpen: PanelState.panel === "overview" && PanelState.screenName === (modelData?.name ?? "")
     Spring {
         id: overviewFade
         spec: Motion.effectsSlow
@@ -205,8 +205,8 @@ PanelWindow {
         id: overviewBlur
         x: overviewStrip.x
         y: overviewStrip.y
-        width: root.overviewOpen ? overviewStrip.width : 0
-        height: root.overviewOpen ? overviewStrip.height : 0
+        width: root.overviewOpen && Performance.blur ? overviewStrip.width : 0
+        height: root.overviewOpen && Performance.blur ? overviewStrip.height : 0
     }
 
     // ── power actions: heavy scrim, the Pearl, time and date ────────
@@ -230,8 +230,8 @@ PanelWindow {
     }
     Item {
         id: powerBlur
-        width: root.power ? root.width : 0
-        height: root.power ? root.height : 0
+        width: root.power && Performance.blur ? root.width : 0
+        height: root.power && Performance.blur ? root.height : 0
     }
     BackgroundEffect.blurRegion: Region {
         Region { item: powerBlur }
@@ -294,7 +294,7 @@ PanelWindow {
     // Out until it has folded back; then the Island shows again.
     readonly property bool pearlOut: power || pearlForm.running || pearlForm.value > 0.001
     onPearlOutChanged: {
-        if (!pearlOut && IslandState.pearlScreen === modelData.name)
+        if (!pearlOut && IslandState.pearlScreen === (modelData?.name ?? ""))
             IslandState.pearlScreen = "";
     }
     Connections {
@@ -302,7 +302,7 @@ PanelWindow {
         function onAboutToLock() {
             if (!powerPearl.visible)
                 return;
-            Lock.handoff = { screen: root.modelData.name, x: powerPearl.x, y: powerPearl.y, w: powerPearl.width, h: powerPearl.height };
+            Lock.handoff = { screen: (root.modelData?.name ?? ""), x: powerPearl.x, y: powerPearl.y, w: powerPearl.width, h: powerPearl.height };
             root.pearlHandedOff = true;
         }
     }
@@ -431,14 +431,14 @@ PanelWindow {
         x: root.xFor("navigator", navigatorAlong.value)
         y: root.yFor("navigator", navigatorAlong.value)
         vertical: root.barLeft
-        screenName: root.modelData.name
+        screenName: (root.modelData?.name ?? "")
     }
     WorkspacesCay {
         id: workspaces
         x: root.xFor("workspaces", workspacesAlong.value)
         y: root.yFor("workspaces", workspacesAlong.value)
         vertical: root.barLeft
-        screenName: root.modelData.name
+        screenName: (root.modelData?.name ?? "")
         visible: Config.options.bar.workspacesCay && opacity > 0.01
         opacity: asideFade.value
         enabled: !root.power
@@ -499,7 +499,7 @@ PanelWindow {
         x: root.xFor("status", statusAlong.value)
         y: root.yFor("status", statusAlong.value)
         vertical: root.barLeft
-        screenName: root.modelData.name
+        screenName: (root.modelData?.name ?? "")
         keyboardActive: root.keyboardActive
     }
 }

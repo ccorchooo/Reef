@@ -50,7 +50,7 @@ PanelWindow {
     Connections {
         target: Actions
         function onSwitcherRequested(step) {
-            if (Hyprland.focusedMonitor?.name !== root.modelData.name) {
+            if (Monitors.focused !== (root.modelData?.name ?? "")) {
                 root.open = false;
                 return;
             }
@@ -168,7 +168,7 @@ PanelWindow {
             y: Tokens.space4
             orientation: ListView.Horizontal
             spacing: Tokens.space3
-            width: Math.min(contentWidth, root.modelData.width - Tokens.space12 * 2 - Tokens.space4 * 2)
+            width: Math.min(contentWidth, (root.modelData?.width ?? 0) - Tokens.space12 * 2 - Tokens.space4 * 2)
             height: Tokens.switcherThumbHeight + Tokens.space2_5 + Tokens.iconMd + Tokens.overviewRing
             clip: true
             interactive: false

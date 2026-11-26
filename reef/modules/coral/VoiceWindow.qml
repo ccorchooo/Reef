@@ -21,7 +21,7 @@ PanelWindow {
     required property ShellScreen modelData
     screen: modelData
 
-    readonly property bool mine: CoralVoice.active && CoralVoice.screen === modelData.name
+    readonly property bool mine: CoralVoice.active && CoralVoice.screen === (modelData?.name ?? "")
     readonly property real spread: Tokens.pearlSize * Tokens.coralPulse
 
     anchors.top: true
@@ -52,9 +52,9 @@ PanelWindow {
     }
     onMineChanged: {
         if (mine) {
-            const r = IslandState.bodyRect(modelData.name, modelData.width);
-            from = { x: r.x - (modelData.width - width) / 2, y: r.y, w: r.w, h: r.h };
-            IslandState.pearlScreen = modelData.name;
+            const r = IslandState.bodyRect((modelData?.name ?? ""), (modelData?.width ?? 0));
+            from = { x: r.x - ((modelData?.width ?? 0) - width) / 2, y: r.y, w: r.w, h: r.h };
+            IslandState.pearlScreen = (modelData?.name ?? "");
             form.target = 1;
             focusTimer.restart();
         } else {
@@ -64,7 +64,7 @@ PanelWindow {
     // Back in the Island: it shows again (and opens on the chat, see CoralVoice._finish).
     readonly property bool out: mine || form.running || form.value > 0.001
     onOutChanged: {
-        if (!out && IslandState.pearlScreen === modelData.name)
+        if (!out && IslandState.pearlScreen === (modelData?.name ?? ""))
             IslandState.pearlScreen = "";
     }
     Timer {

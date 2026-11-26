@@ -11,6 +11,7 @@ How every part of Reef looks and behaves. Each section links to its mockup in `d
 - **The OSD floats.** The volume and brightness OSD is a free card `space-4` from the right edge with `radius-xl` on every corner and `shadow-menu`, not attached to the edge.
 - **No how-to text in menus.** Panels, switchers and dialogs don't explain gestures or shortcuts. Keybinds live in Settings → Keyboard & shortcuts.
 - **Everything is a setting**, including per monitor (see [ARCHITECTURE.md](ARCHITECTURE.md#configuration)).
+- **Many monitors.** Things that open "on the focused monitor" (search, power actions, the Island, notifications, toasts, the OSD, the polkit dialog, voice mode) use the first monitor when Hyprland hasn't named one. Search and the power actions live in the bar and the notifications in the Island, so on a monitor with that turned off they open on the first monitor that shows it. Unplugging a monitor closes the panel, menu or Island open on it.
 
 ## Bar (four cays)
 Mockups: `screens/Home.png`, `screens/Bar.png`, `screens/BarLeft.png`
@@ -219,15 +220,16 @@ Mockup: `screens/Settings.png`
   - Button groups for **Colorfulness** (Mono / Neutral / Tinted / Vivid / Deep; with the Wallpaper palette only), **Theme** (Auto / Light / Dark), and **Transparency** (Solid / Frosted). The selected option is a filled `primary` pill with a check.
   - **Home logo**: Reef / Distro logo / Custom image (`radius-option` cards, the chosen one ringed in `primary`). The choice shows on the Navigator's home button and the lock screen.
   - "Draw the wallpaper".
+  - "Color Hyprland's borders" (on by default): with Reef's Hyprland config, window borders, shadows and groupbars follow the scheme live.
 - **Displays:** per monitor: bar (and its position), Island, home widgets, rounded corners; Night light and its warmth.
 - **Bar & Island:** the bar's switches, workspace count and clock format; the Island's peek, hiding over apps, recording detection and drops; each activity; home (Edit home, Reset widgets, wiggle, weather location and unit); notifications, OSD and toasts; clipboard size, file search, focus lengths and calendars.
 - **Apps:** **Default apps**: one row per kind (web browser, files, terminal, email, text editor, images, videos, music, PDF) with the current app; a row opens the apps that can handle it as pills, the chosen one on `primary-container`. **Dock**: the pins in order, each with move earlier / later and unpin. **Apps in search**: a filter field, then every app with a pin button and a "Show in search" switch (the first 40 until "Show all").
 - **Widgets:** the clock's live preview, then hour ticks, second hand, numbers, face color and shape.
 - **Lock screen:** the Pearl's live preview on the wallpaper (show the current activity, date, hop on the minute, Preview lock screen), then its face (clock, analog, system), color (black, primary, secondary, tertiary) and shape; the status and power buttons; locking (when the lid closes, before sleep).
-- **Sound, Network, Bluetooth:** the matching quick menu, plus the microphone on Sound.
+- **Sound, Network, Bluetooth:** the matching quick menu, plus the microphone on Sound and a **Sounds** card: the master switch, Sound volume, and one switch per sound (turning one on plays it once).
 - **Coral:** endpoint, model, the environment variable holding the API key (the key itself is never stored), voice. Coral arrives in M8.
 - **Keyboard & shortcuts:** the layout and the default shortcuts.
-- **Power & performance:** the authentication dialog, the low-battery level, blur, shape morphs, the visualizer and its frame rate, live thumbnails.
+- **Power & performance:** the authentication dialog, the low-battery level; **Performance mode** (Off / On battery / On; "On battery" also counts Power saver, and it's only offered with a battery), which while on turns off blur, shape morphs, the visualizer, live thumbnails, the edit-mode wiggle and the Pearl's hop, with a line saying whether it's on now; then blur, shape morphs, the visualizer and its frame rate, and live thumbnails for the rest of the time.
 - **Accessibility:** Reduce motion, animation speed, **Zoom** (75–150%: the whole shell, sizes, spacing, corners and text together), text size, spacing and corner roundness.
 - **About:** the Reef lockup, the system, Quickshell and Hyprland versions, and where the settings file lives.
 

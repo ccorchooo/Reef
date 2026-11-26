@@ -13,7 +13,7 @@ Singleton {
 
     property int users: 0
     property int bars: 5
-    readonly property bool enabled: Config.options.performance.visualizer
+    readonly property bool enabled: Performance.visualizer
     readonly property bool running: enabled && users > 0 && Media.playing
     // bars values, 0..1
     property var levels: new Array(bars).fill(0)
@@ -21,7 +21,7 @@ Singleton {
     readonly property string configPath: Config.cacheDir + "/cava.conf"
     readonly property string configText: `[general]
 bars = ${bars}
-framerate = ${Config.options.performance.visualizerFps}
+framerate = ${Performance.visualizerFps}
 autosens = 1
 
 [input]

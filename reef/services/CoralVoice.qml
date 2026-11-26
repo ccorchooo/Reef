@@ -163,7 +163,7 @@ Singleton {
             return;
         }
         Coral.stop();
-        screen = Hyprland.focusedMonitor?.name ?? "";
+        screen = Monitors.focused;
         _listen(noSpeechMs);
     }
 
@@ -175,6 +175,7 @@ Singleton {
         heard = false;
         level = 0;
         phase = "listening";
+        Sounds.play("listen");
         noSpeech.interval = wait;
         rec.command = ["sh", "-c", "mkdir -p \"$1\" && exec setpriv --pdeathsig TERM ffmpeg -nostdin -hide_banner -loglevel error -nostats -f pulse -i default -ac 1 -ar 16000 "
             + "-filter_complex '[0:a]asplit[r][m];[m]astats=metadata=1:reset=1,ametadata=mode=print:key=lavfi.astats.Overall.RMS_level:file=-:direct=1,anullsink' "
@@ -193,7 +194,7 @@ Singleton {
         if (active || !available)
             return;
         Coral.stop();
-        screen = Hyprland.focusedMonitor?.name ?? "";
+        screen = Monitors.focused;
         transcript = "";
         language = "";
         heard = true;

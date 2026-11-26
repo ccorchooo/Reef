@@ -37,20 +37,26 @@ PanelWindow {
     WlrLayershell.namespace: "reef-island"
 
     // While the Island is out being the Pearl (power actions), it isn't here.
-    readonly property bool away: IslandState.pearlScreen === modelData.name
+    readonly property bool away: IslandState.pearlScreen === (modelData?.name ?? "")
     Binding {
         target: root.contentItem
         property: "opacity"
         value: root.away ? 0 : 1
     }
     readonly property var _bodyRect: () => ({
-            x: (root.modelData.width - root.width) / 2 + body.x,
+            x: ((root.modelData?.width ?? 0) - root.width) / 2 + body.x,
             y: body.y,
             w: body.width,
             h: body.height
         })
-    Component.onCompleted: IslandState.registerBody(modelData.name, _bodyRect)
-    Component.onDestruction: IslandState.unregisterBody(modelData.name, _bodyRect)
+    // The screen is gone (null) by the time an unplugged monitor's Island is destroyed:
+    // unregister under the name it registered with.
+    property string _registeredAs: ""
+    Component.onCompleted: {
+        _registeredAs = modelData?.name ?? "";
+        IslandState.registerBody(_registeredAs, _bodyRect);
+    }
+    Component.onDestruction: IslandState.unregisterBody(_registeredAs, _bodyRect)
 
     // Tall enough for the expanded Island plus its shadow; only the body takes input.
     readonly property real shadowRoom: Colors.shadowIsland.blur + Colors.shadowIsland.y * 2
@@ -69,20 +75,20 @@ PanelWindow {
     }
 
     // ── state ───────────────────────────────────────────────────
-    readonly property bool expanded: IslandState.expanded && IslandState.screenName === modelData.name
-    readonly property bool overApps: Workspaces.windowCount(Workspaces.activeOn(modelData.name)) > 0
+    readonly property bool expanded: IslandState.expanded && IslandState.screenName === (modelData?.name ?? "")
+    readonly property bool overApps: Workspaces.windowCount(Workspaces.activeOn((modelData?.name ?? ""))) > 0
     readonly property bool hidesOverApps: overApps && Config.options.motion.islandHoverReveal
     readonly property string activity: IslandState.activity
     readonly property bool hovered: bodyHover.hovered
     property bool revealed: false
 
-    // New notifications show on the focused monitor.
+    // New notifications show on the focused monitor (or the first one with an Island).
     readonly property var popup: Notifications.popup
-    readonly property bool showsPopup: !!popup && (Hyprland.focusedMonitor?.name ?? modelData.name) === modelData.name
+    readonly property bool showsPopup: !!popup && Monitors.showing("island") === (modelData?.name ?? "")
     readonly property real notificationHeight: notificationContent.implicitHeight + Tokens.space3_5 * 2
 
     // Edit mode on this monitor: "Editing home · Done" (screens/EditMode), even over apps.
-    readonly property bool editing: PanelState.panel === "editMode" && PanelState.screenName === modelData.name
+    readonly property bool editing: PanelState.panel === "editMode" && PanelState.screenName === (modelData?.name ?? "")
 
     readonly property string mode: expanded ? "expanded"
         : showsPopup ? "notification"
@@ -159,7 +165,7 @@ PanelWindow {
             enabled: Config.options.island.dropToShelf
             onEntered: drag => {
                 drag.accept(Qt.CopyAction);
-                IslandState.open("shelf", root.modelData.name);
+                IslandState.open("shelf", (root.modelData?.name ?? ""));
             }
         }
         HoverHandler {
@@ -400,7 +406,7 @@ PanelWindow {
             enabled: Config.options.island.dropToShelf
             onEntered: drag => {
                 drag.accept(Qt.CopyAction);
-                IslandState.open("shelf", root.modelData.name);
+                IslandState.open("shelf", (root.modelData?.name ?? ""));
             }
             onDropped: drop => {
                 Shelf.addDrop(drop);
@@ -410,7 +416,7 @@ PanelWindow {
 
         TapHandler {
             enabled: !root.expanded && root.form !== "notification" && root.form !== "editing"
-            onTapped: IslandState.open("now", root.modelData.name)
+            onTapped: IslandState.open("now", (root.modelData?.name ?? ""))
         }
 
         // A notification stays while the pointer is on it or a reply is being typed.

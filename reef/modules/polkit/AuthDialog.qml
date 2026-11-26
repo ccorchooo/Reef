@@ -20,7 +20,7 @@ PanelWindow {
 
     readonly property var flow: Polkit.flow
     readonly property bool open: Polkit.active
-        && (Polkit.screenName === modelData.name || (Polkit.screenName === "" && Quickshell.screens[0] === modelData))
+        && (Monitors.has(Polkit.screenName) ? Polkit.screenName : Monitors.focused) === (modelData?.name ?? "")
 
     anchors {
         top: true

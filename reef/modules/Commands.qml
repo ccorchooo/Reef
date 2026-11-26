@@ -40,7 +40,11 @@ Scope {
                 audio: { ready: Audio.ready, volume: Audio.volume, muted: Audio.muted, sink: Audio.sink?.description ?? null },
                 mic: { source: Audio.source?.description ?? null, id: Audio.source?.id ?? null, ready: Audio.source?.ready ?? false, muted: Audio.micMuted, inputs: Audio.inputs.map(n => n.description) },
                 network: { icon: Network.icon, label: Network.label },
-                battery: { present: Battery.present, level: Battery.level, icon: Battery.icon },
+                battery: { present: Battery.present, level: Battery.level, icon: Battery.icon, unplugged: Battery.unplugged, powerSaver: Battery.powerSaver },
+                monitors: { all: Monitors.names, focused: Monitors.focused, bar: Monitors.showing("bar"), island: Monitors.showing("island") },
+                performance: { mode: Performance.options.mode, active: Performance.active, blur: Performance.blur, shapeMorphs: Performance.shapeMorphs, visualizer: Performance.visualizer, liveThumbnails: Performance.liveThumbnails },
+                panels: { panel: PanelState.panel, menu: PanelState.menu, screen: PanelState.screenName },
+                sounds: { player: Sounds.player, enabled: Config.options.sounds.enabled },
                 media: { active: Media.active, title: Media.title, playing: Media.playing },
                 workspaces: { focused: Workspaces.focusedId, all: Workspaces.all.map(w => w.id) },
                 dock: Apps.dock.map(i => ({ id: i.id, entry: i.entry?.id ?? null, icon: i.entry?.icon ?? null, running: i.running, focused: i.focused })),
@@ -66,6 +70,15 @@ Scope {
 
         function toast(text: string): void {
             Toasts.show({ text: text, icon: "info" });
+        }
+
+        // Play one of Reef's sounds (lock, unlock, power, island, shelf, listen, reply,
+        // notification), as its own settings allow.
+        function sound(name: string): string {
+            if (!Sounds.categories[name])
+                return "unknown sound";
+            Sounds.play(name);
+            return Sounds._checked && Sounds.player === "" ? "no player (pw-play or paplay)" : "ok";
         }
 
         // Regenerate the color scheme from the current wallpaper/static color.

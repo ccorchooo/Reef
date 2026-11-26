@@ -40,7 +40,7 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "reef-overview"
 
-    readonly property bool open: PanelState.panel === "overview" && PanelState.screenName === modelData.name
+    readonly property bool open: PanelState.panel === "overview" && PanelState.screenName === (modelData?.name ?? "")
     // The surface stays mapped: mapping and unmapping a layer plays the compositor's own
     // layer animation (a slide or fade on top of ours). Closed, it draws nothing and
     // takes no input.
@@ -96,8 +96,8 @@ PanelWindow {
         PanelState.overviewWorkspace = ids[Math.max(0, Math.min(ids.length - 1, index))];
     }
 
-    readonly property real cardWidth: modelData.width * Tokens.overviewScale
-    readonly property real cardHeight: modelData.height * Tokens.overviewScale
+    readonly property real cardWidth: (modelData?.width ?? 0) * Tokens.overviewScale
+    readonly property real cardHeight: (modelData?.height ?? 0) * Tokens.overviewScale
     readonly property real step: cardWidth + Tokens.space12
     readonly property real blockHeight: cardHeight + Tokens.space4 + labels.implicitHeight
     readonly property real cardTop: (height - blockHeight) / 2
@@ -110,7 +110,7 @@ PanelWindow {
             _waited = 0;
             startPoll.restart();
             Workspaces.refresh();
-            PanelState.overviewWorkspace = Workspaces.activeOn(modelData.name);
+            PanelState.overviewWorkspace = Workspaces.activeOn((modelData?.name ?? ""));
             strip.jump();
             focusFirst.restart();
         } else {
@@ -141,7 +141,7 @@ PanelWindow {
         stripX.target = stripX.value;
         stripX.velocity = 0;
         focusX = settledX;
-        if (id !== undefined && id !== Workspaces.activeOn(modelData.name)) {
+        if (id !== undefined && id !== Workspaces.activeOn((modelData?.name ?? ""))) {
             switching = true;
             switchHold.restart();
         }
@@ -151,7 +151,7 @@ PanelWindow {
     }
 
     // The bar's strip (its exclusive zone): part of the blurred background.
-    readonly property var monitorSettings: Config.monitor(modelData.name)
+    readonly property var monitorSettings: Config.monitor((modelData?.name ?? ""))
     readonly property bool hasBar: monitorSettings.showBar
     readonly property bool barLeft: monitorSettings.barPosition === "left"
     readonly property real barZone: hasBar ? Tokens.cayHeight + Tokens.space2 : 0
@@ -221,8 +221,8 @@ PanelWindow {
     // its strip (Bar.qml), so the whole background reads as one.
     Item {
         id: blurArea
-        width: root.started && root.shown ? root.width : 0
-        height: root.started && root.shown ? root.height : 0
+        width: root.started && root.shown && Performance.blur ? root.width : 0
+        height: root.started && root.shown && Performance.blur ? root.height : 0
     }
     BackgroundEffect.blurRegion: Region { item: blurArea }
     Rectangle {
@@ -293,7 +293,7 @@ PanelWindow {
                     required property int index
                     readonly property bool current: index === root.selected
                     readonly property var windows: Workspaces.windowsOn(modelData)
-                    readonly property real factor: root.cardWidth / root.modelData.width
+                    readonly property real factor: root.cardWidth / (root.modelData?.width ?? 0)
 
                     // Every window here has its first picture.
                     function ready() {
@@ -342,8 +342,8 @@ PanelWindow {
                             toplevel: modelData
                             live: card.current && root.open
                             visible: !!ipc?.at
-                            x: ((ipc?.at?.[0] ?? 0) - root.modelData.x) * card.factor
-                            y: ((ipc?.at?.[1] ?? 0) - root.modelData.y) * card.factor
+                            x: ((ipc?.at?.[0] ?? 0) - (root.modelData?.x ?? 0)) * card.factor
+                            y: ((ipc?.at?.[1] ?? 0) - (root.modelData?.y ?? 0)) * card.factor
                             width: (ipc?.size?.[0] ?? 0) * card.factor
                             height: (ipc?.size?.[1] ?? 0) * card.factor
 
