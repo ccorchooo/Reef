@@ -55,10 +55,11 @@ Built and running; not ticked until checked by hand: edit mode (it now goes to a
 - [ ] Settings app: Look, Displays, Bar & Island, Sound, Network, Bluetooth, Coral, Keyboard, Power & performance, Accessibility, About.
 
 ## M8 — Coral
-- [ ] OpenAI-compatible streaming chat in the Island.
+- [x] OpenAI-compatible streaming chat in the Island.
+- [x] The Coral app: saved conversations, model menu, attachments (images, text, PDFs), edit, regenerate, reasoning.
 - [ ] Voice mode: Pearl pulse, transcript, speech-to-text and text-to-speech.
-- [ ] Actions through Reef IPC.
-- [ ] Island activity: Coral thinking and replying.
+- [x] Actions through Reef IPC.
+- [x] Island activity: Coral thinking and replying.
 
 ## M9 — Polish
 - [ ] Sounds, Frosted mode (blur), the Vivid scheme variant.

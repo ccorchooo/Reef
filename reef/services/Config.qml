@@ -175,6 +175,7 @@ Singleton {
                     property bool progress: true         // notifications reporting progress
                     property bool event: true            // calendar event starting soon
                     property bool focus: true            // focus session
+                    property bool coral: true            // Coral thinking, replying, or a reply you haven't seen
                 }
             }
 
@@ -255,12 +256,47 @@ Singleton {
             // Settings → Displays: { "<output>": { showBar, showIsland, showCorners, barPosition } }
             property var monitors: ({})
 
-            // Settings → Coral (the assistant arrives in M8)
+            // Settings → Coral
             property JsonObject coral: JsonObject {
-                property string endpoint: "http://localhost:11434/v1"   // any OpenAI-compatible API
-                property string model: ""
-                property string apiKeyEnv: "OPENAI_API_KEY"   // the environment variable holding the key (never stored here)
-                property bool voice: true
+                // Where each part runs: "local" (on this computer) or "cloud" (coral.cloud).
+                property string chat: "local"            // the language model
+                property string listen: "local"          // speech to text: whisper.cpp, or the cloud's transcriptions
+                property string speech: "local"          // text to speech: piper, or the cloud's speech (falls back to piper)
+                // A local OpenAI-compatible server (Ollama, llama.cpp, LM Studio…).
+                property JsonObject local: JsonObject {
+                    property string endpoint: "http://localhost:11434/v1"
+                    property string model: ""            // empty: the server's first model
+                }
+                // An OpenAI-compatible service (Groq by default). The key is kept in
+                // ~/.config/reef/keys/cloud (only you can read it), or read from keyEnv.
+                property JsonObject cloud: JsonObject {
+                    property string endpoint: "https://api.groq.com/openai/v1"
+                    property string keyEnv: "GROQ_API_KEY"       // used when no key is saved
+                    property string model: "openai/gpt-oss-120b"
+                    property string listenModel: "whisper-large-v3-turbo"
+                    property string speechModel: "canopylabs/orpheus-v1-english"
+                    property string speechVoice: "troy"
+                    property list<string> speechLanguages: ["en"]   // what the cloud voice can speak; others use piper
+                }
+                property bool actions: true              // Coral may offer buttons that act (they run only when pressed)
+                property bool voice: true                // voice mode (Super+C)
+                property bool wake: false                // listen for "hey Coral" / "oye Coral"
+                property string wakeWith: "local"        // local (whisper-server, tiny model) | cloud (coral.cloud)
+                property int wakePort: 39471             // whisper-server's port on 127.0.0.1
+                property int wakeGapMs: 450              // quiet that ends a burst of speech
+                property int wakeMinMs: 400              // bursts shorter than this aren't checked
+                property int wakeMaxMs: 7000             // nor longer than this
+                property bool speak: true                // say replies aloud in voice mode
+                property string voiceDir: ""             // models; empty: ~/.local/share/reef/voice
+                property string listenLanguage: "auto"   // whisper's language: auto, or a code (es, en, …)
+                property string voiceLanguage: "en"      // the voice to use when the language has none
+                property real silenceDb: -42             // quieter than this (RMS dB) is always silence
+                property real speechMarginDb: 10         // speech stands this far above the room's background
+                property int silenceMs: 1700             // this much silence after speech ends listening
+                property int noSpeechMs: 8000            // nothing said this long: give up
+                property int maxListenMs: 30000          // never listen longer than this
+                property bool followUp: true             // after a spoken reply, listen a little for a follow-up
+                property int followUpMs: 5000            // how long, before folding away
             }
 
             property JsonObject debug: JsonObject {

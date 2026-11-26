@@ -549,6 +549,11 @@ PanelWindow {
                 width: parent.width
                 visible: IslandState.tab === "tools"
             }
+            CoralTab {
+                id: coralTab
+                width: parent.width
+                visible: IslandState.tab === "coral"
+            }
         }
     }
 
@@ -595,7 +600,7 @@ PanelWindow {
         onTriggered: {
             keys.forceActiveFocus();
             // The tab's own first control: the clipboard search, the calculator, …
-            const tab = ({ shelf: shelfTab, clipboard: clipboardTab, tools: toolsTab })[IslandState.tab];
+            const tab = ({ shelf: shelfTab, clipboard: clipboardTab, tools: toolsTab, coral: coralTab })[IslandState.tab];
             tab?.focusFirst();
             armGrab.restart();
         }

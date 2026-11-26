@@ -12,6 +12,7 @@ import qs.modules.overview
 import qs.modules.switcher
 import qs.modules.home
 import qs.modules.editmode
+import qs.modules.coral
 
 // One per monitor. Each surface can be turned off per monitor (Settings → Displays).
 Scope {
@@ -54,6 +55,9 @@ Scope {
     }
 
     EditMode { modelData: root.modelData }
+
+    // Coral's voice mode (the Pearl at the top center, on the monitor it started on).
+    VoiceWindow { modelData: root.modelData }
 
     Overview {
         modelData: root.modelData

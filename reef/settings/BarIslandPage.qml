@@ -167,7 +167,8 @@ Column {
                 ["recording", "Screen recording"], ["screenShare", "Screen sharing"], ["micCamera", "Microphone and camera in use"],
                 ["battery", "Low battery and charging"], ["bluetooth", "Bluetooth device connected"], ["timer", "Timer"],
                 ["stopwatch", "Stopwatch"], ["media", "Media"], ["keepAwake", "Keep awake"],
-                ["progress", "Progress from notifications"], ["event", "Upcoming event"], ["focus", "Focus session"]
+                ["progress", "Progress from notifications"], ["event", "Upcoming event"], ["focus", "Focus session"],
+                ["coral", "Coral"]
             ]
             SwitchRow {
                 required property var modelData

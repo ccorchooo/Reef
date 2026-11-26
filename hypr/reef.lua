@@ -56,6 +56,7 @@ local binds = {
     { "SUPER + V",           "clipboard" },
     { "SUPER + period",      "emoji" },
     { "SUPER + C",           "coral" },
+    { "SUPER + SHIFT + C",   "coralApp" },
     { "SUPER + N",           "controlCenter" },
     { "SUPER + Tab",         "overview" },
     -- Hold Alt and press Tab to step through windows; letting go of Alt switches.

@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import qs.modules
 import qs.modules.lock
+import qs.modules.coral
 import qs.modules.polkit
 import qs.services
 import qs.settings
@@ -21,6 +22,12 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         AuthDialog {}
+    }
+
+    // The Coral app (M8): its own window, built only while open.
+    LazyLoader {
+        active: Coral.appOpen
+        CoralApp {}
     }
 
     // The Settings app (M7): its own window, built only while open.

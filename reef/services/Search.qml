@@ -261,15 +261,24 @@ Singleton {
     }
 
     // ── Coral ───────────────────────────────────────────────────
-    readonly property var coral: !active || commandMode || q === "" ? [] : [{
+    readonly property var coral: !active || commandMode || q === "" ? [] : ("coral chat conversations assistant ai".split(" ").some(w => w.startsWith(q) && q.length >= 2) ? [{
+        kind: "coral",
+        title: "Coral",
+        subtitle: "Your conversations",
+        icon: "",
+        iconSource: "",
+        run: () => Coral.openApp()
+    }] : []).concat([{
         kind: "coral",
         title: `Ask Coral about “${text}”`,
         subtitle: "Answers in the Island",
         icon: "",
         iconSource: "",
-        // Coral arrives in M8; until then, say so instead of doing nothing.
-        run: () => Toasts.show({ text: "Coral isn't here yet", icon: "info" })
-    }]
+        run: (question => () => {
+                Coral.ask(question);
+                Actions.islandRequested("coral");
+            })(text)
+    }])
 
     // ── together ────────────────────────────────────────────────
     readonly property var sections: [

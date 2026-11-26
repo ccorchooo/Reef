@@ -36,6 +36,10 @@ Singleton {
             if (!sourceMatches(_class(g.source)))
                 continue;
             const name = _name(g.target);
+            // Coral's wake word is its own, opt-in, always-on listener (Settings → Coral);
+            // as an activity it would sit on the Island for good.
+            if (name === "Reef wake word")
+                continue;
             if (!out.includes(name))
                 out.push(name);
         }

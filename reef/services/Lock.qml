@@ -20,7 +20,8 @@ import qs.theme
 // Lid (lock.onLidClose): logind's LidClosed turning true locks. Closing the lid usually
 // suspends too, so Reef holds a logind sleep "delay" inhibitor (systemd-inhibit) and lets
 // it go only once the lock is secure (every monitor covered), so the screen never shows
-// the desktop on wake. logind is watched with `gdbus monitor` (glib, systemd).
+// the desktop on wake; logind still decides whether the lid sleeps (HandleLidSwitch).
+// logind is watched with `gdbus monitor` (glib, systemd). Both helpers end with the shell.
 Singleton {
     id: root
 
@@ -129,7 +130,8 @@ Singleton {
     Process {
         id: logind
         running: root.watchLid
-        command: ["gdbus", "monitor", "--system", "--dest", "org.freedesktop.login1", "--object-path", "/org/freedesktop/login1"]
+        // Ends with the shell: the kernel signals it when Quickshell goes (even a crash).
+        command: ["setpriv", "--pdeathsig", "TERM", "gdbus", "monitor", "--system", "--dest", "org.freedesktop.login1", "--object-path", "/org/freedesktop/login1"]
         stdout: SplitParser {
             onRead: line => {
                 const lid = line.match(/'LidClosed': <(true|false)>/);
@@ -151,7 +153,9 @@ Singleton {
 
     Process {
         running: root._inhibit
-        command: ["systemd-inhibit", "--what=sleep", "--mode=delay", "--who=Reef", "--why=Locking the screen first", "sleep", "infinity"]
+        // Held by `cat` on the stdin pipe Quickshell keeps open, so it's released the moment
+        // the shell is gone (a crash must never leave sleep waiting on it).
+        command: ["systemd-inhibit", "--what=sleep", "--mode=delay", "--who=Reef", "--why=Locking the screen first", "cat"]
     }
 
     PamContext {

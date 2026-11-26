@@ -14,6 +14,11 @@ Column {
     property bool secret: false
     signal committed(string value)
 
+    // Empty the field (a saved secret shouldn't stay in it).
+    function clear() {
+        input.text = "";
+    }
+
     spacing: Tokens.space2
 
     StyledText {

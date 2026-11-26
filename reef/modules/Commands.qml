@@ -13,6 +13,9 @@ import qs.modules.island
 Scope {
     id: root
 
+    // Coral's wake word runs on its own once on (singletons start when first used).
+    readonly property bool coralWake: CoralWake.on
+
     IpcHandler {
         target: "reef"
 
@@ -104,6 +107,25 @@ Scope {
         function lock(): void { Lock.lock(); }
         // Show the lock screen without locking (Escape closes it).
         function preview(): void { Lock.showPreview(!Lock.preview); }
+    }
+
+    // Coral: `coral ask "what's using my battery?"` asks and opens the Island on the
+    // answer; `coral stop` stops a reply, `coral clear` starts a new conversation.
+    IpcHandler {
+        target: "coral"
+
+        function ask(text: string): void {
+            Coral.ask(text);
+            Actions.islandRequested("coral");
+        }
+        function open(): void { Actions.islandRequested("coral"); }
+        function app(): void { Coral.openApp(); }
+        function voice(): void { CoralVoice.start(); }
+        function stop(): void {
+            CoralVoice.cancel();
+            Coral.stop();
+        }
+        function clear(): void { Coral.clear(); }
     }
 
     IpcHandler {

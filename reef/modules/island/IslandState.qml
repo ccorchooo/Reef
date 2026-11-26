@@ -109,6 +109,21 @@ Singleton {
             actions: [{ icon: "calendar_month", label: "Open calendar", tone: "accent", run: () => Actions.run("calendar") }]
         },
         Activity {
+            key: "coral"
+            enabled: root.settings.coral
+            live: Coral.busy || Coral.unread
+            icon: Coral.busy ? "more_horiz" : "chat"
+            text: Coral.status === "thinking" ? "Thinking" : Coral.status === "replying" ? "Replying" : "Replied"
+            textMono: false
+            textColor: Coral.busy ? Colors.on.islandVariant : Colors.islandAccent
+            title: "Coral"
+            subtitle: {
+                const last = Coral.messages[Coral.messages.length - 1];
+                return last && last.role === "assistant" && last.text !== "" ? last.text.replace(/\s+/g, " ").slice(0, 80) : text;
+            }
+            actions: [{ icon: "forum", label: "Open Coral", tone: "accent", run: () => root.open("coral") }]
+        },
+        Activity {
             key: "focus"
             enabled: root.settings.focus
             live: Focus.active
@@ -255,7 +270,7 @@ Singleton {
         { id: "coral", icon: "", label: "Coral" }
     ]
     // Tabs that exist so far; the others run their (stub) action.
-    readonly property var builtTabs: ["now", "shelf", "clipboard", "tools"]
+    readonly property var builtTabs: ["now", "shelf", "clipboard", "tools", "coral"]
 
     // `tab` may also name a tool ("emoji", Super+.): the Tools tab opens on it.
     function open(tab, screen) {

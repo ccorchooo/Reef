@@ -139,6 +139,26 @@ Singleton {
     readonly property real visualizerHeight: 16 * zoom
     readonly property real recordingDot: 10 * zoom
     readonly property real coralRing: 12 * zoom
+    readonly property real coralAvatar: 28 * zoom
+    readonly property real coralButton: 36 * zoom
+    readonly property real coralFieldHeight: 48 * zoom
+    readonly property real coralBubbleWidth: 340 * zoom
+    readonly property real coralReplyWidth: 440 * zoom
+    readonly property real coralBubbleRadius: 20 * zoom
+    readonly property real coralBubbleTail: 6 * zoom
+    readonly property real coralChatMaxHeight: 360 * zoom
+    readonly property real coralOrbCore: 52 * zoom
+    readonly property real coralOrbMark: 28 * zoom
+    readonly property real coralOutline: 2 * zoom
+    readonly property real coralTranscriptWidth: 560 * zoom
+    readonly property real coralAppWidth: 1120 * zoom
+    readonly property real coralAppHeight: 760 * zoom
+    readonly property real coralAppColumn: 760 * zoom
+    readonly property real coralAppBubbleWidth: 600 * zoom
+    readonly property real coralAppThumb: 72 * zoom
+    readonly property real coralAppTool: 32 * zoom
+    readonly property real coralComposerMax: 200 * zoom
+    readonly property real coralMenuWidth: 300 * zoom
     readonly property real iconOsd: 22 * zoom
     readonly property real osdWidth: 72 * zoom
     readonly property real osdHeight: 260 * zoom
@@ -564,6 +584,7 @@ Singleton {
     readonly property real homeGridDotsOpacity: 0.35
     readonly property real clockBackdropOpacity: 0.14
     readonly property real pearlRingTrackOpacity: 0.45
+    readonly property real coralOutlineOpacity: 0.45
 
     // Motion (MOTION.md). Use through the Motion singleton, never directly.
     readonly property var springs: ({"spatialFast": {"stiffness": 800, "damping": 0.6, "duration": 350, "bezier": [0.42, 1.67, 0.21, 0.9]}, "spatialDefault": {"stiffness": 380, "damping": 0.8, "duration": 500, "bezier": [0.38, 1.21, 0.22, 1.0]}, "spatialSlow": {"stiffness": 200, "damping": 0.8, "duration": 650, "bezier": [0.39, 1.29, 0.35, 0.98]}, "spatialBouncy": {"stiffness": 320, "damping": 0.42, "duration": 700, "bezier": [0.34, 1.9, 0.45, 0.85]}, "effectsFast": {"stiffness": 3800, "damping": 1, "duration": 150, "bezier": [0.31, 0.94, 0.34, 1.0]}, "effectsDefault": {"stiffness": 1600, "damping": 1, "duration": 200, "bezier": [0.34, 0.8, 0.34, 1.0]}, "effectsSlow": {"stiffness": 800, "damping": 1, "duration": 300, "bezier": [0.34, 0.88, 0.34, 1.0]}})
@@ -597,4 +618,7 @@ Singleton {
     readonly property real pearlWobble: 8
     readonly property real passwordSpin: -120
     readonly property real pearlPulse: 0.04
+    readonly property real coralBeat: 520
+    readonly property real coralBeatAngle: 60
+    readonly property real coralPulse: 0.32
 }

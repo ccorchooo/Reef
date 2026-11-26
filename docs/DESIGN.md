@@ -139,4 +139,4 @@ Sounds are **very subtle**, short (under 150 ms) and soft, at low volume, with o
 | Per monitor | Show bar, show Island, bar position (bottom / left) |
 | Performance | Disable blur, disable shape morphs (use crossfades), lower Pearl frame rate, disable the audio visualizer |
 | Sound | Master toggle, per-category toggles |
-| Coral | API endpoint, model, voice on/off, wake keybind |
+| Coral | Local or cloud for chat, listening and speaking; local server and cloud service (endpoint, key, models, voice); voice on/off |

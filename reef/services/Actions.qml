@@ -18,7 +18,8 @@ Singleton {
             shelf: ["Island → Shelf", "M6"],
             tools: ["Island → Tools", "M6"],
             emoji: ["Island → Tools (emoji)", "M6"],
-            coral: ["Coral voice", "M8"],
+            coral: ["Coral", "M8"],
+            coralApp: ["The Coral app", "M8"],
             controlCenter: ["Control and notification center", "M3"],
             calendar: ["Calendar", "M3"],
             wifiMenu: ["Wi-Fi menu", "M3"],
@@ -46,7 +47,7 @@ Singleton {
         })
 
     // Actions with a global shortcut (bound in hypr/reef.lua).
-    readonly property var shortcuts: ["search", "island", "islandSwap", "clipboard", "emoji", "coral", "controlCenter", "overview", "switcher", "switcherBack", "editMode", "lock", "power", "focusBar", "volumeUp", "volumeDown", "volumeMute", "brightnessUp", "brightnessDown"]
+    readonly property var shortcuts: ["search", "island", "islandSwap", "clipboard", "emoji", "coral", "coralApp", "controlCenter", "overview", "switcher", "switcherBack", "editMode", "lock", "power", "focusBar", "volumeUp", "volumeDown", "volumeMute", "brightnessUp", "brightnessDown"]
 
     // Surfaces listen to these.
     signal focusBarRequested
@@ -73,6 +74,9 @@ Singleton {
             shelf: () => root.islandRequested("shelf"),
             tools: () => root.islandRequested("tools"),
             emoji: () => root.islandRequested("emoji"),
+            // Voice when it's set up, else the chat.
+            coral: () => CoralVoice.available ? CoralVoice.start() : root.islandRequested("coral"),
+            coralApp: () => Coral.openApp(),
             islandSwap: () => root.islandSwapRequested(),
             controlCenter: () => root.panelRequested("controlCenter"),
             editMode: () => root.panelRequested("editMode"),
