@@ -165,7 +165,7 @@ Column {
         SwitchRow {
             width: parent.width
             text: "Voice"
-            description: "Talk to Coral with Super+C and hear it answer."
+            description: "Talk to Coral with Super+A and hear it answer."
             checked: root.coral.voice
             onToggled: Config.options.coral.voice = !checked
         }

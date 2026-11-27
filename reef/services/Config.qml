@@ -218,6 +218,16 @@ Singleton {
                 property bool polkitAgent: true          // Reef answers polkit prompts (only one agent per session)
             }
 
+            // Settings → Power & performance → When idle (services/Idle). 0 = never.
+            property JsonObject idle: JsonObject {
+                property bool enabled: true
+                property int lockMinutes: 5
+                property int screenOffMinutes: 8
+                property int suspendMinutes: 0           // plugged in
+                property int suspendOnBatteryMinutes: 15
+                property bool whileMedia: false          // false: playing media holds the lock and sleep timers
+            }
+
             property JsonObject battery: JsonObject {
                 property real lowLevel: 0.15             // "low battery" activity at or below this
                 property real criticalLevel: 0.05
@@ -250,6 +260,19 @@ Singleton {
 
             property JsonObject screenshots: JsonObject {
                 property string folder: ""               // empty = ~/Pictures/Screenshots
+            }
+
+            // Screen recording (services/Recording, gpu-screen-recorder or wf-recorder)
+            property JsonObject recordings: JsonObject {
+                property string folder: ""               // empty = ~/Videos/Recordings
+                property int fps: 60
+            }
+
+            // Settings → Look → Apps: apps that follow Reef's colors (services/AppTheme)
+            property JsonObject appTheme: JsonObject {
+                property bool kitty: true                // ~/.config/kitty/reef-colors.conf, reloaded live
+                property real kittyOpacity: -1           // kitty's background, 0.3–1; -1 = the token (color.terminal.opacity)
+                property bool gtk: true                  // light or dark for GTK and libadwaita apps
             }
 
             // Settings → Apps
@@ -296,7 +319,7 @@ Singleton {
                     property list<string> speechLanguages: ["en"]   // what the cloud voice can speak; others use piper
                 }
                 property bool actions: true              // Coral may offer buttons that act (they run only when pressed)
-                property bool voice: true                // voice mode (Super+C)
+                property bool voice: true                // voice mode (Super+A)
                 property bool wake: false                // listen for "hey Coral" / "oye Coral"
                 property string wakeWith: "local"        // local (whisper-server, tiny model) | cloud (coral.cloud)
                 property int wakePort: 39471             // whisper-server's port on 127.0.0.1

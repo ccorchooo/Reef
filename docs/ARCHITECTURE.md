@@ -18,6 +18,7 @@ Built in M0 (✓) and planned:
 ```
 reef/                         # the Quickshell config; symlink to ~/.config/quickshell/reef, run `qs -c reef`
   shell.qml                   ✓ ShellRoot: per-screen Variants, Commands, the dev window (LazyLoader)
+  greeter.qml                 ✓ the login greeter's entry point (greetd): `qs -p …/reef/greeter.qml`
   theme/
     Tokens.qml                ✓ GENERATED: spacing, radius, size, type, shadows, reference schemes, motion;
                                 spacing/radius/type already include the Scale multipliers (raw* don't)
@@ -89,7 +90,9 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
                                 Wallpaper (background layer, optional)
     editmode/                 ✓ (M7) EditMode (left Tide panel: thumbnails, tile layout, bar card)
     controlcenter/QuickTiles  ✓ (M7) the quick toggles' definitions and saved order (control center + edit mode)
-    pearl/  greeter/
+    greeter/                  ✓ (M5) GreeterSurface (one monitor: wallpaper, lockup, clock, avatar, field, users,
+                                session picker, accessibility, layout, power); state in services/Greeter
+    pearl/
   services/                   # singletons
     Config.qml                ✓ ~/.config/reef/config.json (FileView + JsonAdapter, live reload, write-back)
     Scheme.qml                ✓ the color scheme (schemegen.js: wallpaper seeds, M3 tones, classic palettes),
@@ -115,6 +118,12 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
                                 Performance mode (on, or on battery / Power saver); surfaces read this, not Config
     Monitors                  ✓ (M9) connected names, the focused one (with a fallback), showing("bar"|"island")
     CompositorTheme           ✓ (M9) pushes the settled scheme to Hyprland: `hyprctl eval reef_apply_colors(mode, roles)`
+    AppTheme                  ✓ apps follow the scheme: kitty (~/.config/kitty/reef-colors.conf: surface, text, 16 ANSI
+                                colors from schemegen.terminal + tokens color.terminal, accents in 256-color slots 16–20,
+                                opacity; SIGUSR1 reloads every kitty) and GTK (gsettings light/dark, adw-gtk3,
+                                ~/.config/gtk-{3,4}.0/reef-colors.css with libadwaita's named colors)
+    Idle                      ✓ IdleMonitors: lock, screens off (hl.dsp.dpms), sleep; idle.* in Config, respects inhibitors
+    Greeter                   ✓ the greeter's state: users (/etc/passwd), sessions (wayland-sessions), greetd login
   dev/                        ✓ DevWindow (M0 inspector) + its small helpers
   settings/                   ✓ (M7) Settings (FloatingWindow, sidebar + search), SettingsState (singleton: open,
                                 page, search index), one *Page.qml per page, loaded by a Loader
@@ -125,9 +134,18 @@ reef/                         # the Quickshell config; symlink to ~/.config/quic
                                 Unicode's emoji-test.txt; oh-my-zsh ships a copy), gen-sounds.py
                                 (tokens.json → sound into assets/sounds/, standard library only), check-contrast.py
                                 (text pairs in tokens.json at 4.5:1; run after changing colors)
-install.sh                    ✓ (M9) link (or --copy) ~/.config/quickshell/reef, --check programs, --hypr,
-                                --uninstall, --prefix DIR for packages (/etc/xdg/quickshell/reef, /usr/share/reef/hypr)
-packaging/arch/PKGBUILD       ✓ (M9) reef-git: package() is `install.sh --prefix "$pkgdir"`
+bin/reef                      ✓ the CLI: install (packages via pacman + paru/yay, /usr/share/reef, the shell link, fonts,
+                                Hyprland's config with your keyboard/monitors/cursor carried over, kitty/fastfetch/
+                                starship/fish/bash/GTK, services, greetd), update (git pull + refresh, never a file you
+                                changed: checksums in ~/.local/state/reef), doctor, uninstall (restores *.reef-bak.*),
+                                greeter-sync, restart, ipc, binds, prefix DIR (packaging). REEF_ROOT stages the system
+                                side under a folder for testing. install.sh runs it.
+packaging/arch/PKGBUILD       ✓ (M9) reef-git: package() is `bin/reef prefix "$pkgdir"` (/usr/share/reef, /usr/bin/reef,
+                                reef-session, the session entry, /etc/xdg/quickshell/reef)
+config/                       ✓ kitty.conf, fastfetch (config.jsonc + reef.txt, the mark from scripts/gen-logo-text.py),
+                                starship.toml, fish/reef.fish and bash/reef.bash (starship + a fastfetch greeting per window)
+session/                      ✓ reef-session (uwsm → start-hyprland → Hyprland) and reef.desktop
+greeter/                      ✓ hyprland.lua (the greeter's compositor) and config.toml (greetd)
 hypr/
   reef.lua                    ✓ Hyprland snippet (gaps, rounding, start command, binds)
   config/                     ✓ (M9) a whole Hyprland config around Reef (`install.sh --hypr-config`):
@@ -137,6 +155,7 @@ hypr/
                                 look (gaps/corners from tokens, blur, layouts, groups, misc), animations (Reef's
                                 springs), colors (scheme → borders; reef_apply_colors), rules, binds, autostart;
                                 tokens.lua → ../../tokens.lua; defaults/ (the user/ templates)
+  check-binds.lua             ✓ loads a config with a stand-in `hl` and fails on two binds sharing a key (reef doctor)
   tokens.lua                  ✓ GENERATED: spacing/radius, the M3E springs (ratio + bezier fallback) and the
                                 reference scheme (rrggbb per role, dark and light) for reef.lua and hypr/config
 ```
@@ -149,15 +168,15 @@ hypr/
 | Rounded screen | One overlay `PanelWindow` per screen anchored to all edges, with no input (empty mask), drawing four black concave corner pieces of `radius-xl`. |
 | Tide panels | A `PanelWindow` anchored top, bottom and one side, full height, plus `EdgeFillet`s at the top and bottom of the inner edge. Content is a column of `Card`s. Use a focus grab (`HyprlandFocusGrab`) so a click outside closes the panel. |
 | Hyprland | `Quickshell.Hyprland` for workspaces, the active window and `GlobalShortcut` keybinds (appid `reef`). Hyprland 0.57 is configured in **Lua**, so the snippet is `hypr/reef.lua`: load it with `dofile(…)`. It sets gaps (`gaps_in` = space-2, `gaps_out` = space-4) and `rounding` = radius-lg from the generated `hypr/tokens.lua`, starts `qs -c reef -n -d`, and binds keys to `hl.dsp.global("reef:<action>")`. |
-| Colors | `services/Scheme` builds the scheme in Reef with `services/schemegen.js` (no external tool; matugen isn't needed). The wallpaper's colors come from Quickshell's `ColorQuantizer` (16 buckets); `seeds()` groups them into 30° hue families and ranks them by coverage and vividness. `generate(seed, tertiarySeed, colorfulness)` applies the M3 tone recipe in CIE LCh (L* = M3 tone), cutting chroma to fit sRGB; the Colorfulness levels are chroma tables (Neutral and Deep use one accent hue; Deep makes every surface black on dark). Classic palettes (`Tokens.palettes`) go through `classic()`, which derives containers and on-colors and enforces 4.5:1 text. The result is cached in `~/.cache/reef/scheme.json` so the next start is instant. `Colors.qml` falls back to the reference scheme in tokens, keeps the Island roles and scrim fixed, and crossfades every change with `effects-slow`. Writing GTK/Qt/kitty/Hyprland themes from the scheme comes later. The wallpaper path is `look.wallpaper` in Config. |
+| Colors | `services/Scheme` builds the scheme in Reef with `services/schemegen.js` (no external tool; matugen isn't needed). The wallpaper's colors come from Quickshell's `ColorQuantizer` (16 buckets); `seeds()` groups them into 30° hue families and ranks them by coverage and vividness. `generate(seed, tertiarySeed, colorfulness)` applies the M3 tone recipe in CIE LCh (L* = M3 tone), cutting chroma to fit sRGB; the Colorfulness levels are chroma tables (Neutral and Deep use one accent hue; Deep makes every surface black on dark). Classic palettes (`Tokens.palettes`) go through `classic()`, which derives containers and on-colors and enforces 4.5:1 text. The result is cached in `~/.cache/reef/scheme.json` so the next start is instant. `Colors.qml` falls back to the reference scheme in tokens, keeps the Island roles and scrim fixed, and crossfades every change with `effects-slow`. Hyprland's borders (CompositorTheme), kitty and GTK (AppTheme) follow the scheme; Qt apps don't yet. The wallpaper path is `look.wallpaper` in Config. |
 | Audio | `Quickshell.Services.Pipewire` |
 | Media | `Quickshell.Services.Mpris`. Pull the album art's color for `island-accent`. |
 | Notifications | `Quickshell.Services.Notifications`. Reef **is** the notification server. Only one program can own `org.freedesktop.Notifications`: while another shell (Caelestia) runs, Reef receives none. Test with `dbus-run-session` and an isolated `XDG_CONFIG_HOME`. |
 | Tray | `Quickshell.Services.SystemTray`, shown inside the Status cay overflow. |
 | Battery | `Quickshell.Services.UPower` |
 | Network / Bluetooth | Quickshell's networking and Bluetooth modules if your version has them, otherwise `nmcli` and `bluetoothctl` through `Process`. |
-| Lock | `WlSessionLock` plus `Quickshell.Services.Pam`. Idle handled with hypridle or Quickshell's idle support. Lid: `gdbus monitor` on logind (`LidClosed`, `PrepareForSleep`) and a `systemd-inhibit --mode=delay` sleep lock released once the lock is secure; both ship with glib2 and systemd, which Qt and Hyprland already need. |
-| Greeter | greetd plus a Quickshell greeter (`Quickshell.Services.Greetd`), with its own entry point and the same theme. |
+| Lock | `WlSessionLock` plus `Quickshell.Services.Pam`. Idle: `services/Idle` (Quickshell's `IdleMonitor`; no hypridle). Lid: `gdbus monitor` on logind (`LidClosed`, `PrepareForSleep`) and a `systemd-inhibit --mode=delay` sleep lock released once the lock is secure; both ship with glib2 and systemd, which Qt and Hyprland already need. |
+| Greeter | greetd plus a Quickshell greeter (`Quickshell.Services.Greetd`): `reef/greeter.qml`, `modules/greeter`, `services/Greeter`, run in its own Hyprland (`greeter/hyprland.lua`). |
 | Polkit | Quickshell's polkit agent if available, otherwise a small agent process that the UI talks to. |
 | Clipboard | `cliphist` plus `wl-clipboard`. The Clipboard tab lists, searches and pins entries. |
 | Shelf | Files and text dropped on the Island (`DropArea`) are kept in `$XDG_RUNTIME_DIR/reef/shelf` and dragged back out as file URIs. |
@@ -223,10 +242,13 @@ hypr/
 - **Choosing a monitor.** Never read `Hyprland.focusedMonitor` directly: use `Monitors.focused` (falls back to the first screen while Hyprland names none, or names one Quickshell doesn't list) and `Monitors.showing("bar"|"island", name)` for things that live in the bar or the Island.
 - **Performance.** Read `Performance.blur / shapeMorphs / visualizer / liveThumbnails / idleMotion`, never `Config.options.performance.*`: Performance mode overrides them. `Battery.unplugged` is UPower's `onBattery`.
 - **Reduce motion** reaches every route: `Spring` snaps spatial values, `MotionAnimation` (Behavior fallback) takes 0 ms for spatial specs, list `Transition`s use 0 ms for spatial movement, and continuous decorative motion (the wave's travel, the edit-mode wiggle) stops.
+- **Idle.** `IdleMonitor` (Quickshell.Wayland) with `respectInhibitors` honors Keep awake (the bar's `IdleInhibitor`), fullscreen windows (the `idle_inhibit` rule) and apps. Screens go off with `hl.dsp.dpms({ action = "disable" })` and back with `"enable"` (the togglable actions here are enable/disable, as Caelestia uses them).
+- **Lua lists and nil.** `{ maybe_nil, a, b }` walked with `ipairs` stops at the nil: `lib.load_shell()` once listed `vars.reefHypr` (usually nil) first and so never loaded reef.lua from the whole config. Build such lists with `table.insert`.
+- **The greeter** is a second entry point (`greeter.qml`): `qs -p <file>` makes the file's folder the `qs` root, so it shares every module. It runs as greetd's `greeter` user, which can't read a home folder, hence the system copy in /usr/share/reef. `Greetd.launch(cmd, env, true)` quits the greeter, and greeter/hyprland.lua exits Hyprland after it.
 - **Hyprland's Lua config (hypr/config).** The API's authority is `/usr/share/hypr/stubs/hl.meta.lua` (names and types) and `/usr/share/hypr/hyprland.lua` (call shapes). `Hyprland --verify-config -c <file>` is strict: it rejects unknown option keys, wrong types, unknown rule fields and animation leaves (exit 1, errors listed after "Config parsing result"). Dispatcher arguments are checked when the dispatcher is built, so `hyprctl repl 'return tostring(hl.dsp.focus({ monitor = "+1" }))'` checks one without running it. `hl.timer` segfaults the checker (no event loop), so the config uses none. `require` resolves from the config's folder. Rule matches are regexes (`[0-9]`, `\\.`), not Lua patterns. `hyprctl eval '<lua>'` runs in the live config's state (its globals persist): that's how Reef recolors the borders with no reload. Hyprland reloads as soon as a file under ~/.config/hypr changes, so installing the config switches a running session at once.
 - **Checking QML without the live shell.** A throwaway `ShellRoot` file at the config root (so `qs.*` resolves) can `Qt.createComponent()` each file and log `errorString()` (run on the real display with nothing instantiated for layer-shell files, or with `QT_QPA_PLATFORM=offscreen` for the rest), and render Items or a `FloatingWindow`'s first child with `grabToImage`. Isolate it with `dbus-run-session`, no `HYPRLAND_INSTANCE_SIGNATURE`, and scratch `XDG_*` folders.
 - **Edit mode (M7).** Widgets live on a bottom-layer `PanelWindow` with `ExclusionMode.Normal` (it fits inside the bar's exclusive zone); its mask is the widgets' bounds, or the whole surface while editing so drops land. A thumbnail drags out of the panel with `Drag.Automatic` and the MIME type `application/x-reef-widget`; a click adds it too. The bar reserves its zone on the left by changing its anchors (top+bottom+left), so each cay has a `vertical` form.
-- IPC: `reef run <action>`, `reef settings [page]`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|editMode|search|overview|calendar|wifi|bluetooth|audio>` (menus open inside the control center), `panel close`, `overview select <n>|go <n>` (drive the open overview without input, e.g. to record its motion with `grim` in a loop), `focus start <minutes>|stop|toggle`, `superHold down|up` (what holding Super does), `notifications dnd|clear`, `lock lock|preview`, `reef status` (also monitors, performance, panels and sounds), `reef sound <name>`; global shortcuts `reef:screenshot`, `reef:mediaToggle`, `reef:mediaNext`, `reef:mediaPrevious` (bound in reef.lua to Print and the media keys) (lock, unlock, power, island, shelf, listen, reply, notification; as the sound settings allow). With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
+- IPC: `reef run <action>`, `reef settings [page]`, `reef dev`, `reef status`, `reef scheme`, `reef timer <duration>`, `reef toast <text>`, `reef timerCancel`, `island open <tab>`, `island close`, `island toggle`, `island swap`, `island simulate <key>` (shows an activity with its current values, to check how it looks), `stopwatch start|pause|toggle|lap|reset`, `keepAwake on <duration>|off|toggle`, `panel toggle <controlCenter|editMode|search|overview|calendar|wifi|bluetooth|audio>` (menus open inside the control center), `panel close`, `overview select <n>|go <n>` (drive the open overview without input, e.g. to record its motion with `grim` in a loop), `focus start <minutes>|stop|toggle`, `superHold down|up` (what holding Super does), `notifications dnd|clear`, `lock lock|preview`, `reef status` (also monitors, performance, panels and sounds), `reef sound <name>`; global shortcuts for every action in `Actions.shortcuts` (reef.lua binds them: screenshots, recording, media, sleep, clear notifications…) (lock, unlock, power, island, shelf, listen, reply, notification; as the sound settings allow). With more than one Reef running, target one with `qs ipc --pid <pid> call …`.
 
 ## Configuration
 
@@ -237,6 +259,8 @@ hypr/
   - **Motion**: reduce motion, speed, Island hover reveal.
   - **Per monitor**: bar on/off, Island on/off, bar position.
   - **Performance**: `performance.mode` (off | battery | on), blur, shape morphs, visualizer FPS, live thumbnails.
+  - **Idle** (Power & performance → When idle): `idle.enabled`, `lockMinutes`, `screenOffMinutes`, `suspendMinutes`, `suspendOnBatteryMinutes`, `whileMedia`.
+  - **Apps** (Look → Apps): `appTheme.kitty`, `appTheme.kittyOpacity` (-1 = the token), `appTheme.gtk`. Recordings: `recordings.folder`, `recordings.fps`.
   - **Sound**: `sounds.enabled`, `sounds.volume`, and one switch per category (`lock`, `power`, `island`, `shelf`, `coralListen`, `coralReply`, `notification`).
   - **Coral**: endpoint, model, voice, keybind.
   - **Widgets and tile layout**, as saved by edit mode: `home.layouts`, `controlCenter.tiles`, plus `home.weatherLocation`, `home.temperatureUnit`, `home.wiggle`.

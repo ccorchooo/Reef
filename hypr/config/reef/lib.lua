@@ -98,7 +98,9 @@ end)
 -- tokens fall back to the copy installed beside this config.
 function M.load_shell()
     local vars = require("reef.vars")
-    local dirs = { vars.reefHypr, M.config_dir .. "reef-shell/", "/usr/share/reef/hypr/" }
+    -- (vars.reefHypr is usually nil, so it can't go first in a list walked with ipairs.)
+    local dirs = { M.config_dir .. "reef-shell/", M.home .. "/.local/share/reef/hypr/", "/usr/share/reef/hypr/" }
+    if type(vars.reefHypr) == "string" then table.insert(dirs, 1, vars.reefHypr) end
     for _, dir in ipairs(dirs) do
         if type(dir) == "string" and dir ~= "" then
             if dir:sub(-1) ~= "/" then dir = dir .. "/" end

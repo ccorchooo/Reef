@@ -1,10 +1,10 @@
 # Reef, a Quickshell desktop shell for Hyprland, built from the latest commit.
 # Build:  cd packaging/arch && makepkg -si
-# Installs the shell to /etc/xdg/quickshell/reef (start it with `qs -c reef`) and the
-# Hyprland snippet to /usr/share/reef/hypr/reef.lua: add
-#     dofile("/usr/share/reef/hypr/reef.lua")
-# to ~/.config/hypr/hyprland.lua (Hyprland 0.57+, Lua config) to start Reef with Hyprland.
-# Keep depends in step with install.sh's program list.
+# Installs Reef to /usr/share/reef (the shell, Hyprland's config, app configs, the greeter),
+# `reef` and `reef-session` to /usr/bin, the Reef session entry, and links
+# /etc/xdg/quickshell/reef so `qs -c reef` finds it. Then, as yourself:
+#     reef install --no-packages      (your Hyprland config, kitty, fonts, greeter…)
+# Keep depends in step with bin/reef's package lists.
 pkgname=reef-git
 pkgver=r0
 pkgrel=1
@@ -24,6 +24,9 @@ depends=(
     'glib2' 'systemd' 'util-linux' 'procps-ng'
     'brightnessctl' 'bluez-utils'
     'upower' 'power-profiles-daemon'
+    'uwsm' 'xdg-desktop-portal-hyprland' 'xdg-desktop-portal-gtk'
+    'networkmanager' 'polkit' 'gnome-keyring' 'libnotify' 'lua'
+    'kitty' 'fastfetch' 'starship'
 )
 optdepends=(
     'cava: the audio visualizer'
@@ -32,10 +35,14 @@ optdepends=(
     'poppler: PDF attachments in Coral'
     'nvidia-utils: GPU temperature in the system widget'
     'gpu-screen-recorder: screen recording'
-    'networkmanager: Wi-Fi'
     'network-manager-applet: advanced Wi-Fi settings'
     'blueman: advanced Bluetooth settings'
-    'pavucontrol: the volume mixer'
+    'pwvucontrol: the volume mixer'
+    'greetd: the login greeter (reef install --greeter)'
+    'hyprpicker: the color picker'
+    'btop: the system monitor (Ctrl+Shift+Escape)'
+    'wtype: typing the newest clipboard entry'
+    'adw-gtk-theme: GTK apps in the Reef colors'
 )
 makedepends=('git')
 provides=('reef')
@@ -50,5 +57,5 @@ pkgver() {
 
 package() {
     cd reef
-    ./install.sh --prefix "$pkgdir"
+    ./bin/reef prefix "$pkgdir"
 }

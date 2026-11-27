@@ -15,6 +15,9 @@ Scope {
 
     // Coral's wake word runs on its own once on (singletons start when first used).
     readonly property bool coralWake: CoralWake.on
+    // Idle (lock, screens off, sleep) and apps following the scheme (kitty, GTK).
+    readonly property bool idle: Idle.enabled
+    readonly property bool appTheme: AppTheme.options.kitty || AppTheme.options.gtk
 
     IpcHandler {
         target: "reef"

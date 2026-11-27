@@ -361,4 +361,35 @@ Column {
             onToggled: Config.options.look.themeHyprland = !root.look.themeHyprland
         }
     }
+
+    SettingsSection {
+        width: parent.width
+        title: "Apps"
+        SwitchRow {
+            width: parent.width
+            text: "Color the terminal"
+            description: "kitty's background, text and palette follow these colors."
+            checked: Config.options.appTheme.kitty
+            onToggled: Config.options.appTheme.kitty = !Config.options.appTheme.kitty
+        }
+        SliderRow {
+            width: parent.width
+            visible: Config.options.appTheme.kitty
+            text: "Terminal opacity"
+            icon: "opacity"
+            from: 30
+            to: 100
+            stepSize: 2
+            value: Math.round(AppTheme.opacity * 100)
+            format: v => `${v}%`
+            onMoved: v => Config.options.appTheme.kittyOpacity = v / 100
+        }
+        SwitchRow {
+            width: parent.width
+            text: "Color GTK apps"
+            description: "Light or dark, and accents for apps that start after a change."
+            checked: Config.options.appTheme.gtk
+            onToggled: Config.options.appTheme.gtk = !Config.options.appTheme.gtk
+        }
+    }
 }

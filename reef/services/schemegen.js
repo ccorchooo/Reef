@@ -251,3 +251,26 @@ function classic(base, dark) {
     r.inversePrimary = ensureContrast(fromLch(dark ? 40 : 80, p.c, p.h), r.inverseSurface, 3);
     return r;
 }
+
+// ── terminal ──────────────────────────────────────────────────
+// The 16 ANSI colors for a terminal (services/AppTheme → kitty) from a scheme's roles.
+// spec is tokens.json → color.terminal: each hue (LCh) turns toward the primary's hue by
+// `harmonize` of the distance (at most `maxShift`°), takes the mode's tone and chroma, and
+// reads at `minContrast` on the surface. Black and white come from the scheme's neutrals.
+function terminal(r, dark, spec) {
+    const bg = r.surface, p = lch(r.primary), m = dark ? spec.dark : spec.light;
+    const out = {};
+    for (const name of Object.keys(spec.hues)) {
+        const base = spec.hues[name];
+        const d = ((p.h - base + 540) % 360) - 180;
+        const h = (base + Math.sign(d) * Math.min(Math.abs(d) * spec.harmonize, spec.maxShift) + 360) % 360;
+        out[name] = ensureContrast(fromLch(m.tone, m.chroma, h), bg, spec.minContrast);
+        out["bright" + name[0].toUpperCase() + name.slice(1)] = ensureContrast(fromLch(m.brightTone, m.chroma, h), bg, spec.minContrast);
+    }
+    const hex = c => hexOf(rgbOf(String(c)));
+    out.black = hex(dark ? r.surfaceContainerHighest : r.onSurface);
+    out.brightBlack = ensureContrast(hex(dark ? r.outline : r.onSurfaceVariant), bg, spec.dimContrast);
+    out.white = hex(dark ? r.onSurfaceVariant : r.surfaceContainerHighest);
+    out.brightWhite = hex(dark ? r.onSurface : r.outlineVariant);
+    return out;
+}

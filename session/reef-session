@@ -1,0 +1,15 @@
+#!/bin/sh
+# Start a Reef session: Hyprland with Reef's config (which starts the shell), through
+# uwsm when it's there so the session gets systemd's user services and a clean exit.
+# Used by /usr/share/wayland-sessions/reef.desktop (the greeter's "Reef" session).
+export XDG_CURRENT_DESKTOP=Hyprland
+export XDG_SESSION_DESKTOP=reef
+export XDG_SESSION_TYPE=wayland
+
+if command -v uwsm >/dev/null 2>&1; then
+    exec uwsm start -e -D Hyprland -N Reef -- hyprland.desktop
+fi
+if command -v start-hyprland >/dev/null 2>&1; then
+    exec start-hyprland
+fi
+exec Hyprland

@@ -27,6 +27,76 @@ Column {
 
     SettingsSection {
         width: parent.width
+        id: idleSection
+        title: "When idle"
+        readonly property var idle: Config.options.idle
+        readonly property var after: v => v === 0 ? "Never" : `${v} min`
+        SwitchRow {
+            width: parent.width
+            text: "Act when idle"
+            description: "Keep awake, fullscreen video and games hold it off."
+            checked: idleSection.idle.enabled
+            onToggled: Config.options.idle.enabled = !checked
+        }
+        SliderRow {
+            width: parent.width
+            visible: idleSection.idle.enabled
+            text: "Lock after"
+            icon: "lock"
+            from: 0
+            to: 30
+            stepSize: 1
+            value: idleSection.idle.lockMinutes
+            format: idleSection.after
+            onMoved: v => Config.options.idle.lockMinutes = v
+        }
+        SliderRow {
+            width: parent.width
+            visible: idleSection.idle.enabled
+            text: "Screens off after"
+            icon: "desktop_access_disabled"
+            from: 0
+            to: 60
+            stepSize: 1
+            value: idleSection.idle.screenOffMinutes
+            format: idleSection.after
+            onMoved: v => Config.options.idle.screenOffMinutes = v
+        }
+        SliderRow {
+            width: parent.width
+            visible: idleSection.idle.enabled
+            text: Battery.present ? "Sleep after, plugged in" : "Sleep after"
+            icon: "bedtime"
+            from: 0
+            to: 120
+            stepSize: 5
+            value: idleSection.idle.suspendMinutes
+            format: idleSection.after
+            onMoved: v => Config.options.idle.suspendMinutes = v
+        }
+        SliderRow {
+            width: parent.width
+            visible: idleSection.idle.enabled && Battery.present
+            text: "Sleep after, on battery"
+            icon: "battery_horiz_050"
+            from: 0
+            to: 120
+            stepSize: 5
+            value: idleSection.idle.suspendOnBatteryMinutes
+            format: idleSection.after
+            onMoved: v => Config.options.idle.suspendOnBatteryMinutes = v
+        }
+        SwitchRow {
+            width: parent.width
+            visible: idleSection.idle.enabled
+            text: "Lock and sleep while media plays"
+            checked: idleSection.idle.whileMedia
+            onToggled: Config.options.idle.whileMedia = !checked
+        }
+    }
+
+    SettingsSection {
+        width: parent.width
         title: "Battery"
         visible: Battery.present
         SliderRow {

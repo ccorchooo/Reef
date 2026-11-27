@@ -159,6 +159,9 @@ def main():
     w(",\n".join(f"        {js(k)}: {js(v)}" for k, v in pals.items()))
     w("    })")
     w(f"    readonly property var paletteIds: {js(list(pals.keys()))}")
+    # Terminal colors (services/AppTheme): hues, tones and contrast for the ANSI palette.
+    term = {k: v for k, v in t["color"].get("terminal", {}).items() if k != "note"}
+    w(f"    readonly property var terminal: ({js(term)})")
     w("")
 
     # shadows

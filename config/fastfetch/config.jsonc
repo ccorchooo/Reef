@@ -1,0 +1,50 @@
+// Reef's fastfetch: the atoll mark, then two calm cards of facts and the palette.
+// Colors are the terminal's: 38;5;16–18 are the scheme's primary, secondary and tertiary
+// (Reef writes them into kitty's colors), so this follows the wallpaper too.
+// Installed by `reef install` to ~/.config/fastfetch/config.jsonc (yours is backed up).
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "type": "file",
+        "source": "~/.config/fastfetch/reef.txt",
+        "color": { "1": "38;5;16" },
+        "padding": { "top": 1, "left": 2, "right": 4 }
+    },
+    "display": {
+        "separator": "  ",
+        "key": { "width": 11 },
+        "color": { "keys": "38;5;16", "title": "38;5;16", "output": "default" },
+        "bar": {
+            "char": { "elapsed": "━", "total": "━" },
+            "border": { "left": "", "right": "" },
+            "color": { "total": "90" },
+            "width": 12
+        },
+        "percent": { "type": ["num", "bar"], "color": { "green": "38;5;18", "yellow": "38;5;17", "red": "red" } },
+        "size": { "binaryPrefix": "jedec", "ndigits": 1 }
+    },
+    "modules": [
+        "break",
+        {
+            "type": "title",
+            "format": "{#1;38;5;16}{user-name}{#0;90} on {#0;38;5;17}{host-name}",
+            "keyWidth": 0
+        },
+        { "type": "custom", "format": "{#90}────────────────────────" },
+        { "type": "os", "key": "  os", "format": "{pretty-name}" },
+        { "type": "kernel", "key": "  kernel", "format": "{release}" },
+        { "type": "uptime", "key": "  uptime" },
+        { "type": "packages", "key": "  pkgs" },
+        { "type": "shell", "key": "  shell", "format": "{pretty-name} {version}" },
+        { "type": "wm", "key": "  desktop", "format": "Reef · {pretty-name} {version}" },
+        { "type": "terminal", "key": "  term", "format": "{pretty-name} {version}" },
+        "break",
+        { "type": "cpu", "key": "  cpu", "format": "{name}" },
+        { "type": "gpu", "key": "󰢮  gpu", "format": "{name}" },
+        { "type": "memory", "key": "  memory" },
+        { "type": "disk", "key": "  disk", "folders": "/" },
+        { "type": "battery", "key": "  battery" },
+        "break",
+        { "type": "colors", "symbol": "circle", "paddingLeft": 1 }
+    ]
+}

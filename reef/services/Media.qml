@@ -44,6 +44,10 @@ Singleton {
         if (canGoPrevious)
             player.previous();
     }
+    function stop() {
+        if (player?.canControl)
+            player.stop();
+    }
     function seekTo(fraction) {
         if (canSeek && length > 0)
             player.position = Math.max(0, Math.min(1, fraction)) * length;

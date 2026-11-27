@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Reef
+Comment=The Reef desktop on Hyprland
+Exec=reef-session
+TryExec=reef-session
+Type=Application
+DesktopNames=Hyprland;Reef
+Keywords=wayland;hyprland;quickshell;reef;

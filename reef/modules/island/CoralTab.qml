@@ -3,7 +3,7 @@ import qs.theme
 import qs.services
 import qs.components
 
-// The Island's Coral tab (parts/Island-Coral; Super+C, search's "Ask Coral"): the
+// The Island's Coral tab (parts/Island-Coral; Super+A, search's "Ask Coral"): the
 // conversation and an Ask field.
 //
 // Header: Coral's mark (it hops round while Coral thinks or replies), the name, the model

@@ -14,7 +14,7 @@ import qs.modules.bar
 // Four cards: the header with Done; home widget thumbnails (click to add, or drag one
 // onto the desktop); the control center's quick toggles, which drag to rearrange; and
 // the bar (move it to the left, the Spotlight cay, the bar on other monitors).
-// Done, Escape or Super+E leave. It holds the keyboard while open; the desktop and the
+// Done, Escape or Super+Shift+E leave. It holds the keyboard while open; the desktop and the
 // Island stay usable beside it.
 PanelWindow {
     id: root

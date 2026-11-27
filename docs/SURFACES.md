@@ -103,9 +103,10 @@ Mockup: `screens/Lock.png`
 Mockup: `screens/Greeter.png`
 
 - The logo lockup (ring plus the "Reef" wordmark) sits top-left, and the clock and date top-right.
-- In the center: the user avatar in a cookie shape, the name, and the password field with shapes. Other users and Guest appear as small circles below.
-- **Bottom-left:** a session picker. **Bottom-right:** accessibility, keyboard layout, and power buttons.
-- Implement with greetd plus a Quickshell greeter.
+- In the center: the user avatar in a cookie shape (their AccountsService picture, else their initial on `tertiary-container`), the name, and the password field with shapes and a `primary` ring. The other people who can log in appear as small circles below (a guest account, when the system has one, is just another of them).
+- **Bottom-left:** a session picker (`/usr/share/wayland-sessions`, Reef first). **Bottom-right:** accessibility (steps the zoom 100 → 125 → 150%), the keyboard layout, and Sleep, Restart, Power off.
+- The background is the user's wallpaper under black at `greeter-scrim`; with none, the mockup's composition of large shapes in the surface containers.
+- greetd starts a small Hyprland (`greeter/hyprland.lua`) that runs `qs -p /usr/share/reef/reef/greeter.qml` and exits with it. `reef greeter-sync` copies the user's look (colors, scale, wallpaper, keyboard layout) into the greeter's home, so the login screen matches the desktop. The last user and session are remembered.
 
 ## Search
 Mockup: `screens/Search.png`
@@ -235,21 +236,33 @@ Mockup: `screens/Settings.png`
 
 ## Keybinds (defaults)
 
+Laid out like Caelestia's, so the keys people already know keep working; Reef's own actions took free keys where the two met (Coral moved to `Super + A`, edit mode to `Super + Shift + E`). Reef's keys live in `hypr/reef.lua`, the window manager's in `hypr/config/reef/binds.lua`; both can be moved or freed from `~/.config/hypr/user/variables.lua` (`shellKeys`, `keys`), and `reef doctor` (`hypr/check-binds.lua`) fails if two binds share a key.
+
 | Keys | Action |
 | --- | --- |
 | `Super` (left or right, tapped alone) | Search |
 | `Super` (held) | Show the workspaces in the bar |
-| `Super + V` | Island → Clipboard |
+| `Super + V` (or `Super + Alt + V`) | Island → Clipboard |
 | `Super + .` | Island → Tools (emoji) |
-| `Super + C` | Coral (voice; the Island chat until voice is set up) |
-| `Super + Shift + C` | The Coral app |
+| `Super + A` | Coral (voice; the Island chat until voice is set up) |
+| `Super + Shift + A` | The Coral app |
 | `Super + N` | Control / notification center |
+| `Super + I` or `Super + K` | Open or close the Island (Tab between controls, Escape to close) |
+| `Super + Shift + I` | Put the activity in the circle beside the Island on the Island |
 | `Super + Tab` | Workspace overview |
 | `Alt + Tab` (hold Alt) | Window switcher; `Alt + Shift + Tab` steps back |
-| `Super + E` | Edit mode (Done, Escape or Super+E again to leave) |
-| `Super + L` | Lock |
-| `Ctrl + Alt + Delete` | Power actions |
+| `Super + Shift + E` | Edit mode (Done, Escape or the same keys again to leave) |
 | `Super + B` | Keyboard focus to the bar (Tab between controls, Escape to leave) |
-| `Super + I` | Open or close the Island (Tab between controls, Escape to close) |
-| `Super + Shift + I` | Put the activity in the circle beside the Island on the Island |
-| Volume and brightness keys | Change the level and show the OSD |
+| `Super + L` / `Super + Shift + L` | Lock / sleep |
+| `Ctrl + Alt + Delete` | Power actions |
+| `Ctrl + Alt + C` | Clear notifications |
+| `Print` / `Super + Shift + S` | Screenshot of the screen / of a region |
+| `Ctrl + Alt + R`, `Super + Alt + R`, `Super + Shift + Alt + R` | Record the screen, with sound, a region (again to stop) |
+| `Ctrl + Super + Space / = / - / Backspace` | Play or pause, next, previous, stop |
+| `Super + Shift + M` | Mute |
+| Volume, brightness and media keys | Change the level and show the OSD |
+| `Super + Return` (or `T`), `W`, `C`, `E` | Terminal, browser, editor, files |
+| `Super + Q` / `Super + Shift + Q` | Close / kill the window |
+| `Super + F` / `Super + Alt + F` / `Super + Alt + Space` | Fullscreen / maximize / float |
+| `Super + 1…0`, `Super + Alt + 1…0`, `Super + Shift + 1…0` | Go to a workspace, move the window there, send it there and stay |
+| `Super + S`, `M`, `D`, `R`; `Ctrl + Shift + Escape` | Scratchpad, music, chat, to-do; system monitor (special workspaces) |

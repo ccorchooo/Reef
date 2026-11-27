@@ -1,0 +1,150 @@
+# Reef's starship prompt: the folder and the branch sit in rounded pills, like the bar's
+# cays, with one accent (the folder). Colors are terminal slots that Reef keeps in step
+# with the color scheme (services/AppTheme → kitty):
+#   16 primary   17 secondary   18 tertiary   19 surface container   20 on primary
+# Outside Reef's kitty they fall back to plain 256-color blues and still read.
+# Installed by `reef install` to ~/.config/starship.toml (yours is backed up).
+"$schema" = "https://starship.rs/config-schema.json"
+
+add_newline = true
+command_timeout = 800
+
+format = """
+[](fg:16)$directory[](fg:16)\
+( [](fg:19)$git_branch$git_state$git_status[](fg:19))\
+( $python$nodejs$bun$deno$rust$golang$java$kotlin$lua$zig$c$cmake$package)\
+( $nix_shell$container)\
+$fill\
+( $cmd_duration)( $jobs)( $status)
+$character"""
+
+[directory]
+format = "[ $path]($style)[$read_only]($read_only_style)[ ]($style)"
+style = "bg:16 fg:20 bold"
+read_only = " 󰌾"
+read_only_style = "bg:16 fg:20"
+truncation_length = 3
+truncation_symbol = "…/"
+home_symbol = "~"
+
+[git_branch]
+format = "[ $symbol$branch(:$remote_branch) ]($style)"
+symbol = " "
+style = "bg:19 fg:17 bold"
+
+[git_state]
+format = "[$state( $progress_current/$progress_total) ]($style)"
+style = "bg:19 fg:18"
+
+[git_status]
+format = "[($all_status$ahead_behind)]($style)"
+style = "bg:19 fg:18"
+ahead = "⇡$count "
+behind = "⇣$count "
+diverged = "⇕⇡$ahead_count⇣$behind_count "
+conflicted = "=$count "
+stashed = "*$count "
+modified = "!$count "
+staged = "+$count "
+untracked = "?$count "
+deleted = "✘$count "
+renamed = "»$count "
+
+[fill]
+symbol = " "
+
+[cmd_duration]
+min_time = 2000
+format = "[󰥔 $duration]($style)"
+style = "fg:8"
+
+[jobs]
+format = "[$symbol$number]($style)"
+symbol = " "
+style = "fg:17"
+
+[status]
+disabled = false
+format = "[$symbol$status]($style)"
+symbol = " "
+style = "fg:1"
+
+[character]
+success_symbol = "[❯](bold fg:16)"
+error_symbol = "[❯](bold fg:1)"
+vimcmd_symbol = "[❮](bold fg:17)"
+
+[nix_shell]
+format = "[$symbol$name]($style)"
+symbol = " "
+style = "fg:18"
+
+[container]
+format = "[$symbol$name]($style)"
+symbol = " "
+style = "fg:18"
+
+[package]
+format = "[$symbol$version]($style) "
+symbol = "󰏗 "
+style = "fg:8"
+
+[python]
+format = "[$symbol($version)]($style) "
+symbol = " "
+style = "fg:18"
+
+[nodejs]
+format = "[$symbol($version)]($style) "
+symbol = " "
+style = "fg:18"
+
+[bun]
+format = "[$symbol($version)]($style) "
+symbol = " "
+style = "fg:18"
+
+[deno]
+format = "[$symbol($version)]($style) "
+symbol = " "
+style = "fg:18"
+
+[rust]
+format = "[$symbol($version)]($style) "
+symbol = " "
+style = "fg:18"
+
+[golang]
+format = "[$symbol($version)]($style) "
+symbol = " "
+style = "fg:18"
+
+[java]
+format = "[$symbol($version)]($style) "
+symbol = " "
+style = "fg:18"
+
+[kotlin]
+format = "[$symbol($version)]($style) "
+symbol = " "
+style = "fg:18"
+
+[lua]
+format = "[$symbol($version)]($style) "
+symbol = " "
+style = "fg:18"
+
+[zig]
+format = "[$symbol($version)]($style) "
+symbol = " "
+style = "fg:18"
+
+[c]
+format = "[$symbol($version)]($style) "
+symbol = " "
+style = "fg:18"
+
+[cmake]
+format = "[$symbol($version)]($style) "
+symbol = " "
+style = "fg:18"

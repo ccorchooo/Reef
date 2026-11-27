@@ -1,0 +1,702 @@
+#!/usr/bin/env bash
+# reef — install, update and look after the Reef desktop (Hyprland + Quickshell).
+#
+#   reef install [options]   set up the whole desktop: packages, the shell, Hyprland's config,
+#                            kitty/fastfetch/starship, fonts, the session, the greeter, services
+#   reef update              pull the latest Reef (in a git checkout) and refresh its files,
+#                            leaving every file you changed alone
+#   reef doctor              check programs, services, configs and keybinds
+#   reef uninstall           remove Reef and put back what it replaced
+#   reef greeter-sync        give the login greeter your colors, wallpaper and keyboard
+#   reef restart             restart the shell          reef ipc <target> <fn> [args]
+#   reef binds               list every keybind         reef version
+#
+# install options:
+#   -y, --yes        don't ask; take the default answer everywhere
+#   -n, --dry-run    show what would happen, change nothing
+#   --link           point your config at this checkout (edits apply live), for development
+#   --greeter        set up the greeter even if another display manager is enabled
+#   --no-greeter     leave the display manager alone
+#   --no-packages    don't install packages
+#   --no-apps        leave kitty, fastfetch, starship and the shell hooks alone
+#   --keep-hypr      leave ~/.config/hypr alone (load Reef's snippet from it yourself)
+#   --prefix DIR     packaging: lay Reef out under DIR (DIR/usr/share/reef, …) and stop
+#
+# Everything replaced is kept beside it as <name>.reef-bak.<date>. What was installed is
+# recorded in ~/.local/state/reef/ so `reef update` and `reef uninstall` know what's theirs.
+set -euo pipefail
+
+VERSION="1.0.0"
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+SRC="$(cd "$(dirname "$SELF")/.." && pwd)"          # this Reef: a checkout or /usr/share/reef
+# REEF_ROOT stages the system side under a folder, without sudo (for testing the installer).
+ROOTDIR="${REEF_ROOT:-}"
+SYS="$ROOTDIR/usr/share/reef"                           # the system copy (greeter, session, CLI)
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/reef"
+STAMP="$(date +%Y%m%d-%H%M%S)"
+
+YES=0 DRY=0 LINK=0 GREETER=ask PACKAGES=1 APPS=1 KEEP_HYPR=0 UPDATE=0 PREFIX=""
+
+# ── output ──────────────────────────────────────────────────────
+if [ -t 1 ]; then
+    B=$'\e[1m' D=$'\e[2m' R=$'\e[0m' A=$'\e[38;5;209m' G=$'\e[32m' Y=$'\e[33m' E=$'\e[31m'
+else
+    B="" D="" R="" A="" G="" Y="" E=""
+fi
+step() { printf '\n%s◆%s %s%s%s\n' "$A" "$R" "$B" "$*" "$R"; }
+info() { printf '  %s\n' "$*"; }
+ok()   { printf '  %s✓%s %s\n' "$G" "$R" "$*"; }
+warn() { printf '  %s!%s %s\n' "$Y" "$R" "$*"; }
+fail() { printf '  %s✗%s %s\n' "$E" "$R" "$*"; }
+die()  { printf '%sreef:%s %s\n' "$E" "$R" "$*" >&2; exit 1; }
+
+# ask "question" y|n → 0 for yes. --yes takes the default; no terminal takes it too.
+ask() {
+    local q="$1" def="$2" a hint
+    [ "$def" = y ] && hint="[Y/n]" || hint="[y/N]"
+    if [ "$YES" = 1 ] || [ ! -r /dev/tty ]; then
+        [ "$def" = y ]
+        return
+    fi
+    printf '  %s?%s %s %s ' "$A" "$R" "$q" "$D$hint$R"
+    read -r a </dev/tty || a=""
+    a="${a:-$def}"
+    [[ "$a" =~ ^[Yy] ]]
+}
+
+# ── doing things (or showing them with --dry-run) ───────────────
+run() {
+    if [ "$DRY" = 1 ]; then printf '  %s$ %s%s\n' "$D" "$*" "$R"; return 0; fi
+    "$@"
+}
+root() {
+    if [ "$(id -u)" = 0 ] || [ -n "$ROOTDIR" ]; then run "$@"; else run sudo "$@"; fi
+}
+have() { command -v "$1" >/dev/null 2>&1; }
+
+sha() { sha256sum "$1" 2>/dev/null | cut -d' ' -f1; }
+record() {   # record <installed path>: remember its checksum, so update knows it's untouched
+    [ "$DRY" = 1 ] && return 0
+    mkdir -p "$STATE"
+    grep -v -F "  $1" "$STATE/files" 2>/dev/null > "$STATE/files.tmp" || true
+    printf '%s  %s\n' "$(sha "$1")" "$1" >> "$STATE/files.tmp"
+    mv "$STATE/files.tmp" "$STATE/files"
+}
+recorded_sha() { grep -F "  $1" "$STATE/files" 2>/dev/null | tail -1 | cut -d' ' -f1; }
+
+# Keep a file or folder that's about to be replaced.
+backup() {
+    local p="$1"
+    if [ -e "$p" ] || [ -L "$p" ]; then
+        run mv "$p" "$p.reef-bak.$STAMP"
+        [ "$DRY" = 1 ] || printf '%s\n' "$p.reef-bak.$STAMP" >> "$STATE/backups"
+        info "kept the old ${p/#$HOME/\~} as ${p/#$HOME/\~}.reef-bak.$STAMP"
+    fi
+}
+
+# Install a config file of Reef's. On update a file you changed stays as it is.
+put() {
+    local from="$1" to="$2"
+    [ -f "$to" ] && cmp -s "$from" "$to" && { record "$to"; return 0; }
+    if [ -f "$to" ] && [ "$UPDATE" = 1 ]; then
+        if [ "$(sha "$to")" != "$(recorded_sha "$to")" ]; then
+            warn "${to/#$HOME/\~} has your changes; left as it is (Reef's is $from)"
+            return 0
+        fi
+    elif [ -e "$to" ] && [ "$(sha "$to")" != "$(recorded_sha "$to")" ]; then
+        backup "$to"
+    fi
+    run mkdir -p "$(dirname "$to")"
+    run cp "$from" "$to"
+    record "$to"
+    ok "${to/#$HOME/\~}"
+}
+
+# Add a line to a file once.
+add_line() {
+    local file="$1" line="$2"
+    grep -qxF "$line" "$file" 2>/dev/null && return 0
+    if [ "$DRY" = 1 ]; then info "would add to ${file/#$HOME/\~}: $line"; return 0; fi
+    mkdir -p "$(dirname "$file")"
+    printf '\n%s\n' "$line" >> "$file"
+    ok "${file/#$HOME/\~}: added '$line'"
+}
+
+# ── packages ────────────────────────────────────────────────────
+# What Reef runs on, by role. Repo packages go through pacman, the rest through an AUR
+# helper. Keep in step with packaging/arch/PKGBUILD.
+PKGS_CORE=(
+    hyprland xdg-desktop-portal-hyprland xdg-desktop-portal-gtk uwsm
+    pipewire pipewire-pulse pipewire-alsa wireplumber
+    wl-clipboard cliphist grim slurp hyprpicker wtype
+    curl ffmpeg file xdg-utils xdg-user-dirs glib2 util-linux procps-ng libnotify
+    brightnessctl bluez bluez-utils networkmanager upower power-profiles-daemon
+    polkit gnome-keyring lua
+    cava poppler btop gpu-screen-recorder
+)
+PKGS_APPS=( kitty fastfetch starship nautilus pwvucontrol )
+PKGS_LOOK=( adw-gtk-theme papirus-icon-theme noto-fonts noto-fonts-emoji noto-fonts-cjk ttf-jetbrains-mono-nerd )
+PKGS_GREETER=( greetd )
+
+install_packages() {
+    step "Packages"
+    have pacman || { warn "not Arch (no pacman): install what \`reef doctor\` lists yourself"; return 0; }
+    local want=("${PKGS_CORE[@]}" "${PKGS_LOOK[@]}")
+    [ "$APPS" = 1 ] && want+=("${PKGS_APPS[@]}")
+    [ "$GREETER" = yes ] && want+=("${PKGS_GREETER[@]}")
+    have qs || want+=(quickshell)
+
+    local missing=() repo=() aur=() p
+    for p in "${want[@]}"; do pacman -Qq "$p" >/dev/null 2>&1 || missing+=("$p"); done
+    # quickshell-git, nautilus-git and friends already provide what's asked for.
+    for p in "${missing[@]+"${missing[@]}"}"; do
+        if pacman -Qq "$p-git" >/dev/null 2>&1; then continue; fi
+        if pacman -Si "$p" >/dev/null 2>&1; then repo+=("$p"); else aur+=("$p"); fi
+    done
+    if [ ${#repo[@]} -eq 0 ] && [ ${#aur[@]} -eq 0 ]; then ok "everything Reef needs is installed"; return 0; fi
+
+    if [ ${#repo[@]} -gt 0 ]; then
+        info "from the Arch repositories: ${repo[*]}"
+        if ask "Install them with pacman?" y; then
+            root pacman -S --needed $([ "$YES" = 1 ] && echo --noconfirm) "${repo[@]}"
+        fi
+    fi
+    if [ ${#aur[@]} -gt 0 ]; then
+        info "from the AUR: ${aur[*]}"
+        local helper=""
+        have paru && helper=paru
+        [ -z "$helper" ] && have yay && helper=yay
+        if [ -z "$helper" ]; then
+            warn "no AUR helper (paru or yay); install these yourself: ${aur[*]}"
+        elif ask "Install them with $helper?" y; then
+            run "$helper" -S --needed $([ "$YES" = 1 ] && echo --noconfirm) "${aur[@]}"
+        fi
+    fi
+}
+
+# ── the system copy: greeter, session, CLI ──────────────────────
+system_owned() { have pacman && pacman -Qoq "$SYS" >/dev/null 2>&1; }
+
+copy_tree() {   # copy_tree DEST: Reef's runtime files (no docs, mockups or caches)
+    local dest="$1"
+    run mkdir -p "$dest"
+    local d
+    for d in reef hypr config greeter session bin; do
+        run rm -rf "$dest/$d"
+        run cp -rL "$SRC/$d" "$dest/$d"
+    done
+    run mkdir -p "$dest/design"
+    run rm -rf "$dest/design/fonts" "$dest/design/logo"
+    run cp -r "$SRC/design/fonts" "$SRC/design/logo" "$dest/design/"
+    run cp "$SRC/design/tokens.json" "$dest/design/"
+    [ "$DRY" = 1 ] || find "$dest" \( -name __pycache__ -o -name '*.pyc' -o -name '*.qmlc' -o -name '*.jsc' -o -name .qmlls.ini -o -name 'zz-*.qml' \) -prune -exec rm -rf {} +
+}
+
+install_system() {
+    step "System files"
+    if system_owned; then
+        ok "$SYS comes from the reef-git package"
+    elif [ "$SRC" = "$SYS" ]; then
+        ok "running from $SYS"
+    else
+        info "Reef's files go to $SYS (the greeter and the session read them there)"
+        if [ "$(id -u)" = 0 ]; then copy_tree "$SYS"; else
+            local tmp; tmp="$(mktemp -d)"
+            copy_tree "$tmp" >/dev/null
+            root rm -rf "$SYS"
+            root mkdir -p "$(dirname "$SYS")"
+            root cp -r "$tmp" "$SYS"
+            root chmod -R a+rX "$SYS"
+            rm -rf "$tmp"
+        fi
+        ok "$SYS"
+    fi
+    # The CLI, the session launcher and its entry in session menus.
+    root install -Dm755 "$SYS/session/reef-session" "$ROOTDIR/usr/local/bin/reef-session"
+    root install -Dm644 "$SYS/session/reef.desktop" "$ROOTDIR/usr/share/wayland-sessions/reef.desktop"
+    root ln -sfn "$SYS/bin/reef" "$ROOTDIR/usr/local/bin/reef"
+    ok "reef-session and the Reef session entry; the reef command in /usr/local/bin"
+}
+
+# ── the shell ───────────────────────────────────────────────────
+install_shell() {
+    step "The shell"
+    local target="$CONFIG_HOME/quickshell/reef" from="$SYS/reef"
+    [ "$LINK" = 1 ] && from="$SRC/reef"
+    [ "$DRY" = 1 ] && [ ! -d "$from" ] && from="$SRC/reef"
+    if ! { [ -L "$target" ] && [ "$(readlink -f "$target")" = "$(readlink -f "$from")" ]; }; then
+        backup "$target"
+        run mkdir -p "$(dirname "$target")"
+        run ln -s "$from" "$target"
+    fi
+    ok "${target/#$HOME/\~} → $from"
+
+    # Reef's fonts for every app (kitty uses Google Sans Code).
+    local fonts="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/reef"
+    run mkdir -p "$fonts"
+    run cp "$SRC"/design/fonts/*.woff2 "$SRC"/design/fonts/LICENSE-*.txt "$fonts/"
+    have fc-cache && run fc-cache -f "$fonts" >/dev/null
+    ok "fonts: Google Sans Flex, Google Sans Code, Material Symbols Rounded"
+}
+
+# ── Hyprland ────────────────────────────────────────────────────
+install_hypr() {
+    step "Hyprland"
+    local dest="$CONFIG_HOME/hypr" hyprsrc="$SYS/hypr"
+    [ "$LINK" = 1 ] && hyprsrc="$SRC/hypr"
+    [ "$DRY" = 1 ] && [ ! -d "$hyprsrc" ] && hyprsrc="$SRC/hypr"
+    if [ "$KEEP_HYPR" = 1 ]; then
+        info "left ~/.config/hypr alone; add this to your hyprland.lua to start Reef:"
+        info "    dofile(\"$hyprsrc/reef.lua\")"
+        return 0
+    fi
+    local first=0
+    if [ -e "$dest" ] && [ ! -f "$dest/reef/lib.lua" ]; then
+        first=1
+        # Carry over what's personal before the old config moves away.
+        carry_over_hypr
+        backup "$dest"
+    fi
+    [ -e "$dest" ] || first=1
+    run mkdir -p "$dest"
+    run rm -rf "$dest/reef" "$dest/reef-shell"
+    run cp -rL "$SRC/hypr/config/reef" "$dest/reef"
+    run cp "$SRC/hypr/config/hyprland.lua" "$dest/hyprland.lua"
+    run ln -s "$hyprsrc" "$dest/reef-shell"
+    if [ "$first" = 1 ] && [ -n "${CARRY:-}" ] && [ ! -f "$dest/user/variables.lua" ]; then
+        if [ "$DRY" = 1 ]; then info "would write ~/.config/hypr/user/variables.lua:"; printf '%s\n' "$CARRY" | sed 's/^/      /'
+        else mkdir -p "$dest/user"; printf '%s\n' "$CARRY" > "$dest/user/variables.lua"; fi
+    fi
+    ok "~/.config/hypr: Reef's modules (your changes go in ~/.config/hypr/user/, never replaced)"
+
+    if have Hyprland && [ "$DRY" = 0 ]; then
+        local out; out="$(mktemp)"
+        if Hyprland --verify-config -c "$dest/hyprland.lua" >"$out" 2>&1; then ok "Hyprland checked the config: no errors"
+        else warn "Hyprland found problems:"; sed -n '/parsing result/,$p' "$out" | tail -n +3 | sed 's/^/      /'; fi
+        rm -f "$out"
+    fi
+    if have lua && [ "$DRY" = 0 ]; then
+        if lua "$hyprsrc/check-binds.lua" "$dest" >/dev/null; then ok "keybinds: no two share a key"
+        else warn "keybinds clash:"; lua "$hyprsrc/check-binds.lua" "$dest" | sed 's/^/      /'; fi
+    fi
+}
+
+# What's personal in the Hyprland session that's running now (keyboard, monitors,
+# cursor), as a user/variables.lua for Reef's config. Sets CARRY.
+carry_over_hypr() {
+    CARRY=""
+    have hyprctl && hyprctl version >/dev/null 2>&1 || return 0
+    local layout variant options cursor csize mons
+    opt() { hyprctl getoption "$1" 2>/dev/null | sed -n 's/^str: //p' | sed 's/^\[\[EMPTY\]\]$//'; }
+    layout="$(opt input:kb_layout)"; variant="$(opt input:kb_variant)"; options="$(opt input:kb_options)"
+    cursor="$(gsettings get org.gnome.desktop.interface cursor-theme 2>/dev/null | tr -d "'")"
+    csize="$(gsettings get org.gnome.desktop.interface cursor-size 2>/dev/null)"
+    mons="$(hyprctl monitors -j 2>/dev/null | python3 -c '
+import json, sys
+for m in json.load(sys.stdin):
+    print("        {{ output = \"{}\", mode = \"{}x{}@{:.2f}\", position = \"{}x{}\", scale = {} }},".format(
+        m["name"], m["width"], m["height"], m["refreshRate"], m["x"], m["y"], m["scale"]))' 2>/dev/null || true)"
+    CARRY="-- Your settings (reef/variables.lua lists them all). Carried over from the Hyprland
+-- config you had when Reef was installed.
+return {"
+    if [ -n "$layout" ]; then
+        CARRY+="
+    input = {
+        layout  = \"$layout\","
+        [ -n "$variant" ] && CARRY+="
+        variant = \"$variant\","
+        [ -n "$options" ] && CARRY+="
+        options = \"$options\","
+        CARRY+="
+    },"
+    fi
+    [ -n "$mons" ] && CARRY+="
+    monitors = {
+$mons
+    },"
+    [ -n "$cursor" ] && [ "$cursor" != Adwaita ] && CARRY+="
+    cursor = { theme = \"$cursor\", size = ${csize:-24} },"
+    CARRY+="
+}"
+    info "carrying over your keyboard${mons:+, monitors}${cursor:+ and cursor} into ~/.config/hypr/user/variables.lua"
+}
+
+# ── terminal and shell ──────────────────────────────────────────
+install_apps() {
+    step "Terminal, prompt and greeting"
+    local c="$SRC/config"
+    put "$c/kitty/kitty.conf" "$CONFIG_HOME/kitty/kitty.conf"
+    put "$c/fastfetch/config.jsonc" "$CONFIG_HOME/fastfetch/config.jsonc"
+    put "$c/fastfetch/reef.txt" "$CONFIG_HOME/fastfetch/reef.txt"
+    put "$c/starship/starship.toml" "$CONFIG_HOME/starship.toml"
+
+    # kitty runs fish when you use it (Caelestia's foot did), else your login shell.
+    if have fish && [ ! -f "$CONFIG_HOME/kitty/reef-shell.conf" ] && [ "$(basename "${SHELL:-}")" != fish ]; then
+        if ask "Use fish in kitty? (your login shell stays ${SHELL:-bash})" y; then
+            if [ "$DRY" = 1 ]; then info "would write ~/.config/kitty/reef-shell.conf: shell fish"
+            else printf '# Written by reef install: the shell kitty starts.\nshell fish\n' > "$CONFIG_HOME/kitty/reef-shell.conf"; ok "~/.config/kitty/reef-shell.conf (fish)"; fi
+        fi
+    fi
+
+    # Shell hooks: starship and the greeting.
+    if have fish; then put "$c/fish/reef.fish" "$CONFIG_HOME/fish/conf.d/reef.fish"; fi
+    put "$c/bash/reef.bash" "${XDG_DATA_HOME:-$HOME/.local/share}/reef/reef.bash"
+    add_line "$HOME/.bashrc" "[ -f \"${XDG_DATA_HOME:-$HOME/.local/share}/reef/reef.bash\" ] && . \"${XDG_DATA_HOME:-$HOME/.local/share}/reef/reef.bash\""
+
+    # Caelestia's fish config paints its own terminal colors over kitty's; Reef's come
+    # from the scheme now.
+    local fc="$CONFIG_HOME/fish/config.fish"
+    if [ -f "$fc" ] && grep -q '^[[:space:]]*cat ~/.local/state/caelestia/sequences.txt' "$fc"; then
+        if ask "Stop Caelestia's terminal colors in config.fish (Reef colors kitty now)?" y; then
+            run cp "$fc" "$fc.reef-bak.$STAMP"
+            [ "$DRY" = 1 ] || printf '%s\n' "$fc.reef-bak.$STAMP" >> "$STATE/backups"
+            run sed -i 's|^\([[:space:]]*\)cat ~/.local/state/caelestia/sequences.txt|\1# (Reef) cat ~/.local/state/caelestia/sequences.txt|' "$fc"
+            ok "~/.config/fish/config.fish: Caelestia's color sequences turned off"
+        fi
+    fi
+
+    # GTK apps import Reef's colors (written by the shell, services/AppTheme).
+    local v
+    for v in 3.0 4.0; do
+        local css="$CONFIG_HOME/gtk-$v/gtk.css"
+        if ! grep -q 'reef-colors.css' "$css" 2>/dev/null; then
+            if [ -f "$css" ]; then
+                run cp "$css" "$css.reef-bak.$STAMP"
+                [ "$DRY" = 1 ] || printf '%s\n' "$css.reef-bak.$STAMP" >> "$STATE/backups"
+            fi
+            if [ "$DRY" = 1 ]; then info "would point $css at reef-colors.css"
+            else mkdir -p "$(dirname "$css")"; printf '/* Reef: colors from the current scheme (services/AppTheme). */\n@import url("reef-colors.css");\n' > "$css"; ok "${css/#$HOME/\~}"; fi
+        fi
+    done
+
+    # kitty is the terminal apps open (xdg-terminal-exec; Reef's Settings → Apps reads it).
+    if have kitty; then
+        local list="$CONFIG_HOME/xdg-terminals.list"
+        if [ "$(head -1 "$list" 2>/dev/null)" != kitty.desktop ]; then
+            if [ "$DRY" = 1 ]; then info "would put kitty.desktop first in $list"
+            else { echo kitty.desktop; grep -vx kitty.desktop "$list" 2>/dev/null || true; } > "$list.tmp" && mv "$list.tmp" "$list"; ok "kitty is the default terminal"; fi
+        fi
+    fi
+}
+
+# ── session services ────────────────────────────────────────────
+enable_unit() {   # enable_unit [--user] NAME
+    local user="" ; [ "$1" = --user ] && { user=--user; shift; }
+    local u="$1"
+    systemctl $user cat "$u" >/dev/null 2>&1 || return 0
+    if systemctl $user is-enabled "$u" >/dev/null 2>&1; then ok "$u"; return 0; fi
+    if [ -n "$user" ]; then run systemctl --user enable --now "$u"; else root systemctl enable --now "$u"; fi
+    ok "$u (enabled)"
+}
+
+install_services() {
+    step "Services"
+    have systemctl || { warn "no systemd: start NetworkManager, bluetooth and power-profiles-daemon yourself"; return 0; }
+    enable_unit NetworkManager.service
+    enable_unit bluetooth.service
+    enable_unit power-profiles-daemon.service
+    enable_unit --user pipewire.socket
+    enable_unit --user pipewire-pulse.socket
+    enable_unit --user wireplumber.service
+    have xdg-user-dirs-update && run xdg-user-dirs-update
+    # Other notification daemons and polkit agents would take Reef's place.
+    local other
+    for other in mako dunst swaync hyprpolkitagent polkit-gnome-authentication-agent-1; do
+        pgrep -x "$other" >/dev/null 2>&1 && warn "$other is running: Reef does its job; stop it and drop it from your autostart"
+    done
+    if pgrep -f 'qs -c caelestia|quickshell.*caelestia' >/dev/null 2>&1; then
+        info "Caelestia's shell is running now; it stops with this Hyprland session (Reef's config doesn't start it)"
+    fi
+}
+
+# ── greeter ─────────────────────────────────────────────────────
+other_dm() {
+    local dm
+    for dm in sddm gdm lightdm ly lxdm; do
+        systemctl is-enabled "$dm.service" >/dev/null 2>&1 && { echo "$dm"; return; }
+    done
+}
+
+decide_greeter() {
+    [ "$GREETER" != ask ] && return 0
+    local dm; dm="$(other_dm)"
+    if [ -n "$dm" ]; then
+        info "$dm is your login screen now."
+        if ask "Replace it with Reef's greeter (greetd)? $dm stays installed" n; then GREETER=yes; else GREETER=no; fi
+    elif systemctl is-enabled greetd.service >/dev/null 2>&1 && ! grep -q reef $ROOTDIR/etc/greetd/config.toml 2>/dev/null; then
+        ask "Use Reef's greeter in greetd?" y && GREETER=yes || GREETER=no
+    else
+        ask "Use Reef's login greeter (greetd)?" y && GREETER=yes || GREETER=no
+    fi
+}
+
+install_greeter() {
+    [ "$GREETER" = yes ] || return 0
+    step "Login greeter"
+    have greetd || [ "$DRY" = 1 ] || { warn "greetd isn't installed (it's in the package list)"; return 0; }
+    if [ -f $ROOTDIR/etc/greetd/config.toml ] && ! grep -q reef $ROOTDIR/etc/greetd/config.toml; then
+        root cp $ROOTDIR/etc/greetd/config.toml $ROOTDIR/etc/greetd/config.toml.bak
+    fi
+    root install -Dm644 "$SYS/greeter/config.toml" $ROOTDIR/etc/greetd/config.toml
+    greeter_sync
+    local dm; dm="$(other_dm)"
+    if [ -n "$dm" ]; then root systemctl disable "$dm.service"; info "$dm turned off (systemctl enable $dm to go back)"; fi
+    root systemctl enable greetd.service
+    ok "greetd shows Reef's greeter from the next boot"
+}
+
+# The greeter runs as greetd's user with its own config: give it this user's look.
+greeter_sync() {
+    local ghome
+    ghome="$(getent passwd greeter | cut -d: -f6)"
+    [ -n "$ghome" ] || { [ "$DRY" = 1 ] && ghome=/var/lib/greeter || { warn "no greeter user yet (greetd makes it)"; return 0; }; }
+    local tmp; tmp="$(mktemp -d)"
+    mkdir -p "$tmp/.config/reef" "$tmp/.cache/reef"
+    local cfg="$CONFIG_HOME/reef/config.json" wall=""
+    if [ -f "$cfg" ] && have python3; then
+        wall="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("look",{}).get("wallpaper",""))' "$cfg" 2>/dev/null || true)"
+        # Only the look: colors, scale, motion. The wallpaper moves beside it.
+        python3 - "$cfg" "$tmp/.config/reef/config.json" "$wall" <<'PY'
+import json, os, sys
+src, dst, wall = sys.argv[1:4]
+c = json.load(open(src))
+out = {k: c[k] for k in ("look", "scale", "motion", "lock") if k in c}
+if wall:
+    out.setdefault("look", {})["wallpaper"] = "/usr/share/reef/greeter/wallpaper" + os.path.splitext(wall)[1]
+json.dump(out, open(dst, "w"), indent=1)
+PY
+    fi
+    [ -f "${XDG_CACHE_HOME:-$HOME/.cache}/reef/scheme.json" ] && cp "${XDG_CACHE_HOME:-$HOME/.cache}/reef/scheme.json" "$tmp/.cache/reef/"
+    root mkdir -p "$ghome/.config/reef" "$ghome/.cache/reef" "$SYS/greeter"
+    [ -f "$tmp/.config/reef/config.json" ] && root install -m644 "$tmp/.config/reef/config.json" "$ghome/.config/reef/config.json"
+    [ -f "$tmp/.cache/reef/scheme.json" ] && root install -m644 "$tmp/.cache/reef/scheme.json" "$ghome/.cache/reef/scheme.json"
+    if [ -n "$wall" ] && [ -f "$wall" ]; then root install -m644 "$wall" "$SYS/greeter/wallpaper.${wall##*.}"; fi
+    # The keyboard layout, for typing the password.
+    if have hyprctl && hyprctl version >/dev/null 2>&1; then
+        local l v o
+        l="$(hyprctl getoption input:kb_layout 2>/dev/null | sed -n 's/^str: //p' | sed 's/^\[\[EMPTY\]\]$//')"
+        v="$(hyprctl getoption input:kb_variant 2>/dev/null | sed -n 's/^str: //p' | sed 's/^\[\[EMPTY\]\]$//')"
+        o="$(hyprctl getoption input:kb_options 2>/dev/null | sed -n 's/^str: //p' | sed 's/^\[\[EMPTY\]\]$//')"
+        printf 'return { kb_layout = "%s", kb_variant = "%s", kb_options = "%s" }\n' "$l" "$v" "$o" > "$tmp/keyboard.lua"
+        root install -m644 "$tmp/keyboard.lua" "$SYS/greeter/keyboard.lua"
+    fi
+    root chown -R greeter: "$ghome/.config/reef" "$ghome/.cache/reef" 2>/dev/null || true
+    rm -rf "$tmp"
+    ok "the greeter has your colors${wall:+, wallpaper} and keyboard"
+}
+
+# ── commands ────────────────────────────────────────────────────
+cmd_install() {
+    printf '%sReef%s %s  %s(from %s)%s\n' "$B$A" "$R" "$VERSION" "$D" "$SRC" "$R"
+    [ "$DRY" = 1 ] && info "dry run: nothing will change"
+    [ "$(id -u)" = 0 ] && die "run it as yourself, not root (it asks for sudo when it needs it)"
+    if [ "$DRY" = 0 ]; then
+        mkdir -p "$STATE"
+        printf 'src=%s\nlink=%s\ninstalled=%s\n' "$SRC" "$LINK" "$STAMP" > "$STATE/install"
+    fi
+
+    if [ "$UPDATE" = 1 ]; then GREETER=no; [ -f $ROOTDIR/etc/greetd/config.toml ] && grep -q reef $ROOTDIR/etc/greetd/config.toml && GREETER=sync; else decide_greeter; fi
+    [ "$PACKAGES" = 1 ] && install_packages
+    install_system
+    install_shell
+    install_hypr
+    [ "$APPS" = 1 ] && install_apps
+    [ "$UPDATE" = 1 ] || install_services
+    if [ "$GREETER" = sync ]; then step "Login greeter"; greeter_sync; else install_greeter; fi
+
+    step "Done"
+    if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ "$UPDATE" = 0 ]; then
+        info "Hyprland has reloaded with Reef's config."
+        if have qs && pgrep -f 'qs -c caelestia|quickshell.*caelestia' >/dev/null 2>&1; then
+            if ask "Switch from Caelestia's shell to Reef now?" y; then
+                run qs kill -c caelestia
+                run qs -c reef -n -d
+                ok "Reef is running"
+            fi
+        elif have qs && ! qs -c reef ipc call reef status >/dev/null 2>&1; then
+            ask "Start Reef now?" y && run qs -c reef -n -d && ok "Reef is running"
+        fi
+        info "Logging out and back in starts everything cleanly (pick the Reef session)."
+    elif [ "$UPDATE" = 1 ] && have qs && qs -c reef ipc call reef status >/dev/null 2>&1; then
+        info "Restart the shell to load the update:  reef restart"
+    else
+        info "Log in to the Reef session (or run reef-session from a TTY)."
+    fi
+    info "Keys: Super tap = search, Super+Return = terminal, Super+A = Coral. \`reef binds\` lists them all."
+}
+
+cmd_update() {
+    local src="$SRC"
+    [ -f "$STATE/install" ] && src="$(sed -n 's/^src=//p' "$STATE/install")"
+    if [ -d "$src/.git" ]; then
+        step "Pulling Reef"
+        run git -C "$src" pull --ff-only
+    elif system_owned; then
+        info "Reef came from the reef-git package: update it with your AUR helper, then run reef update again"
+    fi
+    local link=0
+    [ -f "$STATE/install" ] && link="$(sed -n 's/^link=//p' "$STATE/install")"
+    local args=(install --update --no-packages)
+    [ "$link" = 1 ] && args+=(--link)
+    [ "$YES" = 1 ] && args+=(--yes)
+    [ "$DRY" = 1 ] && args+=(--dry-run)
+    exec "$src/bin/reef" "${args[@]}"
+}
+
+cmd_doctor() {
+    local bad=0
+    step "Programs"
+    local need=(
+        "qs:Quickshell" "Hyprland:Hyprland" "wl-copy:wl-clipboard" "cliphist:clipboard history"
+        "grim:screenshots" "slurp:choosing a region" "curl:weather and Coral" "ffmpeg:Coral's voice"
+        "xdg-open:xdg-utils" "gdbus:glib2" "brightnessctl:brightness" "bluetoothctl:bluez-utils"
+        "nmcli:NetworkManager" "pw-play:pipewire" "kitty:the terminal" "fastfetch:the greeting" "starship:the prompt"
+    )
+    local opt=(
+        "cava:the visualizer" "gpu-screen-recorder:screen recording" "hyprpicker:the color picker"
+        "btop:the system monitor" "wtype:typing the newest clipboard entry" "whisper-cli:Coral listening locally"
+        "piper-tts:Coral speaking locally" "pdftotext:PDF attachments" "greetd:the login greeter"
+    )
+    local e
+    for e in "${need[@]}"; do have "${e%%:*}" && ok "${e%%:*}" || { fail "${e%%:*} missing (${e#*:})"; bad=1; }; done
+    for e in "${opt[@]}"; do have "${e%%:*}" || info "${D}optional: ${e%%:*} (${e#*:})$R"; done
+    have qs && info "${D}$(qs --version 2>/dev/null | head -1) (Reef is built against 0.3.2)$R"
+
+    step "Files"
+    local shell="$CONFIG_HOME/quickshell/reef"
+    [ -f "$shell/shell.qml" ] && ok "shell: ${shell/#$HOME/\~} → $(readlink -f "$shell")" || { fail "the shell isn't installed (reef install)"; bad=1; }
+    [ -f "$CONFIG_HOME/hypr/reef/lib.lua" ] && ok "Hyprland: Reef's config" || warn "~/.config/hypr isn't Reef's config"
+    [ -f "$CONFIG_HOME/hypr/reef-shell/reef.lua" ] && ok "Hyprland: Reef's keys and start command (reef-shell/)" || warn "~/.config/hypr/reef-shell/ is missing: Reef won't start with Hyprland"
+    grep -q reef-colors.conf "$CONFIG_HOME/kitty/kitty.conf" 2>/dev/null && ok "kitty follows Reef's colors" || info "kitty doesn't include reef-colors.conf"
+    fc-list 2>/dev/null | grep -qi 'Google Sans Code' && ok "fonts" || warn "Google Sans Code isn't installed for apps (reef install)"
+    [ -f "$ROOTDIR/usr/share/wayland-sessions/reef.desktop" ] && ok "the Reef session" || info "no Reef session entry (reef install)"
+    if systemctl is-enabled greetd.service >/dev/null 2>&1 && grep -q reef $ROOTDIR/etc/greetd/config.toml 2>/dev/null; then ok "greeter: greetd with Reef"
+    else info "greeter: $(other_dm || true)${D} (not Reef's)$R"; fi
+
+    step "Hyprland config"
+    if [ -f "$CONFIG_HOME/hypr/hyprland.lua" ] && have Hyprland; then
+        local out; out="$(mktemp)"
+        if Hyprland --verify-config -c "$CONFIG_HOME/hypr/hyprland.lua" >"$out" 2>&1; then ok "verify-config: no errors"
+        else fail "verify-config:"; sed -n '/parsing result/,$p' "$out" | tail -n +3 | sed 's/^/      /'; bad=1; fi
+        rm -f "$out"
+    fi
+    local checker="$CONFIG_HOME/hypr/reef-shell/check-binds.lua"
+    [ -f "$checker" ] || checker="$SRC/hypr/check-binds.lua"
+    if have lua && [ -f "$CONFIG_HOME/hypr/reef/lib.lua" ]; then
+        local r; r="$(lua "$checker" "$CONFIG_HOME/hypr" 2>&1)" && ok "keybinds: $(tail -1 <<<"$r")" || { fail "keybinds:"; sed 's/^/      /' <<<"$r"; bad=1; }
+    fi
+
+    step "Session"
+    have systemctl && for e in NetworkManager bluetooth power-profiles-daemon; do
+        systemctl is-active "$e.service" >/dev/null 2>&1 && ok "$e" || warn "$e isn't running"
+    done
+    for e in mako dunst swaync hyprpolkitagent; do
+        pgrep -x "$e" >/dev/null 2>&1 && warn "$e is running and takes Reef's place (notifications or polkit)"
+    done
+    if pgrep -f 'qs -c caelestia|quickshell.*caelestia' >/dev/null 2>&1; then warn "Caelestia's shell is running: it takes notifications and the keys"; fi
+    if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && have qs; then
+        qs -c reef ipc call reef status >/dev/null 2>&1 && ok "Reef is running" || info "Reef isn't running (qs -c reef -n -d)"
+    fi
+    echo
+    [ "$bad" = 0 ] && printf '%sAll good.%s\n' "$G" "$R" || printf '%sSome things need a look (above).%s\n' "$Y" "$R"
+    return $bad
+}
+
+cmd_uninstall() {
+    step "Removing Reef"
+    local link="$CONFIG_HOME/quickshell/reef"
+    [ -L "$link" ] && run rm "$link" && ok "${link/#$HOME/\~}"
+    # Put back what Reef replaced (the newest backup of each).
+    if [ -f "$STATE/backups" ]; then
+        local b orig
+        while read -r b; do
+            orig="${b%.reef-bak.*}"
+            [ -e "$b" ] || continue
+            if ask "Put back ${orig/#$HOME/\~} from before Reef?" y; then
+                [ -e "$orig" ] && run rm -rf "$orig"
+                run mv "$b" "$orig"
+                ok "${orig/#$HOME/\~}"
+            fi
+        done < <(tac "$STATE/backups" | awk -F'.reef-bak.' '!seen[$1]++')
+    fi
+    # Reef's own files that nothing was replaced for, if you haven't changed them.
+    if [ -f "$STATE/files" ]; then
+        local sum path
+        while read -r sum path; do
+            [ -f "$path" ] && [ "$(sha "$path")" = "$sum" ] && run rm -f "$path"
+        done < "$STATE/files"
+    fi
+    run rm -f "$CONFIG_HOME/kitty/reef-colors.conf" "$CONFIG_HOME/kitty/reef-shell.conf" \
+        "$CONFIG_HOME/gtk-3.0/reef-colors.css" "$CONFIG_HOME/gtk-4.0/reef-colors.css"
+    local css
+    for css in "$CONFIG_HOME/gtk-3.0/gtk.css" "$CONFIG_HOME/gtk-4.0/gtk.css"; do
+        [ -f "$css" ] && [ "$(grep -cv '^/\*\|reef-colors.css' "$css")" = 0 ] && run rm -f "$css"
+    done
+    [ "$DRY" = 1 ] || sed -i '/\/reef\/reef.bash/d' "$HOME/.bashrc" 2>/dev/null || true
+    run rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/fonts/reef" "${XDG_DATA_HOME:-$HOME/.local/share}/reef/reef.bash"
+    ok "Reef's terminal, prompt and GTK files"
+    if ask "Remove the Reef session, the greeter setup and $SYS (needs sudo)?" y; then
+        if grep -q reef $ROOTDIR/etc/greetd/config.toml 2>/dev/null; then
+            if [ -f $ROOTDIR/etc/greetd/config.toml.bak ]; then root mv $ROOTDIR/etc/greetd/config.toml.bak $ROOTDIR/etc/greetd/config.toml; fi
+            info "greetd is still enabled; turn your old login screen back on with systemctl enable <sddm|gdm|…>"
+        fi
+        root rm -f "$ROOTDIR/usr/local/bin/reef" "$ROOTDIR/usr/local/bin/reef-session" "$ROOTDIR/usr/share/wayland-sessions/reef.desktop"
+        system_owned || root rm -rf "$SYS"
+        ok "system files"
+    fi
+    run rm -rf "$STATE"
+    info "Your settings stay in ${CONFIG_HOME/#$HOME/\~}/reef."
+}
+
+cmd_prefix() {
+    local p="$1"
+    copy_tree "$p$SYS"
+    run install -Dm755 "$SRC/session/reef-session" "$p/usr/bin/reef-session"
+    run install -Dm644 "$SRC/session/reef.desktop" "$p/usr/share/wayland-sessions/reef.desktop"
+    run mkdir -p "$p/usr/bin" "$p/etc/xdg/quickshell" "$p/usr/share/licenses/reef"
+    run ln -sfn "$SYS/bin/reef" "$p/usr/bin/reef"
+    run ln -sfn "$SYS/reef" "$p/etc/xdg/quickshell/reef"
+    run cp "$SRC"/design/fonts/LICENSE-*.txt "$p/usr/share/licenses/reef/"
+}
+
+usage() { sed -n '2,25p' "$SELF" | sed 's/^# \{0,1\}//'; }
+
+# ── main ────────────────────────────────────────────────────────
+cmd="${1:-help}"; [ $# -gt 0 ] && shift
+# install.sh's old flags still work.
+case "$cmd" in --check) cmd=doctor ;; --uninstall) cmd=uninstall ;; --prefix) cmd=prefix ;; --link|--copy|--hypr|--hypr-config|-y|--yes|-n|--dry-run) set -- "$cmd" "$@"; cmd=install ;; esac
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -y|--yes) YES=1 ;;
+        -n|--dry-run) DRY=1 ;;
+        --link) LINK=1 ;;
+        --copy|--hypr|--hypr-config) ;;
+        --greeter) GREETER=yes ;;
+        --no-greeter) GREETER=no ;;
+        --no-packages) PACKAGES=0 ;;
+        --no-apps) APPS=0 ;;
+        --keep-hypr) KEEP_HYPR=1 ;;
+        --update) UPDATE=1 ;;
+        --prefix) PREFIX="${2:?--prefix needs a directory}"; shift ;;
+        -h|--help) usage; exit 0 ;;
+        *) [ "$cmd" = ipc ] && break; [ "$cmd" = prefix ] && [ -z "$PREFIX" ] && { PREFIX="$1"; shift; continue; }; die "unknown option $1 (reef help)" ;;
+    esac
+    shift
+done
+
+case "$cmd" in
+    install) cmd_install ;;
+    update) cmd_update ;;
+    doctor|check) cmd_doctor ;;
+    uninstall) cmd_uninstall ;;
+    greeter-sync) greeter_sync ;;
+    prefix) [ -n "$PREFIX" ] || die "prefix needs a directory"; cmd_prefix "$PREFIX" ;;
+    restart) qs kill -c reef >/dev/null 2>&1 || true; exec qs -c reef -n -d ;;
+    ipc) exec qs -c reef ipc call "$@" ;;
+    binds) exec lua "$CONFIG_HOME/hypr/reef-shell/check-binds.lua" "$CONFIG_HOME/hypr" --list ;;
+    version|--version|-v) echo "reef $VERSION" ;;
+    help|-h|--help) usage ;;
+    *) die "unknown command $cmd (reef help)" ;;
+esac

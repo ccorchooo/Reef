@@ -8,7 +8,7 @@ import qs.theme
 // Coral's voice mode (SURFACES.md → Coral → Voice). Listens, writes down what was said,
 // asks Coral, and speaks the reply.
 //
-//   CoralVoice.start()    // Super+C, the mic in the Coral tab
+//   CoralVoice.start()    // Super+A, the mic in the Coral tab
 //   CoralVoice.done()     // Stop while listening: that's all I'm saying
 //   CoralVoice.cancel()   // Escape, Stop otherwise
 //

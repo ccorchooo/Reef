@@ -29,6 +29,44 @@ Singleton {
             Quickshell.execDetached(["kill", "-INT", String(pid)]);
     }
 
+    readonly property string folder: Config.options.recordings.folder || (Quickshell.env("HOME") + "/Videos/Recordings")
+
+    // Start recording, or stop the one running. mode: screen (the focused monitor),
+    // sound (the same with the speakers' audio) or region (chosen with slurp).
+    // gpu-screen-recorder, else wf-recorder. Detached, so a shell restart keeps it going;
+    // the probe below picks it up as the recording activity either way.
+    function toggle(mode) {
+        if (active) {
+            stop();
+            return;
+        }
+        const name = Qt.formatDateTime(new Date(), "yyyy-MM-dd_hh-mm-ss") + ".mp4";
+        const script = `out="$1"; mon="$2"; mode="$3"; fps="$4"; mkdir -p "$(dirname "$out")" || exit 1
+if command -v gpu-screen-recorder >/dev/null; then
+    set -- -f "$fps" -o "$out"
+    [ "$mode" = sound ] && set -- "$@" -a default_output
+    if [ "$mode" = region ]; then g=$(slurp -f '%wx%h+%x+%y' </dev/null) || exit 0; set -- -w region -region "$g" "$@"
+    else set -- -w "$mon" "$@"; fi
+    exec gpu-screen-recorder "$@"
+elif command -v wf-recorder >/dev/null; then
+    set -- -r "$fps" -f "$out"
+    [ "$mode" = sound ] && set -- "$@" --audio
+    if [ "$mode" = region ]; then g=$(slurp </dev/null) || exit 0; set -- -g "$g" "$@"
+    else set -- -o "$mon" "$@"; fi
+    exec wf-recorder "$@"
+fi
+notify-send -a Reef "Screen recording" "Install gpu-screen-recorder or wf-recorder to record." 2>/dev/null`;
+        Quickshell.execDetached(["sh", "-c", script, "reef-record", folder + "/" + name, Monitors.focused, mode || "screen", String(Config.options.recordings.fps)]);
+        recheck.restart();
+    }
+
+    // Notice the new recorder quickly instead of on the next 2 s probe.
+    Timer {
+        id: recheck
+        interval: 600
+        onTriggered: if (!probe.running) probe.running = true
+    }
+
     // comm names are cut to 15 characters, hence "gpu-screen-reco".
     Process {
         id: probe

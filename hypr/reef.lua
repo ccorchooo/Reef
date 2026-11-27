@@ -45,46 +45,70 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("wl-paste --type image --watch cliphist store")
 end)
 
--- Default keybinds (SURFACES.md → Keybinds). Each fires a Reef global shortcut
--- (reef/modules/Commands.qml); actions that aren't built yet just log.
-local binds = {
+-- Default keybinds (SURFACES.md → Keybinds), laid out to match Caelestia's where the two
+-- share an action. Each fires a Reef global shortcut (reef/modules/Commands.qml).
+-- In Reef's Hyprland config, user/variables.lua can move or free any of them by action:
+--     shellKeys = { coral = "SUPER + Y", editMode = false }
+-- A list gives one action several keys. `reef doctor` checks for clashes.
+local keys = {
     -- Tap either Super key on its own for search. Release binds fire only when no other
     -- key was pressed while Super was held, so Super+V and friends don't open it.
-    { "SUPER + SUPER_L",     "search", { release = true } },
-    { "SUPER + SUPER_R",     "search", { release = true } },
+    search        = { { "SUPER + SUPER_L", "SUPER + SUPER_R" }, { release = true } },
     -- Holding either Super key shows the workspaces in the bar until it's let go (Reef
     -- gets the press and the release of this global; a hold doesn't open search).
-    { "SUPER + SUPER_L",     "superHold" },
-    { "SUPER + SUPER_R",     "superHold" },
-    { "SUPER + V",           "clipboard" },
-    { "SUPER + period",      "emoji" },
-    { "SUPER + C",           "coral" },
-    { "SUPER + SHIFT + C",   "coralApp" },
-    { "SUPER + N",           "controlCenter" },
-    { "SUPER + Tab",         "overview" },
+    superHold     = { { "SUPER + SUPER_L", "SUPER + SUPER_R" } },
+    clipboard     = { { "SUPER + V", "SUPER + ALT + V" } },
+    emoji         = { "SUPER + period" },
+    coral         = { "SUPER + A" },
+    coralApp      = { "SUPER + SHIFT + A" },
+    controlCenter = { "SUPER + N" },
+    island        = { { "SUPER + I", "SUPER + K" } },
+    islandSwap    = { "SUPER + SHIFT + I" },
+    overview      = { "SUPER + Tab" },
     -- Hold Alt and press Tab to step through windows; letting go of Alt switches.
-    { "ALT + Tab",           "switcher",     { repeating = true } },
-    { "ALT + SHIFT + Tab",   "switcherBack", { repeating = true } },
-    { "SUPER + E",           "editMode" },
-    { "SUPER + L",           "lock" },
-    { "CTRL + ALT + Delete", "power" },
-    { "SUPER + B",           "focusBar" },
-    { "SUPER + I",           "island" },
-    { "SUPER + SHIFT + I",   "islandSwap" },
-    -- Media keys: Reef changes the level and shows the OSD.
-    { "XF86AudioRaiseVolume",  "volumeUp",       { locked = true, repeating = true } },
-    { "XF86AudioLowerVolume",  "volumeDown",     { locked = true, repeating = true } },
-    { "XF86AudioMute",         "volumeMute",     { locked = true } },
-    { "XF86MonBrightnessUp",   "brightnessUp",   { locked = true, repeating = true } },
-    { "XF86MonBrightnessDown", "brightnessDown", { locked = true, repeating = true } },
-    { "XF86AudioPlay",         "mediaToggle",    { locked = true } },
-    { "XF86AudioPause",        "mediaToggle",    { locked = true } },
-    { "XF86AudioNext",         "mediaNext",      { locked = true } },
-    { "XF86AudioPrev",         "mediaPrevious",  { locked = true } },
-    -- A region screenshot, saved and copied (Reef's Screenshot service).
-    { "Print",                 "screenshot",     { locked = true } },
+    switcher      = { "ALT + Tab", { repeating = true } },
+    switcherBack  = { "ALT + SHIFT + Tab", { repeating = true } },
+    editMode      = { "SUPER + SHIFT + E" },
+    focusBar      = { "SUPER + B" },
+    lock          = { "SUPER + L" },
+    sleep         = { "SUPER + SHIFT + L", { locked = true } },
+    power         = { "CTRL + ALT + Delete" },
+    clearNotifications = { "CTRL + ALT + C", { locked = true } },
+    -- Screenshots: the screen, or a region (saved and copied; Reef's Screenshot service).
+    screenshotScreen = { "Print", { locked = true } },
+    screenshot    = { { "SUPER + SHIFT + S", "SUPER + SHIFT + ALT + S" } },
+    -- Recording (again to stop): the screen, with sound, or a region.
+    record        = { "CTRL + ALT + R" },
+    recordSound   = { "SUPER + ALT + R" },
+    recordRegion  = { "SUPER + SHIFT + ALT + R" },
+    -- Volume, brightness and media: Reef changes the level and shows the OSD.
+    volumeUp      = { "XF86AudioRaiseVolume", { locked = true, repeating = true } },
+    volumeDown    = { "XF86AudioLowerVolume", { locked = true, repeating = true } },
+    volumeMute    = { { "XF86AudioMute", "SUPER + SHIFT + M" }, { locked = true } },
+    micMute       = { "XF86AudioMicMute", { locked = true } },
+    brightnessUp  = { "XF86MonBrightnessUp", { locked = true, repeating = true } },
+    brightnessDown = { "XF86MonBrightnessDown", { locked = true, repeating = true } },
+    mediaToggle   = { { "XF86AudioPlay", "XF86AudioPause", "CTRL + SUPER + space" }, { locked = true } },
+    mediaNext     = { { "XF86AudioNext", "CTRL + SUPER + equal" }, { locked = true } },
+    mediaPrevious = { { "XF86AudioPrev", "CTRL + SUPER + minus" }, { locked = true } },
+    mediaStop     = { { "XF86AudioStop", "CTRL + SUPER + BackSpace" }, { locked = true } },
 }
 
-for _, b in ipairs(binds) do
-    hl.bind(b[1], hl.dsp.global("reef:" .. b[2]), b[3])
+local vars = package.loaded["reef.vars"]
+local over = type(vars) == "table" and type(vars.shellKeys) == "table" and vars.shellKeys or {}
+
+-- In a fixed order (search's release bind before superHold's press, as always).
+local names = {}
+for action in pairs(keys) do names[#names + 1] = action end
+table.sort(names)
+for _, action in ipairs(names) do
+    local b = keys[action]
+    local k = b[1]
+    if over[action] ~= nil then k = over[action] end
+    if type(k) ~= "table" then k = { k } end
+    for _, key in ipairs(k) do
+        if type(key) == "string" and key:match("%S") then
+            hl.bind(key, hl.dsp.global("reef:" .. action), b[2])
+        end
+    end
 end

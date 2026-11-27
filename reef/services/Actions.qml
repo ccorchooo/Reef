@@ -29,6 +29,13 @@ Singleton {
             nightLight: ["Night light", "M3"],
             micMute: ["Mute microphone", "M3"],
             screenshot: ["Screenshot of a region", "M3"],
+            screenshotScreen: ["Screenshot of the screen", "M3"],
+            screenshotWindow: ["Screenshot of the window", "M3"],
+            record: ["Record the screen (again to stop)", "M9"],
+            recordSound: ["Record the screen with sound", "M9"],
+            recordRegion: ["Record a region", "M9"],
+            clearNotifications: ["Clear notifications", "M3"],
+            sleep: ["Sleep", "M5"],
             keepAwake: ["Keep awake", "M3"],
             focus: ["Focus session", "M3"],
             overview: ["Workspace overview", "M4"],
@@ -46,11 +53,12 @@ Singleton {
             brightnessDown: ["Brightness down", "M2"],
             mediaToggle: ["Play or pause", "M9"],
             mediaNext: ["Next track", "M9"],
-            mediaPrevious: ["Previous track", "M9"]
+            mediaPrevious: ["Previous track", "M9"],
+            mediaStop: ["Stop playback", "M9"]
         })
 
     // Actions with a global shortcut (bound in hypr/reef.lua).
-    readonly property var shortcuts: ["search", "island", "islandSwap", "clipboard", "emoji", "coral", "coralApp", "controlCenter", "overview", "switcher", "switcherBack", "editMode", "lock", "power", "focusBar", "volumeUp", "volumeDown", "volumeMute", "brightnessUp", "brightnessDown", "screenshot", "mediaToggle", "mediaNext", "mediaPrevious"]
+    readonly property var shortcuts: ["search", "island", "islandSwap", "clipboard", "emoji", "coral", "coralApp", "controlCenter", "overview", "switcher", "switcherBack", "editMode", "lock", "power", "focusBar", "volumeUp", "volumeDown", "volumeMute", "brightnessUp", "brightnessDown", "screenshot", "screenshotScreen", "screenshotWindow", "record", "recordSound", "recordRegion", "clearNotifications", "sleep", "micMute", "settings", "home", "mediaToggle", "mediaNext", "mediaPrevious", "mediaStop"]
 
     // Surfaces listen to these.
     signal focusBarRequested
@@ -92,6 +100,13 @@ Singleton {
             nightLight: () => NightLight.toggle(),
             micMute: () => Audio.toggleMicMute(),
             screenshot: () => Screenshot.region(),
+            screenshotScreen: () => Screenshot.take("screen"),
+            screenshotWindow: () => Screenshot.take("window"),
+            record: () => Recording.toggle("screen"),
+            recordSound: () => Recording.toggle("sound"),
+            recordRegion: () => Recording.toggle("region"),
+            clearNotifications: () => Notifications.clearAll(),
+            sleep: () => Session.suspend(),
             keepAwake: () => KeepAwake.toggle(0),
             focus: () => Focus.active ? Focus.stop() : Focus.start(0),
             volumeUp: () => Audio.setVolume(Audio.volume + 0.05),
@@ -101,7 +116,8 @@ Singleton {
             brightnessDown: () => Brightness.step(-0.05),
             mediaToggle: () => Media.togglePlaying(),
             mediaNext: () => Media.next(),
-            mediaPrevious: () => Media.previous()
+            mediaPrevious: () => Media.previous(),
+            mediaStop: () => Media.stop()
         })
 
     function run(name) {

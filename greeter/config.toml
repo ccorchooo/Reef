@@ -1,0 +1,8 @@
+# greetd for Reef (installed by `reef install --greeter` as /etc/greetd/config.toml;
+# the previous one is kept as config.toml.bak).
+[terminal]
+vt = 1
+
+[default_session]
+command = "start-hyprland -- -c /usr/share/reef/greeter/hyprland.lua"
+user = "greeter"
